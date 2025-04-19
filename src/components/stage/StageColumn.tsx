@@ -1,13 +1,11 @@
 
 import { useState } from "react";
-import { Droppable, Draggable } from "react-beautiful-dnd";
+import { Draggable } from "react-beautiful-dnd";
 import { Stage, Opportunity } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import OpportunityCard from "../opportunity/OpportunityCard";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import CreateOpportunityDialog from "../opportunity/CreateOpportunityDialog";
+import StageHeader from "./StageHeader";
+import StageOpportunityList from "./StageOpportunityList";
 
 interface StageColumnProps {
   stage: Stage;
@@ -19,12 +17,6 @@ interface StageColumnProps {
 const StageColumn = ({ stage, index, funnelId, onOpportunityCreated }: StageColumnProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const totalValue = stage.opportunities.reduce((sum, opp) => sum + opp.value, 0);
-  const formattedTotalValue = new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
-  }).format(totalValue);
-
   return (
     <Draggable draggableId={`stage-${stage.id}`} index={index}>
       {(provided) => (
@@ -34,52 +26,16 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated }: StageColu
           {...provided.draggableProps}
         >
           <Card className="h-full flex flex-col">
-            <CardHeader 
-              className="pb-2 border-b" 
-              {...provided.dragHandleProps}
-            >
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm font-medium">
-                  {stage.name}
-                </CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  {stage.opportunities.length}
-                </Badge>
-              </div>
-              <div className="text-xs text-muted-foreground flex justify-between">
-                <span>{stage.description}</span>
-                <span className="font-medium">{formattedTotalValue}</span>
-              </div>
-            </CardHeader>
+            <StageHeader 
+              stage={stage}
+              dragHandleProps={provided.dragHandleProps}
+            />
             <CardContent className="p-2 flex-1">
-              <Droppable droppableId={stage.id} type="opportunity">
-                {(provided, snapshot) => (
-                  <div
-                    className={`min-h-[150px] h-full p-1 rounded-sm ${
-                      snapshot.isDraggingOver ? "bg-accent/70" : ""
-                    }`}
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                  >
-                    {stage.opportunities.map((opportunity, index) => (
-                      <OpportunityCard
-                        key={opportunity.id}
-                        opportunity={opportunity}
-                        index={index}
-                      />
-                    ))}
-                    {provided.placeholder}
-                    <Button
-                      variant="ghost"
-                      className="w-full mt-2 text-muted-foreground border border-dashed border-muted-foreground/30"
-                      onClick={() => setIsDialogOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adicionar
-                    </Button>
-                  </div>
-                )}
-              </Droppable>
+              <StageOpportunityList
+                stageId={stage.id}
+                opportunities={stage.opportunities}
+                onAddClick={() => setIsDialogOpen(true)}
+              />
             </CardContent>
           </Card>
           
