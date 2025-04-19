@@ -1,13 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLayout from "@/components/layout/AppLayout";
+import Dashboard from "@/pages/Dashboard";
+import FunnelList from "@/pages/FunnelList";
+import FunnelDetail from "@/pages/FunnelDetail";
+import OpportunityList from "@/pages/OpportunityList";
+import WebhookManager from "@/pages/WebhookManager";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="funnels" element={<FunnelList />} />
+        <Route path="funnels/:id" element={<FunnelDetail />} />
+        <Route path="opportunities" element={<OpportunityList />} />
+        <Route path="webhooks" element={<WebhookManager />} />
+      </Route>
+    </Routes>
   );
 };
 

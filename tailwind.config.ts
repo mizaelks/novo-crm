@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				kanban: {
+					'blue': '#4EA8DE',
+					'purple': '#8884FF',
+					'light-blue': '#EFF9FF',
+					'light-purple': '#F5F5FF'
 				}
 			},
 			borderRadius: {
