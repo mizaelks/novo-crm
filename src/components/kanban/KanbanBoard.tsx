@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
-import { Funnel, Opportunity, Stage } from "@/types";
+import { DropResult } from "react-beautiful-dnd";
+import { Funnel, Stage, Opportunity } from "@/types";
 import { funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
-import StageColumn from "../stage/StageColumn";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import CreateStageDialog from "../stage/CreateStageDialog";
 import { toast } from "sonner";
+import KanbanSkeleton from "./KanbanSkeleton";
+import KanbanHeader from "./KanbanHeader";
+import KanbanStages from "./KanbanStages";
+import CreateStageDialog from "../stage/CreateStageDialog";
 
 interface KanbanBoardProps {
   funnelId: string;
@@ -25,7 +24,6 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       try {
         const funnelData = await funnelAPI.getById(funnelId);
         const stagesData = await stageAPI.getByFunnelId(funnelId);
-        
         setFunnel(funnelData);
         setStages(stagesData);
       } catch (error) {
@@ -118,7 +116,6 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   };
 
   const handleOpportunityCreated = (newOpportunity: Opportunity) => {
-    // Update the stages with the new opportunity
     const updatedStages = stages.map(stage => {
       if (stage.id === newOpportunity.stageId) {
         return {
@@ -133,16 +130,7 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="p-4">
-        <div className="h-6 w-48 bg-muted animate-pulse rounded mb-6" />
-        <div className="flex space-x-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="w-80 h-96 bg-muted animate-pulse rounded" />
-          ))}
-        </div>
-      </div>
-    );
+    return <KanbanSkeleton />;
   }
 
   if (!funnel) {
@@ -155,39 +143,17 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">{funnel.name}</h2>
-          <p className="text-muted-foreground">{funnel.description}</p>
-        </div>
-        <Button onClick={() => setIsCreateStageDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Etapa
-        </Button>
-      </div>
+      <KanbanHeader 
+        funnel={funnel}
+        onNewStage={() => setIsCreateStageDialogOpen(true)}
+      />
       
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="all-stages" direction="horizontal" type="stage">
-          {(provided) => (
-            <div 
-              className="flex space-x-4 overflow-x-auto pb-4"
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-            >
-              {stages.map((stage, index) => (
-                <StageColumn 
-                  key={stage.id} 
-                  stage={stage} 
-                  index={index} 
-                  funnelId={funnelId}
-                  onOpportunityCreated={handleOpportunityCreated}
-                />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <KanbanStages 
+        stages={stages}
+        funnelId={funnelId}
+        onDragEnd={handleDragEnd}
+        onOpportunityCreated={handleOpportunityCreated}
+      />
       
       <CreateStageDialog 
         open={isCreateStageDialogOpen}
