@@ -53,7 +53,7 @@ const OpportunityDetailsDialog = ({
     await scheduledActionAPI.execute(actionId);
     
     const updatedActions = scheduledActions.map(action => 
-      action.id === actionId ? {...action, status: 'completed'} : action
+      action.id === actionId ? {...action, status: 'completed' as const} : action
     );
     
     setScheduledActions(updatedActions);

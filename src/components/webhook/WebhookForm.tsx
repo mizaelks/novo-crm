@@ -3,7 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { WebhookConfig } from "@/types";
+import { WebhookConfig, WebhookFormData } from "@/types";
 import { webhookAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -41,7 +41,15 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
     try {
       setIsSubmitting(true);
       
-      const newWebhook = await webhookAPI.create(values);
+      // Create a properly typed WebhookFormData object from the form values
+      const webhookData: WebhookFormData = {
+        targetType: values.targetType,
+        targetId: values.targetId,
+        url: values.url,
+        event: values.event
+      };
+      
+      const newWebhook = await webhookAPI.create(webhookData);
       
       toast.success("Webhook configurado com sucesso!");
       
