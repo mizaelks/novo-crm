@@ -1,11 +1,12 @@
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import FunnelList from "@/pages/FunnelList";
 import FunnelDetail from "@/pages/FunnelDetail";
 import OpportunityList from "@/pages/OpportunityList";
 import WebhookManager from "@/pages/WebhookManager";
+import NotFound from "@/pages/NotFound";
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
         <Route path="funnels/:id" element={<FunnelDetail />} />
         <Route path="opportunities" element={<OpportunityList />} />
         <Route path="webhooks" element={<WebhookManager />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );
