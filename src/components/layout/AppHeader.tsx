@@ -1,6 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 const AppHeader = () => {
   const location = useLocation();
@@ -47,9 +48,12 @@ const AppHeader = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            Documentação API
-          </Button>
+          <a href="/api-docs" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              Documentação API
+              <ExternalLink size={14} />
+            </Button>
+          </a>
         </div>
       </div>
     </header>
