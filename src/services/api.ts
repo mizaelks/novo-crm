@@ -15,62 +15,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from '@/integrations/supabase/types';
 
-// Data mapping functions to convert between database and application models
-const mapDbFunnelToFunnel = (dbFunnel: any): Funnel => {
-  return {
-    id: dbFunnel.id,
-    name: dbFunnel.name,
-    description: dbFunnel.description || '',
-    order: dbFunnel.order || 0,
-    stages: [], // Will be populated separately
-  };
-};
-
-const mapDbStageToStage = (dbStage: any): Stage => {
-  return {
-    id: dbStage.id,
-    name: dbStage.name,
-    description: dbStage.description || '',
-    order: dbStage.order || 0,
-    funnelId: dbStage.funnel_id,
-    opportunities: [], // Will be populated separately
-  };
-};
-
-const mapDbOpportunityToOpportunity = (dbOpportunity: any): Opportunity => {
-  return {
-    id: dbOpportunity.id,
-    title: dbOpportunity.title,
-    value: dbOpportunity.value || 0,
-    client: dbOpportunity.client || '',
-    createdAt: new Date(dbOpportunity.created_at),
-    stageId: dbOpportunity.stage_id,
-    funnelId: dbOpportunity.funnel_id,
-    scheduledActions: [], // Will be populated separately
-  };
-};
-
-const mapDbWebhookToWebhook = (dbWebhook: any): WebhookConfig => {
-  return {
-    id: dbWebhook.id,
-    targetType: dbWebhook.target_type as 'funnel' | 'stage' | 'opportunity',
-    targetId: dbWebhook.target_id,
-    url: dbWebhook.url,
-    event: dbWebhook.event as 'create' | 'update' | 'move',
-  };
-};
-
-const mapDbScheduledActionToScheduledAction = (dbAction: any): ScheduledAction => {
-  return {
-    id: dbAction.id,
-    opportunityId: dbAction.opportunity_id,
-    actionType: dbAction.action_type as 'email' | 'webhook',
-    actionConfig: dbAction.action_config || {},
-    scheduledDateTime: new Date(dbAction.scheduled_datetime),
-    status: dbAction.status as 'pending' | 'completed' | 'failed',
-  };
-};
-
 // Webhook dispatch simulation (could be updated later for real external calls)
 const dispatchWebhook = async (payload: WebhookPayload, url: string) => {
   console.log(`Dispatching webhook to ${url}`, payload);
@@ -108,6 +52,59 @@ const triggerEntityWebhooks = async (
   return { dispatched: promises.length };
 };
 
+// Data mapping functions to convert between database and application models
+const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, "stages"> => {
+  return {
+    id: dbFunnel.id,
+    name: dbFunnel.name,
+    description: dbFunnel.description || '',
+    order: dbFunnel.order || 0,
+  };
+};
+
+const mapDbStageToStage = (dbStage: any): Omit<Stage, "opportunities"> => {
+  return {
+    id: dbStage.id,
+    name: dbStage.name,
+    description: dbStage.description || '',
+    order: dbStage.order || 0,
+    funnelId: dbStage.funnel_id,
+  };
+};
+
+const mapDbOpportunityToOpportunity = (dbOpportunity: any): Omit<Opportunity, "scheduledActions"> => {
+  return {
+    id: dbOpportunity.id,
+    title: dbOpportunity.title,
+    value: dbOpportunity.value || 0,
+    client: dbOpportunity.client || '',
+    createdAt: new Date(dbOpportunity.created_at),
+    stageId: dbOpportunity.stage_id,
+    funnelId: dbOpportunity.funnel_id,
+  };
+};
+
+const mapDbWebhookToWebhook = (dbWebhook: any): WebhookConfig => {
+  return {
+    id: dbWebhook.id,
+    targetType: dbWebhook.target_type as 'funnel' | 'stage' | 'opportunity',
+    targetId: dbWebhook.target_id,
+    url: dbWebhook.url,
+    event: dbWebhook.event as 'create' | 'update' | 'move',
+  };
+};
+
+const mapDbScheduledActionToScheduledAction = (dbAction: any): ScheduledAction => {
+  return {
+    id: dbAction.id,
+    opportunityId: dbAction.opportunity_id,
+    actionType: dbAction.action_type as 'email' | 'webhook',
+    actionConfig: dbAction.action_config as any,
+    scheduledDateTime: new Date(dbAction.scheduled_datetime),
+    status: dbAction.status as 'pending' | 'completed' | 'failed',
+  };
+};
+
 // --- FUNNEL API ---
 export const funnelAPI = {
   getAll: async (): Promise<Funnel[]> => {
@@ -115,11 +112,16 @@ export const funnelAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const funnels: Funnel[] = (data || []).map(mapDbFunnelToFunnel);
+    const funnelBases = (data || []).map(mapDbFunnelToFunnel);
     
     // For each funnel, fetch its stages & opportunities
-    for (const funnel of funnels) {
-      funnel.stages = await stageAPI.getByFunnelId(funnel.id);
+    const funnels: Funnel[] = [];
+    for (const funnelBase of funnelBases) {
+      const stages = await stageAPI.getByFunnelId(funnelBase.id);
+      funnels.push({
+        ...funnelBase,
+        stages
+      });
     }
     
     return funnels;
@@ -129,10 +131,13 @@ export const funnelAPI = {
     const { data, error } = await supabase.from('funnels').select('*').eq('id', id).single();
     if (error || !data) return null;
     
-    const funnel = mapDbFunnelToFunnel(data);
-    funnel.stages = await stageAPI.getByFunnelId(data.id);
+    const funnelBase = mapDbFunnelToFunnel(data);
+    const stages = await stageAPI.getByFunnelId(data.id);
     
-    return funnel;
+    return {
+      ...funnelBase,
+      stages
+    };
   },
 
   create: async (data: FunnelFormData): Promise<Funnel> => {
@@ -142,11 +147,14 @@ export const funnelAPI = {
     
     if (error || !created) throw error || new Error("Funnel create error");
     
-    const funnel = mapDbFunnelToFunnel(created);
-    funnel.stages = [];
+    const funnelBase = mapDbFunnelToFunnel(created);
     
     await triggerEntityWebhooks('funnel', created.id, 'create', created);
-    return funnel;
+    
+    return {
+      ...funnelBase,
+      stages: []
+    };
   },
 
   update: async (id: string, data: Partial<FunnelFormData>): Promise<Funnel | null> => {
@@ -155,10 +163,13 @@ export const funnelAPI = {
     
     await triggerEntityWebhooks('funnel', id, 'update', updated);
     
-    const funnel = mapDbFunnelToFunnel(updated);
-    funnel.stages = await stageAPI.getByFunnelId(id);
+    const funnelBase = mapDbFunnelToFunnel(updated);
+    const stages = await stageAPI.getByFunnelId(id);
     
-    return funnel;
+    return {
+      ...funnelBase,
+      stages
+    };
   },
 
   delete: async (id: string): Promise<boolean> => {
@@ -174,11 +185,16 @@ export const stageAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const stages: Stage[] = (data || []).map(mapDbStageToStage);
+    const stageBases = (data || []).map(mapDbStageToStage);
     
     // Collect opportunities for each stage
-    for (const stage of stages) {
-      stage.opportunities = await opportunityAPI.getByStageId(stage.id);
+    const stages: Stage[] = [];
+    for (const stageBase of stageBases) {
+      const opportunities = await opportunityAPI.getByStageId(stageBase.id);
+      stages.push({
+        ...stageBase,
+        opportunities
+      });
     }
     
     return stages;
@@ -189,11 +205,16 @@ export const stageAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const stages: Stage[] = (data || []).map(mapDbStageToStage);
+    const stageBases = (data || []).map(mapDbStageToStage);
     
     // Collect opportunities for each stage
-    for (const stage of stages) {
-      stage.opportunities = await opportunityAPI.getByStageId(stage.id);
+    const stages: Stage[] = [];
+    for (const stageBase of stageBases) {
+      const opportunities = await opportunityAPI.getByStageId(stageBase.id);
+      stages.push({
+        ...stageBase,
+        opportunities
+      });
     }
     
     return stages;
@@ -203,10 +224,13 @@ export const stageAPI = {
     const { data, error } = await supabase.from('stages').select('*').eq('id', id).single();
     if (error || !data) return null;
     
-    const stage = mapDbStageToStage(data);
-    stage.opportunities = await opportunityAPI.getByStageId(id);
+    const stageBase = mapDbStageToStage(data);
+    const opportunities = await opportunityAPI.getByStageId(id);
     
-    return stage;
+    return {
+      ...stageBase,
+      opportunities
+    };
   },
 
   create: async (data: StageFormData): Promise<Stage> => {
@@ -220,11 +244,14 @@ export const stageAPI = {
     
     if (error || !created) throw error || new Error('Stage create error');
     
-    const stage = mapDbStageToStage(created);
-    stage.opportunities = [];
+    const stageBase = mapDbStageToStage(created);
     
     await triggerEntityWebhooks('stage', created.id, 'create', created);
-    return stage;
+    
+    return {
+      ...stageBase,
+      opportunities: []
+    };
   },
 
   update: async (id: string, data: Partial<StageFormData>): Promise<Stage | null> => {
@@ -240,10 +267,13 @@ export const stageAPI = {
     
     await triggerEntityWebhooks('stage', id, 'update', updated);
     
-    const stage = mapDbStageToStage(updated);
-    stage.opportunities = await opportunityAPI.getByStageId(id);
+    const stageBase = mapDbStageToStage(updated);
+    const opportunities = await opportunityAPI.getByStageId(id);
     
-    return stage;
+    return {
+      ...stageBase,
+      opportunities
+    };
   },
 
   delete: async (id: string): Promise<boolean> => {
@@ -259,11 +289,16 @@ export const opportunityAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const opportunities: Opportunity[] = (data || []).map(mapDbOpportunityToOpportunity);
+    const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
     
     // Add scheduled actions for each opportunity
-    for (const opportunity of opportunities) {
-      opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+    const opportunities: Opportunity[] = [];
+    for (const opportunityBase of opportunityBases) {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunityBase.id);
+      opportunities.push({
+        ...opportunityBase,
+        scheduledActions
+      });
     }
     
     return opportunities;
@@ -274,11 +309,16 @@ export const opportunityAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const opportunities: Opportunity[] = (data || []).map(mapDbOpportunityToOpportunity);
+    const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
     
     // Add scheduled actions for each opportunity
-    for (const opportunity of opportunities) {
-      opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+    const opportunities: Opportunity[] = [];
+    for (const opportunityBase of opportunityBases) {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunityBase.id);
+      opportunities.push({
+        ...opportunityBase,
+        scheduledActions
+      });
     }
     
     return opportunities;
@@ -289,11 +329,16 @@ export const opportunityAPI = {
     if (error) throw error;
     
     // Map database objects to application objects
-    const opportunities: Opportunity[] = (data || []).map(mapDbOpportunityToOpportunity);
+    const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
     
     // Add scheduled actions for each opportunity
-    for (const opportunity of opportunities) {
-      opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+    const opportunities: Opportunity[] = [];
+    for (const opportunityBase of opportunityBases) {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunityBase.id);
+      opportunities.push({
+        ...opportunityBase,
+        scheduledActions
+      });
     }
     
     return opportunities;
@@ -303,10 +348,13 @@ export const opportunityAPI = {
     const { data, error } = await supabase.from('opportunities').select('*').eq('id', id).single();
     if (error || !data) return null;
     
-    const opportunity = mapDbOpportunityToOpportunity(data);
-    opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    const opportunityBase = mapDbOpportunityToOpportunity(data);
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
     
-    return opportunity;
+    return {
+      ...opportunityBase,
+      scheduledActions
+    };
   },
 
   create: async (data: OpportunityFormData): Promise<Opportunity> => {
@@ -322,11 +370,14 @@ export const opportunityAPI = {
     
     if (error || !created) throw error || new Error("Opportunity create error");
     
-    const opportunity = mapDbOpportunityToOpportunity(created);
-    opportunity.scheduledActions = [];
+    const opportunityBase = mapDbOpportunityToOpportunity(created);
     
     await triggerEntityWebhooks('opportunity', created.id, 'create', created);
-    return opportunity;
+    
+    return {
+      ...opportunityBase,
+      scheduledActions: []
+    };
   },
 
   update: async (id: string, data: Partial<OpportunityFormData>): Promise<Opportunity | null> => {
@@ -351,10 +402,13 @@ export const opportunityAPI = {
       updated
     );
     
-    const opportunity = mapDbOpportunityToOpportunity(updated);
-    opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    const opportunityBase = mapDbOpportunityToOpportunity(updated);
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
     
-    return opportunity;
+    return {
+      ...opportunityBase,
+      scheduledActions
+    };
   },
 
   delete: async (id: string): Promise<boolean> => {
@@ -373,10 +427,13 @@ export const opportunityAPI = {
     
     await triggerEntityWebhooks('opportunity', id, 'move', updated);
     
-    const opportunity = mapDbOpportunityToOpportunity(updated);
-    opportunity.scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    const opportunityBase = mapDbOpportunityToOpportunity(updated);
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
     
-    return opportunity;
+    return {
+      ...opportunityBase,
+      scheduledActions
+    };
   }
 };
 
@@ -472,7 +529,7 @@ export const scheduledActionAPI = {
     const { data: created, error } = await supabase.from('scheduled_actions').insert({
       opportunity_id: data.opportunityId,
       action_type: data.actionType,
-      action_config: data.actionConfig as any,
+      action_config: data.actionConfig as Json,
       scheduled_datetime: scheduledDateTime,
       status: 'pending'
     }).select().single();
@@ -492,7 +549,7 @@ export const scheduledActionAPI = {
       dbData.action_type = data.actionType;
     }
     if (data.actionConfig !== undefined) {
-      dbData.action_config = data.actionConfig as any;
+      dbData.action_config = data.actionConfig as Json;
     }
     if (data.scheduledDateTime !== undefined) {
       dbData.scheduled_datetime = data.scheduledDateTime instanceof Date 
@@ -517,5 +574,3 @@ export const scheduledActionAPI = {
     return !error;
   }
 };
-
-// Removed duplicate declarations of dispatchWebhook and triggerEntityWebhooks

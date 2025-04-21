@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
+// Form validation schema
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   description: z.string().optional()
@@ -45,15 +46,21 @@ const CreateStageDialog = ({
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
+      
+      // Create the new stage
       const newStage = await stageAPI.create({
         name: values.name,
         description: values.description || "",
         funnelId
       });
       
+      // Show success notification and call the callback
       toast.success("Etapa criada com sucesso!");
       onStageCreated(newStage);
+      
+      // Reset the form
       form.reset();
+      onOpenChange(false); // Close the dialog after successful creation
     } catch (error) {
       console.error("Error creating stage:", error);
       toast.error("Erro ao criar etapa. Tente novamente.");
