@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Stage } from "@/types";
 import { stageAPI } from "@/services/api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -58,10 +58,14 @@ const CreateStageDialog = ({
       toast.success("Etapa criada com sucesso!");
       
       // Explicitly ensure the stage has the required properties before calling the callback
-      // This makes sure the stage object conforms to the Stage type
       const completeStage: Stage = {
         ...newStage,
-        opportunities: newStage.opportunities || []
+        id: newStage.id,
+        name: newStage.name,
+        description: newStage.description,
+        order: newStage.order,
+        funnelId: newStage.funnelId,
+        opportunities: []
       };
       
       // Call the callback with the complete stage
@@ -83,6 +87,9 @@ const CreateStageDialog = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Criar nova etapa</DialogTitle>
+          <DialogDescription>
+            Adicione uma nova etapa ao seu funil de vendas.
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
