@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from '@/integrations/supabase/types';
 
 // Data mapping functions to convert between database and application models
-const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, 'stages'> => ({
+const mapDbFunnelToFunnel = (dbFunnel: any): Funnel => ({
   id: dbFunnel.id,
   name: dbFunnel.name,
   description: dbFunnel.description || '',
@@ -24,7 +24,7 @@ const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, 'stages'> => ({
   stages: [], // Will be populated separately
 });
 
-const mapDbStageToStage = (dbStage: any): Omit<Stage, 'opportunities'> => ({
+const mapDbStageToStage = (dbStage: any): Stage => ({
   id: dbStage.id,
   name: dbStage.name,
   description: dbStage.description || '',
@@ -33,7 +33,7 @@ const mapDbStageToStage = (dbStage: any): Omit<Stage, 'opportunities'> => ({
   opportunities: [], // Will be populated separately
 });
 
-const mapDbOpportunityToOpportunity = (dbOpportunity: any): Omit<Opportunity, 'scheduledActions'> => ({
+const mapDbOpportunityToOpportunity = (dbOpportunity: any): Opportunity => ({
   id: dbOpportunity.id,
   title: dbOpportunity.title,
   value: dbOpportunity.value || 0,
@@ -109,8 +109,7 @@ export const funnelAPI = {
     
     // For each funnel, fetch its stages & opportunities
     for (const funnel of funnels) {
-      const stages = await stageAPI.getByFunnelId(funnel.id);
-      funnel.stages = stages;
+      funnel.stages = await stageAPI.getByFunnelId(funnel.id);
     }
     
     return funnels;
@@ -460,15 +459,13 @@ export const scheduledActionAPI = {
       ? data.scheduledDateTime.toISOString() 
       : new Date(data.scheduledDateTime).toISOString();
       
-    const { data: created, error } = await supabase.from('scheduled_actions').insert([
-      {
-        opportunity_id: data.opportunityId,
-        action_type: data.actionType,
-        action_config: data.actionConfig,
-        scheduled_datetime: scheduledDateTime,
-        status: 'pending'
-      }
-    ]).select().single();
+    const { data: created, error } = await supabase.from('scheduled_actions').insert({
+      opportunity_id: data.opportunityId,
+      action_type: data.actionType,
+      action_config: data.actionConfig,
+      scheduled_datetime: scheduledDateTime,
+      status: 'pending'
+    }).select().single();
     
     if (error || !created) throw error || new Error("Scheduled action create error");
     return mapDbScheduledActionToScheduledAction(created);
@@ -485,10 +482,7 @@ export const scheduledActionAPI = {
       dbData.action_type = data.actionType;
     }
     if (data.actionConfig !== undefined) {
-      // Ensure to deep merge actionConfig if partial
-      const { data: existing, error } = await supabase.from('scheduled_actions').select('action_config').eq('id', id).single();
-      if (error) return null;
-      dbData.action_config = { ...existing.action_config, ...data.actionConfig };
+      dbData.action_config = data.actionConfig;
     }
     if (data.scheduledDateTime !== undefined) {
       dbData.scheduled_datetime = data.scheduledDateTime instanceof Date 
