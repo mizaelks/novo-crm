@@ -1,579 +1,360 @@
 
-import { 
-  Funnel, 
-  Stage, 
-  Opportunity, 
-  WebhookConfig, 
-  ScheduledAction, 
+import {
+  Funnel,
+  Stage,
+  Opportunity,
+  WebhookConfig,
+  ScheduledAction,
   FunnelFormData,
   StageFormData,
   OpportunityFormData,
   WebhookFormData,
   ScheduledActionFormData,
-  WebhookPayload
+  WebhookPayload,
 } from '../types';
+import { supabase } from "@/integrations/supabase/client";
 
-import { 
-  mockFunnels, 
-  mockStages, 
-  mockOpportunities, 
-  mockWebhooks, 
-  mockScheduledActions 
-} from './mockData';
+// Utility function to generate IDs is not needed since Supabase autogenerates UUIDs
 
-// Utility function to generate IDs (would be handled by DB in real impl)
-const generateId = () => Math.random().toString(36).substring(2, 9);
+// API delay mock removed
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Webhook dispatch simulation
+// Webhook dispatch simulation (could be updated later for real external calls)
 const dispatchWebhook = async (payload: WebhookPayload, url: string) => {
   console.log(`Dispatching webhook to ${url}`, payload);
-  // In a real implementation, this would make an actual HTTP request
-  await delay(300);
+  // TODO: Implement real external call if desired
   return { success: true, url };
 };
 
-// Trigger webhooks for an entity
-const triggerEntityWebhooks = async (entityType: 'funnel' | 'stage' | 'opportunity', entityId: string, eventType: 'create' | 'update' | 'move', data: any) => {
-  // Find relevant webhook configs
-  const webhooks = mockWebhooks.filter(
-    hook => hook.targetType === entityType && 
-            hook.targetId === entityId && 
-            hook.event === eventType
-  );
-  
-  // Build payload
+const triggerEntityWebhooks = async (
+  entityType: 'funnel' | 'stage' | 'opportunity',
+  entityId: string,
+  eventType: 'create' | 'update' | 'move',
+  data: any
+) => {
+  const { data: webhooks, error } = await supabase
+    .from('webhooks')
+    .select('*')
+    .eq('target_type', entityType)
+    .eq('target_id', entityId)
+    .eq('event', eventType);
+
+  if (error) {
+    console.error("Failed to fetch webhooks:", error);
+    return { dispatched: 0 };
+  }
+
   const eventName = `${entityType}.${eventType}`;
   const payload: WebhookPayload = {
     event: eventName,
-    data: data
+    data,
   };
-  
-  // Dispatch to all matching webhooks
-  const promises = webhooks.map(webhook => dispatchWebhook(payload, webhook.url));
+
+  const promises = (webhooks ?? []).map(webhook => dispatchWebhook(payload, webhook.url));
   await Promise.all(promises);
-  
+
   return { dispatched: promises.length };
 };
 
-// Funnel API
+// --- FUNNEL API ---
 export const funnelAPI = {
   getAll: async (): Promise<Funnel[]> => {
-    await delay(300);
-    return [...mockFunnels];
+    const { data, error } = await supabase.from('funnels').select('*').order('order', { ascending: true });
+    if (error) throw error;
+    // For each funnel, fetch its stages & opportunities
+    const results: Funnel[] = [];
+    for (const funnel of data!) {
+      const stages = await stageAPI.getByFunnelId(funnel.id);
+      results.push({
+        ...funnel,
+        stages,
+      });
+    }
+    return results;
   },
-  
+
   getById: async (id: string): Promise<Funnel | null> => {
-    await delay(200);
-    const funnel = mockFunnels.find(f => f.id === id);
-    return funnel ? {...funnel} : null;
+    const { data, error } = await supabase.from('funnels').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    const stages = await stageAPI.getByFunnelId(data.id);
+    return {
+      ...data,
+      stages,
+    };
   },
-  
+
   create: async (data: FunnelFormData): Promise<Funnel> => {
-    await delay(400);
-    const newFunnel: Funnel = {
-      id: generateId(),
-      name: data.name,
-      description: data.description,
-      order: mockFunnels.length + 1,
-      stages: []
-    };
-    
-    mockFunnels.push(newFunnel);
-    
-    // Trigger webhooks
-    await triggerEntityWebhooks('funnel', newFunnel.id, 'create', newFunnel);
-    
-    return newFunnel;
+    const { data: created, error } = await supabase.from('funnels').insert([
+      { name: data.name, description: data.description }
+    ]).select().single();
+    if (error || !created) throw error || new Error("Funnel create error");
+    // No stages yet
+    await triggerEntityWebhooks('funnel', created.id, 'create', created);
+    return { ...created, stages: [] };
   },
-  
+
   update: async (id: string, data: Partial<FunnelFormData>): Promise<Funnel | null> => {
-    await delay(400);
-    const funnelIndex = mockFunnels.findIndex(f => f.id === id);
-    
-    if (funnelIndex === -1) return null;
-    
-    mockFunnels[funnelIndex] = {
-      ...mockFunnels[funnelIndex],
-      ...data
-    };
-    
-    // Trigger webhooks
-    await triggerEntityWebhooks('funnel', id, 'update', mockFunnels[funnelIndex]);
-    
-    return {...mockFunnels[funnelIndex]};
+    const { data: updated, error } = await supabase.from('funnels').update(data).eq('id', id).select().single();
+    if (error || !updated) return null;
+    await triggerEntityWebhooks('funnel', id, 'update', updated);
+    const stages = await stageAPI.getByFunnelId(id);
+    return { ...updated, stages };
   },
-  
+
   delete: async (id: string): Promise<boolean> => {
-    await delay(400);
-    const initialLength = mockFunnels.length;
-    const funnelIndex = mockFunnels.findIndex(f => f.id === id);
-    
-    if (funnelIndex === -1) return false;
-    
-    // Remove the funnel
-    mockFunnels.splice(funnelIndex, 1);
-    
-    return mockFunnels.length < initialLength;
+    const { error } = await supabase.from('funnels').delete().eq('id', id);
+    return !error;
   }
 };
 
-// Stage API
+// --- STAGE API ---
 export const stageAPI = {
   getAll: async (): Promise<Stage[]> => {
-    await delay(300);
-    return [...mockStages];
+    const { data, error } = await supabase.from('stages').select('*').order('order', { ascending: true });
+    if (error) throw error;
+    // Collect opportunities for each stage
+    const stagesWithOpportunities = await Promise.all(
+      (data ?? []).map(async stage => {
+        const opportunities = await opportunityAPI.getByStageId(stage.id);
+        return { ...stage, opportunities };
+      })
+    );
+    return stagesWithOpportunities;
   },
-  
+
   getByFunnelId: async (funnelId: string): Promise<Stage[]> => {
-    await delay(200);
-    const stages = mockStages.filter(s => s.funnelId === funnelId);
-    return [...stages];
+    const { data, error } = await supabase.from('stages').select('*').eq('funnel_id', funnelId).order('order', { ascending: true });
+    if (error) throw error;
+    const stagesWithOpportunities = await Promise.all(
+      (data ?? []).map(async stage => {
+        const opportunities = await opportunityAPI.getByStageId(stage.id);
+        return { ...stage, opportunities };
+      })
+    );
+    return stagesWithOpportunities;
   },
-  
+
   getById: async (id: string): Promise<Stage | null> => {
-    await delay(200);
-    const stage = mockStages.find(s => s.id === id);
-    return stage ? {...stage} : null;
+    const { data, error } = await supabase.from('stages').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    const opportunities = await opportunityAPI.getByStageId(id);
+    return { ...data, opportunities };
   },
-  
+
   create: async (data: StageFormData): Promise<Stage> => {
-    await delay(400);
-    // Get the current stages in this funnel to determine order
-    const funnelStages = mockStages.filter(s => s.funnelId === data.funnelId);
-    
-    const newStage: Stage = {
-      id: generateId(),
-      name: data.name,
-      description: data.description,
-      order: funnelStages.length + 1,
-      funnelId: data.funnelId,
-      opportunities: []
-    };
-    
-    mockStages.push(newStage);
-    
-    // Update the funnel's stages
-    const funnel = mockFunnels.find(f => f.id === data.funnelId);
-    if (funnel) {
-      funnel.stages.push(newStage);
-    }
-    
-    // Trigger webhooks
-    await triggerEntityWebhooks('stage', newStage.id, 'create', newStage);
-    
-    return newStage;
+    const { data: created, error } = await supabase.from('stages').insert([
+      { name: data.name, description: data.description, funnel_id: data.funnelId }
+    ]).select().single();
+    if (error || !created) throw error || new Error('Stage create error');
+    const opportunities: Opportunity[] = [];
+    await triggerEntityWebhooks('stage', created.id, 'create', created);
+    return { ...created, opportunities };
   },
-  
+
   update: async (id: string, data: Partial<StageFormData>): Promise<Stage | null> => {
-    await delay(400);
-    const stageIndex = mockStages.findIndex(s => s.id === id);
-    
-    if (stageIndex === -1) return null;
-    
-    mockStages[stageIndex] = {
-      ...mockStages[stageIndex],
-      ...data
-    };
-    
-    // Trigger webhooks
-    await triggerEntityWebhooks('stage', id, 'update', mockStages[stageIndex]);
-    
-    return {...mockStages[stageIndex]};
+    const { data: updated, error } = await supabase.from('stages').update(data).eq('id', id).select().single();
+    if (error || !updated) return null;
+    await triggerEntityWebhooks('stage', id, 'update', updated);
+    const opportunities = await opportunityAPI.getByStageId(id);
+    return { ...updated, opportunities };
   },
-  
+
   delete: async (id: string): Promise<boolean> => {
-    await delay(400);
-    const initialLength = mockStages.length;
-    const stageIndex = mockStages.findIndex(s => s.id === id);
-    
-    if (stageIndex === -1) return false;
-    
-    // Get funnel to update its stages
-    const funnelId = mockStages[stageIndex].funnelId;
-    const funnel = mockFunnels.find(f => f.id === funnelId);
-    
-    // Remove the stage from funnel stages
-    if (funnel) {
-      const funnelStageIndex = funnel.stages.findIndex(s => s.id === id);
-      if (funnelStageIndex !== -1) {
-        funnel.stages.splice(funnelStageIndex, 1);
-      }
-    }
-    
-    // Remove the stage
-    mockStages.splice(stageIndex, 1);
-    
-    return mockStages.length < initialLength;
+    const { error } = await supabase.from('stages').delete().eq('id', id);
+    return !error;
   }
 };
 
-// Opportunity API
+// --- OPPORTUNITY API ---
 export const opportunityAPI = {
   getAll: async (): Promise<Opportunity[]> => {
-    await delay(300);
-    return [...mockOpportunities];
+    const { data, error } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    // Add scheduled actions for each
+    return await Promise.all((data ?? []).map(async (opportunity) => {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+      return { ...opportunity, scheduledActions };
+    }));
   },
-  
+
   getByStageId: async (stageId: string): Promise<Opportunity[]> => {
-    await delay(200);
-    const opportunities = mockOpportunities.filter(o => o.stageId === stageId);
-    return [...opportunities];
+    const { data, error } = await supabase.from('opportunities').select('*').eq('stage_id', stageId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return await Promise.all((data ?? []).map(async opportunity => {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+      return { ...opportunity, scheduledActions };
+    }));
   },
-  
+
   getByFunnelId: async (funnelId: string): Promise<Opportunity[]> => {
-    await delay(200);
-    const opportunities = mockOpportunities.filter(o => o.funnelId === funnelId);
-    return [...opportunities];
+    const { data, error } = await supabase.from('opportunities').select('*').eq('funnel_id', funnelId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return await Promise.all((data ?? []).map(async opportunity => {
+      const scheduledActions = await scheduledActionAPI.getByOpportunityId(opportunity.id);
+      return { ...opportunity, scheduledActions };
+    }));
   },
-  
+
   getById: async (id: string): Promise<Opportunity | null> => {
-    await delay(200);
-    const opportunity = mockOpportunities.find(o => o.id === id);
-    return opportunity ? {...opportunity} : null;
+    const { data, error } = await supabase.from('opportunities').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    return { ...data, scheduledActions };
   },
-  
+
   create: async (data: OpportunityFormData): Promise<Opportunity> => {
-    await delay(400);
-    const newOpportunity: Opportunity = {
-      id: generateId(),
-      title: data.title,
-      value: data.value,
-      client: data.client,
-      createdAt: new Date(),
-      stageId: data.stageId,
-      funnelId: data.funnelId,
-    };
-    
-    mockOpportunities.push(newOpportunity);
-    
-    // Update the stage's opportunities
-    const stage = mockStages.find(s => s.id === data.stageId);
-    if (stage) {
-      stage.opportunities.push(newOpportunity);
-    }
-    
-    // Trigger webhooks
-    await triggerEntityWebhooks('opportunity', newOpportunity.id, 'create', newOpportunity);
-    
-    return newOpportunity;
+    const { data: created, error } = await supabase.from('opportunities').insert([
+      {
+        title: data.title,
+        value: data.value,
+        client: data.client,
+        stage_id: data.stageId,
+        funnel_id: data.funnelId,
+      }
+    ]).select().single();
+    if (error || !created) throw error || new Error("Opportunity create error");
+    await triggerEntityWebhooks('opportunity', created.id, 'create', created);
+    const scheduledActions: ScheduledAction[] = [];
+    return { ...created, scheduledActions };
   },
-  
+
   update: async (id: string, data: Partial<OpportunityFormData>): Promise<Opportunity | null> => {
-    await delay(400);
-    const oppIndex = mockOpportunities.findIndex(o => o.id === id);
-    
-    if (oppIndex === -1) return null;
-    
-    const originalStageId = mockOpportunities[oppIndex].stageId;
-    const newStageId = data.stageId || originalStageId;
-    
-    // Handle stage change 
-    if (data.stageId && data.stageId !== originalStageId) {
-      // Remove from old stage
-      const oldStage = mockStages.find(s => s.id === originalStageId);
-      if (oldStage) {
-        oldStage.opportunities = oldStage.opportunities.filter(o => o.id !== id);
-      }
-      
-      // Add to new stage
-      const newStage = mockStages.find(s => s.id === data.stageId);
-      if (newStage) {
-        // Make a copy of the opportunity with the updated stageId
-        const updatedOpp = {
-          ...mockOpportunities[oppIndex],
-          stageId: data.stageId
-        };
-        newStage.opportunities.push(updatedOpp);
-      }
-    }
-    
-    // Update the opportunity
-    mockOpportunities[oppIndex] = {
-      ...mockOpportunities[oppIndex],
-      ...data
-    };
-    
-    // Trigger appropriate webhooks
-    if (newStageId !== originalStageId) {
-      await triggerEntityWebhooks('opportunity', id, 'move', mockOpportunities[oppIndex]);
-    } else {
-      await triggerEntityWebhooks('opportunity', id, 'update', mockOpportunities[oppIndex]);
-    }
-    
-    return {...mockOpportunities[oppIndex]};
+    const { data: updated, error } = await supabase.from('opportunities').update(data).eq('id', id).select().single();
+    if (error || !updated) return null;
+    await triggerEntityWebhooks(
+      'opportunity',
+      id,
+      data.stageId ? 'move' : 'update',
+      updated
+    );
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    return { ...updated, scheduledActions };
   },
-  
+
   delete: async (id: string): Promise<boolean> => {
-    await delay(400);
-    const initialLength = mockOpportunities.length;
-    const oppIndex = mockOpportunities.findIndex(o => o.id === id);
-    
-    if (oppIndex === -1) return false;
-    
-    // Get stage to update its opportunities
-    const stageId = mockOpportunities[oppIndex].stageId;
-    const stage = mockStages.find(s => s.id === stageId);
-    
-    // Remove from stage's opportunities
-    if (stage) {
-      stage.opportunities = stage.opportunities.filter(o => o.id !== id);
-    }
-    
-    // Remove the opportunity
-    mockOpportunities.splice(oppIndex, 1);
-    
-    return mockOpportunities.length < initialLength;
+    const { error } = await supabase.from('opportunities').delete().eq('id', id);
+    return !error;
   },
-  
+
   // Move opportunity between stages
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
-    await delay(300);
-    const opportunity = mockOpportunities.find(o => o.id === id);
-    
-    if (!opportunity) return null;
-    
-    const oldStageId = opportunity.stageId;
-    
-    // Update the opportunity with the new stageId
-    opportunity.stageId = newStageId;
-    
-    // Remove from old stage
-    const oldStage = mockStages.find(s => s.id === oldStageId);
-    if (oldStage) {
-      oldStage.opportunities = oldStage.opportunities.filter(o => o.id !== id);
-    }
-    
-    // Add to new stage
-    const newStage = mockStages.find(s => s.id === newStageId);
-    if (newStage) {
-      newStage.opportunities.push(opportunity);
-    }
-    
-    // Trigger webhook for move event
-    await triggerEntityWebhooks('opportunity', id, 'move', opportunity);
-    
-    return {...opportunity};
+    // Fetch the existing opportunity
+    const { data: existing, error: fetchErr } = await supabase.from('opportunities').select('*').eq('id', id).single();
+    if (fetchErr || !existing) return null;
+    const { data: updated, error } = await supabase.from('opportunities').update({ stage_id: newStageId }).eq('id', id).select().single();
+    if (error || !updated) return null;
+    await triggerEntityWebhooks('opportunity', id, 'move', updated);
+    const scheduledActions = await scheduledActionAPI.getByOpportunityId(id);
+    return { ...updated, scheduledActions };
   }
 };
 
-// Webhook API
+// --- WEBHOOK API ---
 export const webhookAPI = {
   getAll: async (): Promise<WebhookConfig[]> => {
-    await delay(300);
-    return [...mockWebhooks];
+    const { data, error } = await supabase.from('webhooks').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
   },
-  
+
   getById: async (id: string): Promise<WebhookConfig | null> => {
-    await delay(200);
-    const webhook = mockWebhooks.find(w => w.id === id);
-    return webhook ? {...webhook} : null;
+    const { data, error } = await supabase.from('webhooks').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    return data;
   },
-  
+
   getByTarget: async (targetType: 'funnel' | 'stage' | 'opportunity', targetId: string): Promise<WebhookConfig[]> => {
-    await delay(200);
-    const webhooks = mockWebhooks.filter(w => w.targetType === targetType && w.targetId === targetId);
-    return [...webhooks];
+    const { data, error } = await supabase.from('webhooks').select('*').eq('target_type', targetType).eq('target_id', targetId);
+    if (error) throw error;
+    return data ?? [];
   },
-  
+
   create: async (data: WebhookFormData): Promise<WebhookConfig> => {
-    await delay(400);
-    const newWebhook: WebhookConfig = {
-      id: generateId(),
-      targetType: data.targetType,
-      targetId: data.targetId,
-      url: data.url,
-      event: data.event,
-    };
-    
-    mockWebhooks.push(newWebhook);
-    
-    return newWebhook;
+    const { data: created, error } = await supabase.from('webhooks').insert([
+      {
+        target_type: data.targetType,
+        target_id: data.targetId,
+        url: data.url,
+        event: data.event
+      }
+    ]).select().single();
+    if (error || !created) throw error || new Error("Webhook create error");
+    return created;
   },
-  
+
   update: async (id: string, data: Partial<WebhookFormData>): Promise<WebhookConfig | null> => {
-    await delay(400);
-    const webhookIndex = mockWebhooks.findIndex(w => w.id === id);
-    
-    if (webhookIndex === -1) return null;
-    
-    mockWebhooks[webhookIndex] = {
-      ...mockWebhooks[webhookIndex],
-      ...data
-    };
-    
-    return {...mockWebhooks[webhookIndex]};
+    const { data: updated, error } = await supabase.from('webhooks').update(data).eq('id', id).select().single();
+    if (error || !updated) return null;
+    return updated;
   },
-  
+
   delete: async (id: string): Promise<boolean> => {
-    await delay(400);
-    const initialLength = mockWebhooks.length;
-    const webhookIndex = mockWebhooks.findIndex(w => w.id === id);
-    
-    if (webhookIndex === -1) return false;
-    
-    // Remove the webhook
-    mockWebhooks.splice(webhookIndex, 1);
-    
-    return mockWebhooks.length < initialLength;
+    const { error } = await supabase.from('webhooks').delete().eq('id', id);
+    return !error;
   },
-  
-  // Inbound webhook handler simulation
+
+  // Inbound webhook handler simulation (not implemented)
   receiveInbound: async (payload: any): Promise<Opportunity | null> => {
-    await delay(500);
-    
-    // Validate payload for opportunity creation
-    if (!payload.title || !payload.stageId || !payload.funnelId) {
-      console.error('Invalid webhook payload', payload);
-      return null;
-    }
-    
-    // Create or update opportunity based on payload
-    const existingOpp = payload.id ? 
-      mockOpportunities.find(o => o.id === payload.id) : null;
-    
-    if (existingOpp) {
-      // Update existing
-      return opportunityAPI.update(existingOpp.id, payload) as Promise<Opportunity>;
-    } else {
-      // Create new opportunity
-      const newOpportunity: OpportunityFormData = {
-        title: payload.title,
-        value: payload.value || 0,
-        client: payload.client || 'Unknown',
-        stageId: payload.stageId,
-        funnelId: payload.funnelId
-      };
-      
-      return opportunityAPI.create(newOpportunity);
-    }
+    // Not used, can implement later with Edge Function if needed
+    return null;
   }
 };
 
-// Scheduled Actions API
+// --- SCHEDULED ACTIONS API ---
 export const scheduledActionAPI = {
   getAll: async (): Promise<ScheduledAction[]> => {
-    await delay(300);
-    return [...mockScheduledActions];
+    const { data, error } = await supabase.from('scheduled_actions').select('*').order('scheduled_datetime', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
   },
-  
+
   getByOpportunityId: async (opportunityId: string): Promise<ScheduledAction[]> => {
-    await delay(200);
-    const actions = mockScheduledActions.filter(a => a.opportunityId === opportunityId);
-    return [...actions];
+    const { data, error } = await supabase.from('scheduled_actions').select('*').eq('opportunity_id', opportunityId).order('scheduled_datetime', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
   },
-  
+
   getById: async (id: string): Promise<ScheduledAction | null> => {
-    await delay(200);
-    const action = mockScheduledActions.find(a => a.id === id);
-    return action ? {...action} : null;
+    const { data, error } = await supabase.from('scheduled_actions').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    return data;
   },
-  
+
   create: async (data: ScheduledActionFormData): Promise<ScheduledAction> => {
-    await delay(400);
-    const newAction: ScheduledAction = {
-      id: generateId(),
-      opportunityId: data.opportunityId,
-      actionType: data.actionType,
-      actionConfig: {...data.actionConfig},
-      scheduledDateTime: data.scheduledDateTime,
-      status: 'pending'
-    };
-    
-    mockScheduledActions.push(newAction);
-    
-    // Set a timeout to "execute" the scheduled action
-    const now = new Date();
-    const timeUntilExecution = data.scheduledDateTime.getTime() - now.getTime();
-    
-    if (timeUntilExecution > 0) {
-      setTimeout(() => {
-        console.log('Executing scheduled action:', newAction);
-        
-        // Mark as completed
-        const actionIndex = mockScheduledActions.findIndex(a => a.id === newAction.id);
-        if (actionIndex !== -1) {
-          mockScheduledActions[actionIndex].status = 'completed';
-        }
-        
-        // Perform the action (simulated)
-        if (newAction.actionType === 'webhook' && newAction.actionConfig.url) {
-          dispatchWebhook({
-            event: 'scheduledAction.executed',
-            data: {
-              actionId: newAction.id,
-              opportunityId: newAction.opportunityId
-            }
-          }, newAction.actionConfig.url);
-        } else if (newAction.actionType === 'email') {
-          console.log('Sending email to:', newAction.actionConfig.email);
-          console.log('Subject:', newAction.actionConfig.subject);
-          console.log('Body:', newAction.actionConfig.body);
-        }
-      }, Math.min(timeUntilExecution, 60000)); // Cap at 1 minute for demo purposes
-    }
-    
-    return newAction;
-  },
-  
-  update: async (id: string, data: Partial<ScheduledActionFormData>): Promise<ScheduledAction | null> => {
-    await delay(400);
-    const actionIndex = mockScheduledActions.findIndex(a => a.id === id);
-    
-    if (actionIndex === -1) return null;
-    
-    mockScheduledActions[actionIndex] = {
-      ...mockScheduledActions[actionIndex],
-      ...data,
-      actionConfig: {
-        ...mockScheduledActions[actionIndex].actionConfig,
-        ...data.actionConfig
+    const { data: created, error } = await supabase.from('scheduled_actions').insert([
+      {
+        opportunity_id: data.opportunityId,
+        action_type: data.actionType,
+        action_config: data.actionConfig,
+        scheduled_datetime: data.scheduledDateTime,
+        status: 'pending'
       }
-    };
-    
-    return {...mockScheduledActions[actionIndex]};
+    ]).select().single();
+    if (error || !created) throw error || new Error("Scheduled action create error");
+    return created;
   },
-  
-  delete: async (id: string): Promise<boolean> => {
-    await delay(400);
-    const initialLength = mockScheduledActions.length;
-    const actionIndex = mockScheduledActions.findIndex(a => a.id === id);
-    
-    if (actionIndex === -1) return false;
-    
-    // Remove the action
-    mockScheduledActions.splice(actionIndex, 1);
-    
-    return mockScheduledActions.length < initialLength;
-  },
-  
-  // Manually execute a scheduled action
-  execute: async (id: string): Promise<boolean> => {
-    await delay(600);
-    const action = mockScheduledActions.find(a => a.id === id);
-    
-    if (!action) return false;
-    
-    // Mark as completed
-    action.status = 'completed';
-    
-    // Perform the action (simulated)
-    if (action.actionType === 'webhook' && action.actionConfig.url) {
-      await dispatchWebhook({
-        event: 'scheduledAction.executed',
-        data: {
-          actionId: action.id,
-          opportunityId: action.opportunityId
-        }
-      }, action.actionConfig.url);
-    } else if (action.actionType === 'email') {
-      console.log('Sending email to:', action.actionConfig.email);
-      console.log('Subject:', action.actionConfig.subject);
-      console.log('Body:', action.actionConfig.body);
+
+  update: async (id: string, data: Partial<ScheduledActionFormData>): Promise<ScheduledAction | null> => {
+    // Ensure to deep merge actionConfig if partial
+    let updateObj: any = { ...data };
+    if (data.actionConfig) {
+      const { data: existing, error } = await supabase.from('scheduled_actions').select('action_config').eq('id', id).single();
+      if (error) return null;
+      updateObj.action_config = { ...existing.action_config, ...data.actionConfig };
     }
-    
-    return true;
+    const { data: updated, error: updateErr } = await supabase.from('scheduled_actions').update(updateObj).eq('id', id).select().single();
+    if (updateErr || !updated) return null;
+    return updated;
+  },
+
+  delete: async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('scheduled_actions').delete().eq('id', id);
+    return !error;
+  },
+
+  execute: async (id: string): Promise<boolean> => {
+    // For now, just mark as completed
+    const { error } = await supabase.from('scheduled_actions').update({ status: 'completed' }).eq('id', id);
+    // TODO: Optionally trigger some side effect here (send webhook, send email, etc)
+    return !error;
   }
 };

@@ -78,6 +78,44 @@ export type Database = {
           },
         ]
       }
+      scheduled_actions: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string | null
+          id: string
+          opportunity_id: string | null
+          scheduled_datetime: string
+          status: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string | null
+          id?: string
+          opportunity_id?: string | null
+          scheduled_datetime: string
+          status?: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          opportunity_id?: string | null
+          scheduled_datetime?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_actions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stages: {
         Row: {
           created_at: string | null
@@ -109,6 +147,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhooks: {
+        Row: {
+          created_at: string | null
+          event: string
+          id: string
+          target_id: string
+          target_type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          event: string
+          id?: string
+          target_id: string
+          target_type: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          event?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          url?: string
+        }
+        Relationships: []
       }
     }
     Views: {
