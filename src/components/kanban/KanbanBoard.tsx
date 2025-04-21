@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DropResult } from "react-beautiful-dnd";
 import { Funnel, Stage, Opportunity } from "@/types";
@@ -112,13 +111,12 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   };
 
   const handleStageCreated = (newStage: Stage) => {
-    // Ensure the new stage has an empty opportunities array
-    const stageWithOpportunities = {
-      ...newStage,
-      opportunities: []
-    };
+    // Make sure the stage has all required properties before adding it to the state
+    if (!newStage.opportunities) {
+      newStage.opportunities = [];
+    }
     
-    setStages([...stages, stageWithOpportunities]);
+    setStages([...stages, newStage]);
     setIsCreateStageDialogOpen(false);
   };
 

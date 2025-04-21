@@ -54,9 +54,18 @@ const CreateStageDialog = ({
         funnelId
       });
       
-      // Show success notification and call the callback
+      // Show success notification
       toast.success("Etapa criada com sucesso!");
-      onStageCreated(newStage);
+      
+      // Explicitly ensure the stage has the required properties before calling the callback
+      // This makes sure the stage object conforms to the Stage type
+      const completeStage: Stage = {
+        ...newStage,
+        opportunities: newStage.opportunities || []
+      };
+      
+      // Call the callback with the complete stage
+      onStageCreated(completeStage);
       
       // Reset the form
       form.reset();
