@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import WebhookManager from "./pages/WebhookManager";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute />}>
               <Route index element={<Index />} />
+              <Route path="/webhooks" element={<WebhookManager />} />
               <Route path="/*" element={<Index />} />
             </Route>
             <Route path="/api-docs" element={

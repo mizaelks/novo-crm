@@ -38,34 +38,43 @@ export const triggerEntityWebhooks = async (
   eventType: 'create' | 'update' | 'move',
   data: any
 ) => {
-  const { data: webhooks, error } = await supabase
-    .from('webhooks')
-    .select('*')
-    .eq('target_type', entityType)
-    .eq('target_id', entityId)
-    .eq('event', eventType);
+  console.log(`Triggering ${eventType} webhooks for ${entityType} ${entityId}`, data);
 
-  if (error) {
-    console.error("Failed to fetch webhooks:", error);
+  try {
+    const { data: webhooks, error } = await supabase
+      .from('webhooks')
+      .select('*')
+      .eq('target_type', entityType)
+      .eq('target_id', entityId)
+      .eq('event', eventType);
+
+    if (error) {
+      console.error("Failed to fetch webhooks:", error);
+      return { dispatched: 0, success: 0, failed: 0 };
+    }
+
+    console.log(`Found ${webhooks?.length || 0} webhooks to dispatch`);
+
+    const eventName = `${entityType}.${eventType}`;
+    const payload: WebhookPayload = {
+      event: eventName,
+      data,
+    };
+
+    const promises = (webhooks ?? []).map(webhook => dispatchWebhook(payload, webhook.url));
+    const results = await Promise.all(promises);
+    
+    const successful = results.filter(r => r.success).length;
+    const failed = results.length - successful;
+    
+    return { 
+      dispatched: promises.length,
+      success: successful,
+      failed,
+      results
+    };
+  } catch (e) {
+    console.error("Error in triggerEntityWebhooks:", e);
     return { dispatched: 0, success: 0, failed: 0 };
   }
-
-  const eventName = `${entityType}.${eventType}`;
-  const payload: WebhookPayload = {
-    event: eventName,
-    data,
-  };
-
-  const promises = (webhooks ?? []).map(webhook => dispatchWebhook(payload, webhook.url));
-  const results = await Promise.all(promises);
-  
-  const successful = results.filter(r => r.success).length;
-  const failed = results.length - successful;
-  
-  return { 
-    dispatched: promises.length,
-    success: successful,
-    failed,
-    results
-  };
 };

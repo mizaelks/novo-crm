@@ -8,6 +8,7 @@ import KanbanSkeleton from "./KanbanSkeleton";
 import KanbanHeader from "./KanbanHeader";
 import KanbanStages from "./KanbanStages";
 import CreateStageDialog from "../stage/CreateStageDialog";
+import { triggerEntityWebhooks } from "@/services/utils/webhook";
 
 interface KanbanBoardProps {
   funnelId: string;
@@ -57,13 +58,14 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     if (type === "opportunity") {
       // Handle opportunity movement
       const opportunityId = draggableId;
-      const newStageId = destination.droppableId;
+      const sourceStageId = source.droppableId;
+      const destinationStageId = destination.droppableId;
       
       try {
         // Optimistically update the UI
         const updatedStages = stages.map(stage => {
           // If this is the source stage, remove the opportunity
-          if (stage.id === source.droppableId) {
+          if (stage.id === sourceStageId) {
             const opportunityIndex = stage.opportunities.findIndex(opp => opp.id === opportunityId);
             if (opportunityIndex !== -1) {
               const opportunity = stage.opportunities[opportunityIndex];
@@ -76,18 +78,18 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         });
         
         // Find the opportunity from the source stage
-        const sourceStage = stages.find(stage => stage.id === source.droppableId);
+        const sourceStage = stages.find(stage => stage.id === sourceStageId);
         if (!sourceStage) return;
         
         const opportunity = sourceStage.opportunities.find(opp => opp.id === opportunityId);
         if (!opportunity) return;
         
         // Update the opportunity with the new stageId
-        const updatedOpportunity = { ...opportunity, stageId: newStageId };
+        const updatedOpportunity = { ...opportunity, stageId: destinationStageId };
         
         // Add the opportunity to the destination stage
         const finalStages = updatedStages.map(stage => {
-          if (stage.id === newStageId) {
+          if (stage.id === destinationStageId) {
             const newOpportunities = [...stage.opportunities];
             newOpportunities.splice(destination.index, 0, updatedOpportunity);
             return { ...stage, opportunities: newOpportunities };
@@ -98,7 +100,34 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         setStages(finalStages);
         
         // Send the update to the API
-        await opportunityAPI.move(opportunityId, newStageId);
+        await opportunityAPI.move(opportunityId, destinationStageId);
+        
+        // Trigger move webhook for opportunity
+        const webhookResponse = await triggerEntityWebhooks(
+          'opportunity', 
+          opportunityId, 
+          'move',
+          {
+            id: opportunityId,
+            title: updatedOpportunity.title,
+            client: updatedOpportunity.client,
+            value: updatedOpportunity.value,
+            previousStageId: sourceStageId,
+            newStageId: destinationStageId,
+            funnelId: funnelId
+          }
+        );
+        
+        console.log("Webhook dispatch result:", webhookResponse);
+        
+        // Show toast for successful move
+        if (webhookResponse.dispatched > 0) {
+          toast.success(
+            `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
+          );
+        } else {
+          toast.success("Oportunidade movida com sucesso.");
+        }
         
       } catch (error) {
         console.error("Error moving opportunity:", error);
@@ -122,6 +151,19 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     // Add the new stage to the existing stages
     setStages(prevStages => [...prevStages, newStage]);
     setIsCreateStageDialogOpen(false);
+    
+    // Trigger webhook for stage creation
+    triggerEntityWebhooks(
+      'stage', 
+      newStage.id, 
+      'create',
+      {
+        id: newStage.id,
+        name: newStage.name,
+        description: newStage.description,
+        funnelId: funnelId
+      }
+    );
   };
 
   const handleOpportunityCreated = (newOpportunity: Opportunity) => {
@@ -136,6 +178,21 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     });
     
     setStages(updatedStages);
+    
+    // Trigger webhook for opportunity creation
+    triggerEntityWebhooks(
+      'opportunity', 
+      newOpportunity.id, 
+      'create',
+      {
+        id: newOpportunity.id,
+        title: newOpportunity.title,
+        client: newOpportunity.client,
+        value: newOpportunity.value,
+        stageId: newOpportunity.stageId,
+        funnelId: newOpportunity.funnelId
+      }
+    );
   };
 
   if (loading) {

@@ -1,15 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { WebhookConfig, WebhookFormData } from "@/types";
-import { webhookAPI } from "@/services/api";
+import { webhookAPI, funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   targetType: z.enum(["funnel", "stage", "opportunity"]),
@@ -26,6 +27,8 @@ interface WebhookFormProps {
 
 const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableTargets, setAvailableTargets] = useState<Array<{id: string, name: string}>>([]);
+  const [loadingTargets, setLoadingTargets] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -36,6 +39,49 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
       event: "create"
     }
   });
+
+  const targetType = form.watch("targetType");
+  
+  // Fetch available targets based on selected type
+  useEffect(() => {
+    const fetchAvailableTargets = async () => {
+      setLoadingTargets(true);
+      try {
+        let targets: Array<{id: string, name: string}> = [];
+        
+        switch (targetType) {
+          case "funnel":
+            const funnels = await funnelAPI.getAll();
+            targets = funnels.map(f => ({ id: f.id, name: f.name }));
+            break;
+          case "stage":
+            const funnels2 = await funnelAPI.getAll();
+            for (const funnel of funnels2) {
+              const stages = await stageAPI.getByFunnelId(funnel.id);
+              targets = [
+                ...targets, 
+                ...stages.map(s => ({ 
+                  id: s.id, 
+                  name: `${s.name} (${funnel.name})`
+                }))
+              ];
+            }
+            break;
+          case "opportunity":
+            // For opportunities, we'll just recommend using stages instead
+            break;
+        }
+        
+        setAvailableTargets(targets);
+      } catch (error) {
+        console.error(`Error fetching ${targetType} targets:`, error);
+      } finally {
+        setLoadingTargets(false);
+      }
+    };
+    
+    fetchAvailableTargets();
+  }, [targetType]);
 
   const handleSubmit = async (values: FormValues) => {
     try {
@@ -48,6 +94,12 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
         url: values.url,
         event: values.event
       };
+      
+      // Check if event type is valid for target type
+      if (values.targetType !== 'opportunity' && values.event === 'move') {
+        toast.error("O evento 'move' só é válido para oportunidades");
+        return;
+      }
       
       const newWebhook = await webhookAPI.create(webhookData);
       
@@ -87,6 +139,9 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
                   <SelectItem value="opportunity">Oportunidade</SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Selecione o tipo de recurso que você deseja monitorar
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -98,9 +153,35 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>ID do alvo</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: 1" {...field} />
-              </FormControl>
+              {availableTargets.length > 0 ? (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingTargets ? "Carregando..." : "Selecione o ID"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {availableTargets.map(target => (
+                      <SelectItem key={target.id} value={target.id}>
+                        {target.name} ({target.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <FormControl>
+                  <Input 
+                    placeholder={loadingTargets ? "Carregando..." : "Ex: 1234-5678-9012"} 
+                    {...field} 
+                    disabled={loadingTargets}
+                  />
+                </FormControl>
+              )}
+              <FormDescription>
+                {targetType === "opportunity" ? 
+                  "Para oportunidades específicas, você pode copiar o ID da URL ao visualizar a oportunidade" :
+                  "Selecione um ID da lista ou insira manualmente"}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -121,9 +202,14 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
                 <SelectContent>
                   <SelectItem value="create">Criação</SelectItem>
                   <SelectItem value="update">Atualização</SelectItem>
-                  <SelectItem value="move">Movimentação</SelectItem>
+                  <SelectItem value="move" disabled={targetType !== 'opportunity'}>
+                    Movimentação {targetType !== 'opportunity' && "(Apenas para oportunidades)"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Escolha quando o webhook deve ser disparado
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -138,13 +224,21 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
               <FormControl>
                 <Input placeholder="https://api.exemplo.com/webhook" {...field} />
               </FormControl>
+              <FormDescription>
+                URL para onde o sistema enviará as notificações de eventos
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Configurando..." : "Configurar webhook"}
+        <Button type="submit" disabled={isSubmitting || loadingTargets} className="w-full">
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Configurando...
+            </>
+          ) : "Configurar webhook"}
         </Button>
       </form>
     </Form>

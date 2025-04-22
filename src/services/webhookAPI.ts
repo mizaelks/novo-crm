@@ -17,12 +17,22 @@ export const webhookAPI = {
   },
 
   getByTarget: async (targetType: 'funnel' | 'stage' | 'opportunity', targetId: string): Promise<WebhookConfig[]> => {
-    const { data, error } = await supabase.from('webhooks').select('*').eq('target_type', targetType).eq('target_id', targetId);
-    if (error) throw error;
+    const { data, error } = await supabase.from('webhooks')
+      .select('*')
+      .eq('target_type', targetType)
+      .eq('target_id', targetId);
+    
+    if (error) {
+      console.error("Error fetching webhooks for target:", error);
+      throw error;
+    }
+    
     return (data || []).map(mapDbWebhookToWebhook);
   },
 
   create: async (data: WebhookFormData): Promise<WebhookConfig> => {
+    console.log("Creating webhook with data:", data);
+    
     const { data: created, error } = await supabase.from('webhooks').insert([{
       target_type: data.targetType,
       target_id: data.targetId,
@@ -30,7 +40,12 @@ export const webhookAPI = {
       event: data.event
     }]).select().single();
     
-    if (error || !created) throw error || new Error("Webhook create error");
+    if (error || !created) {
+      console.error("Webhook creation error:", error);
+      throw error || new Error("Webhook create error");
+    }
+    
+    console.log("Webhook created successfully:", created);
     return mapDbWebhookToWebhook(created);
   },
 
@@ -56,17 +71,29 @@ export const webhookAPI = {
   },
 
   receiveInbound: async (payload: any): Promise<any | null> => {
-    // Implement the webhook receiver functionality
+    console.log("Processing inbound webhook payload:", payload);
+    
     try {
+      // Validate required fields
+      if (!payload.title || !payload.stageId || !payload.funnelId) {
+        console.error("Invalid payload - missing required fields");
+        return null;
+      }
+      
       const { data, error } = await supabase.from('opportunities').insert([{
-        title: payload.title || 'New opportunity from webhook',
+        title: payload.title,
         client: payload.client || 'External client',
         value: payload.value || 0,
         stage_id: payload.stageId,
         funnel_id: payload.funnelId,
       }]).select().single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Database error when processing webhook:", error);
+        throw error;
+      }
+      
+      console.log("Created opportunity from webhook:", data);
       return data;
     } catch (error) {
       console.error("Failed to process inbound webhook:", error);
