@@ -21,18 +21,19 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Check if admin user already exists
-    const { data: existingUsers, error: searchError } = await supabase
-      .from('auth.users')
-      .select('*')
-      .eq('email', 'mizaellimadesigner@gmail.com')
-      .maybeSingle();
+    const { data: existingUsers, error: searchError } = await supabase.auth.admin.listUsers();
     
     if (searchError) {
       throw searchError;
     }
 
+    // Look for the specified email in the user list
+    const existingUser = existingUsers?.users?.find(
+      (user) => user.email === "mizaellimadesigner@gmail.com"
+    );
+
     let result;
-    if (!existingUsers) {
+    if (!existingUser) {
       // Create the default user if it doesn't exist
       const { data, error } = await supabase.auth.admin.createUser({
         email: "mizaellimadesigner@gmail.com",
@@ -49,8 +50,19 @@ const handler = async (req: Request): Promise<Response> => {
         userId: data.user?.id,
       };
     } else {
+      // If user exists, update their password to ensure it's correct
+      const { error } = await supabase.auth.admin.updateUserById(
+        existingUser.id,
+        { password: "@Pequenino", email_confirm: true }
+      );
+      
+      if (error) {
+        throw error;
+      }
+      
       result = {
-        message: "Default user already exists",
+        message: "Default user already exists, password has been reset",
+        userId: existingUser.id,
       };
     }
 

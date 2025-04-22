@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
@@ -20,6 +21,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const form = useForm<LoginFormValues>({
@@ -33,12 +36,14 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
+      setError(null);
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
 
       if (error) {
+        setError(error.message);
         throw error;
       }
 
@@ -51,6 +56,35 @@ const Login = () => {
     }
   };
 
+  const createDefaultUser = async () => {
+    try {
+      setIsCreatingUser(true);
+      
+      const response = await fetch("https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/create-default-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabase.auth.getSession()}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar usuário padrão");
+      }
+      
+      toast.success("Usuário padrão criado com sucesso! Faça login com mizaellimadesigner@gmail.com e a senha padrão");
+      
+      // Auto-fill the form with the default user email
+      form.setValue("email", "mizaellimadesigner@gmail.com");
+    } catch (error: any) {
+      toast.error(error.message || "Falha ao criar usuário padrão");
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
@@ -60,7 +94,14 @@ const Login = () => {
             Faça login para acessar o sistema
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Erro de autenticação</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -101,8 +142,18 @@ const Login = () => {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex justify-center text-sm text-muted-foreground">
-          Sistema de gerenciamento de funil de vendas
+        <CardFooter className="flex flex-col space-y-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={createDefaultUser}
+            disabled={isCreatingUser}
+          >
+            {isCreatingUser ? "Criando usuário padrão..." : "Criar usuário padrão"}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Sistema de gerenciamento de funil de vendas
+          </p>
         </CardFooter>
       </Card>
     </div>

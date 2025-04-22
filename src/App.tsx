@@ -21,7 +21,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<ProtectedRoute />}>
               <Route path="/*" element={<Index />} />
             </Route>
             <Route path="/api-docs" element={
