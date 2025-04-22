@@ -27,25 +27,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set mounted flag
+    setMounted(true);
+    
+    // Function to safely update state only if component is mounted
+    const safeSetState = (callback: Function) => {
+      if (mounted) {
+        callback();
+      }
+    };
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        safeSetState(() => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        });
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      safeSetState(() => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
     });
 
-    return () => subscription.unsubscribe();
+    // Cleanup function
+    return () => {
+      setMounted(false);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
