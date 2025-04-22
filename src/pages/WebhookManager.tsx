@@ -14,7 +14,8 @@ const WebhookManager = () => {
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [refreshList, setRefreshList] = useState(false);
   const [funnels, setFunnels] = useState<Array<{id: string, name: string}>>([]);
-  const [stages, setStages] = useState<Array<{id: string, name: string}>>([]);
+  // Update the type definition to include funnelId
+  const [stages, setStages] = useState<Array<{id: string, name: string, funnelId: string}>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
