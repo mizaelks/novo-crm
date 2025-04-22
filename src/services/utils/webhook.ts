@@ -1,10 +1,35 @@
+
 import { WebhookPayload } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 
-// Webhook dispatch simulation (could be updated later for real external calls)
+// Real webhook dispatch function that sends HTTP requests to the specified URL
 export const dispatchWebhook = async (payload: WebhookPayload, url: string) => {
   console.log(`Dispatching webhook to ${url}`, payload);
-  return { success: true, url };
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const responseData = await response.text();
+    console.log(`Webhook response from ${url}:`, responseData);
+    return { 
+      success: response.ok, 
+      url,
+      status: response.status,
+      statusText: response.statusText
+    };
+  } catch (error) {
+    console.error(`Error dispatching webhook to ${url}:`, error);
+    return { 
+      success: false, 
+      url,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 };
 
 export const triggerEntityWebhooks = async (
@@ -22,7 +47,7 @@ export const triggerEntityWebhooks = async (
 
   if (error) {
     console.error("Failed to fetch webhooks:", error);
-    return { dispatched: 0 };
+    return { dispatched: 0, success: 0, failed: 0 };
   }
 
   const eventName = `${entityType}.${eventType}`;
@@ -32,7 +57,15 @@ export const triggerEntityWebhooks = async (
   };
 
   const promises = (webhooks ?? []).map(webhook => dispatchWebhook(payload, webhook.url));
-  await Promise.all(promises);
-
-  return { dispatched: promises.length };
+  const results = await Promise.all(promises);
+  
+  const successful = results.filter(r => r.success).length;
+  const failed = results.length - successful;
+  
+  return { 
+    dispatched: promises.length,
+    success: successful,
+    failed,
+    results
+  };
 };

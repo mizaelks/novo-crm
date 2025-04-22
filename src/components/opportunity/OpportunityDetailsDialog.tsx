@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { opportunityAPI } from "@/services/api";
 import { Opportunity, ScheduledAction } from "@/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock } from "lucide-react";
@@ -79,6 +79,7 @@ const OpportunityDetailsDialog = ({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>{opportunity.title}</DialogTitle>
+          <DialogDescription>Detalhes da oportunidade</DialogDescription>
         </DialogHeader>
 
         <div className="mt-2 space-y-6">
@@ -102,15 +103,15 @@ const OpportunityDetailsDialog = ({
           
           <Tabs defaultValue="actions">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="actions">Ações Agendadas</TabsTrigger>
-              <TabsTrigger value="schedule">Agendar Nova</TabsTrigger>
+              <TabsTrigger value="actions">Webhooks Agendados</TabsTrigger>
+              <TabsTrigger value="schedule">Agendar Novo</TabsTrigger>
             </TabsList>
             
             <TabsContent value="actions" className="space-y-4">
               {scheduledActions.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
                   <Clock className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p>Nenhuma ação agendada para esta oportunidade</p>
+                  <p>Nenhum webhook agendado para esta oportunidade</p>
                 </div>
               ) : (
                 <div className="space-y-3 mt-4">
@@ -132,7 +133,7 @@ const OpportunityDetailsDialog = ({
                       >
                         <div className="flex justify-between">
                           <div className="font-medium">
-                            {action.actionType === 'email' ? 'Enviar e-mail' : 'Executar webhook'}
+                            Webhook agendado
                           </div>
                           <div className={`text-xs ${
                             action.status === 'pending' ? 'text-primary' : 
@@ -146,19 +147,10 @@ const OpportunityDetailsDialog = ({
                           <Clock className="h-3 w-3 mr-1" />
                           {actionDate}
                         </div>
-                        <div className="mt-2 text-sm">
-                          {action.actionType === 'email' && (
-                            <div className="text-muted-foreground">
-                              Para: {action.actionConfig.email}
-                              <br />
-                              Assunto: {action.actionConfig.subject}
-                            </div>
-                          )}
-                          {action.actionType === 'webhook' && (
-                            <div className="text-xs text-muted-foreground break-all">
-                              URL: {action.actionConfig.url}
-                            </div>
-                          )}
+                        <div className="mt-2">
+                          <div className="text-xs text-muted-foreground break-all">
+                            URL: {action.actionConfig.url}
+                          </div>
                         </div>
                         {action.status === 'pending' && (
                           <Button

@@ -1,59 +1,65 @@
 
-import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 const AppHeader = () => {
   const location = useLocation();
-
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const { user, signOut } = useAuth();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Sessão encerrada com sucesso");
   };
 
+  const links = [
+    { href: "/", label: "Dashboard" },
+    { href: "/funnels", label: "Funis" },
+    { href: "/opportunities", label: "Oportunidades" },
+    { href: "/webhooks", label: "Webhooks" },
+  ];
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="text-xl font-bold text-primary flex items-center gap-2">
-            <span className="text-2xl">⟁</span>
-            <span>Kanban Flow</span>
+    <header className="border-b">
+      <div className="flex h-16 items-center px-4 sm:px-6">
+        <div className="flex items-center space-x-4">
+          <Link to="/" className="font-semibold text-lg text-primary">
+            SalesFunnel
           </Link>
-          
-          <nav className="hidden md:flex ml-8 space-x-4">
-            <Link 
-              to="/" 
-              className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/') && !isActive('/funnels') && !isActive('/opportunities') && !isActive('/webhooks') ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/funnels" 
-              className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/funnels') ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
-            >
-              Funis
-            </Link>
-            <Link 
-              to="/opportunities" 
-              className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/opportunities') ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
-            >
-              Oportunidades
-            </Link>
-            <Link 
-              to="/webhooks" 
-              className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/webhooks') ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
-            >
-              Webhooks
-            </Link>
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={
+                  location.pathname === link.href
+                    ? "text-sm font-medium transition-colors text-primary"
+                    : "text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                }
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <a href="/api-docs" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              Documentação API
-              <ExternalLink size={14} />
-            </Button>
-          </a>
+        <div className="ml-auto flex items-center space-x-4">
+          {user && (
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-muted-foreground">
+                {user.email}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>

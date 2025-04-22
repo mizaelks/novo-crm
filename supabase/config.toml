@@ -1,1 +1,35 @@
+
 project_id = "ffykgxnmijoonyutchzx"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+port = 9999
+
+[storage]
+enabled = true
+
+[realtime]
+enabled = true
+
+[functions]
+[functions.create-default-user]
+verify_jwt = false

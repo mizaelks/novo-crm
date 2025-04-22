@@ -55,8 +55,22 @@ export const webhookAPI = {
     return !error;
   },
 
-  receiveInbound: async (payload: any): Promise<Opportunity | null> => {
-    // Not used, can implement later with Edge Function if needed
-    return null;
+  receiveInbound: async (payload: any): Promise<any | null> => {
+    // Implement the webhook receiver functionality
+    try {
+      const { data, error } = await supabase.from('opportunities').insert([{
+        title: payload.title || 'New opportunity from webhook',
+        client: payload.client || 'External client',
+        value: payload.value || 0,
+        stage_id: payload.stageId,
+        funnel_id: payload.funnelId,
+      }]).select().single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Failed to process inbound webhook:", error);
+      return null;
+    }
   }
 };
