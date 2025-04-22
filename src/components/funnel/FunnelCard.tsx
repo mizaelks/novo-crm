@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Funnel } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Hash } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FunnelCardProps {
   funnel: Funnel;
@@ -12,10 +15,28 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
-        <CardTitle className="flex justify-between items-center">
-          <span>{funnel.name}</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <CardTitle>{funnel.name}</CardTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-1"
+                  onClick={() => navigator.clipboard.writeText(funnel.id)}
+                >
+                  <Hash className="h-3 w-3 mr-1" />
+                  <span className="text-xs font-mono">{funnel.id.split('-')[0]}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clique para copiar o ID</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <Badge variant="outline">{funnel.stages.length} etapas</Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{funnel.description}</p>

@@ -3,8 +3,10 @@ import { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Opportunity } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Hash } from "lucide-react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -25,7 +27,6 @@ const OpportunityCard = ({ opportunity, index }: OpportunityCardProps) => {
     year: '2-digit'
   }).format(new Date(opportunity.createdAt));
 
-  // Check if there are any pending scheduled actions
   const hasScheduledActions = opportunity.scheduledActions?.some(
     action => action.status === 'pending'
   );
@@ -55,9 +56,30 @@ const OpportunityCard = ({ opportunity, index }: OpportunityCardProps) => {
                   Cliente: {opportunity.client}
                 </div>
                 <div className="flex justify-between items-center mt-1">
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {formattedDate}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {formattedDate}
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-5 px-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(opportunity.id);
+                          }}
+                        >
+                          <Hash className="h-3 w-3 mr-1" />
+                          <span className="text-xs font-mono">{opportunity.id.split('-')[0]}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clique para copiar o ID</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   {hasScheduledActions && (
                     <div className="flex items-center text-xs text-secondary">
