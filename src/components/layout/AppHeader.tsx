@@ -19,6 +19,7 @@ const AppHeader = () => {
     { href: "/funnels", label: "Funis" },
     { href: "/opportunities", label: "Oportunidades" },
     { href: "/webhooks", label: "Webhooks" },
+    { href: "/api", label: "API" },
   ];
 
   return (

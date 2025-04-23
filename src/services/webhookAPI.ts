@@ -80,13 +80,23 @@ export const webhookAPI = {
         return null;
       }
       
-      const { data, error } = await supabase.from('opportunities').insert([{
+      // Create object with all possible fields from payload
+      const opportunityData = {
         title: payload.title,
         client: payload.client || 'External client',
         value: payload.value || 0,
         stage_id: payload.stageId,
         funnel_id: payload.funnelId,
-      }]).select().single();
+        // Additional contact information fields
+        phone: payload.phone || null,
+        email: payload.email || null,
+        company: payload.company || null,
+      };
+      
+      const { data, error } = await supabase.from('opportunities')
+        .insert([opportunityData])
+        .select()
+        .single();
       
       if (error) {
         console.error("Database error when processing webhook:", error);

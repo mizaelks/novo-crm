@@ -7,14 +7,15 @@ import WebhookList from "@/components/webhook/WebhookList";
 import { WebhookConfig } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Info, FileText, Code } from "lucide-react";
+import { Info, FileText, Code, ChevronLeft } from "lucide-react";
 import { funnelAPI, stageAPI } from "@/services/api";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const WebhookManager = () => {
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [refreshList, setRefreshList] = useState(false);
   const [funnels, setFunnels] = useState<Array<{id: string, name: string}>>([]);
-  // Update the type definition to include funnelId
   const [stages, setStages] = useState<Array<{id: string, name: string, funnelId: string}>>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +54,15 @@ const WebhookManager = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Gerenciador de Webhooks</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Gerenciador de Webhooks</h1>
+        <Link to="/">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ChevronLeft className="h-4 w-4" />
+            Voltar ao Dashboard
+          </Button>
+        </Link>
+      </div>
       
       <Alert className="bg-blue-50 border-blue-200">
         <Info className="h-4 w-4" />

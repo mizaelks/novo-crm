@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Opportunity } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, Hash } from "lucide-react";
+import { Calendar, Clock, Hash, Phone, Mail, Building } from "lucide-react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -52,9 +52,32 @@ const OpportunityCard = ({ opportunity, index }: OpportunityCardProps) => {
                     {formattedValue}
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Cliente: {opportunity.client}
+
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Cliente: {opportunity.client}</div>
+                  
+                  {opportunity.company && (
+                    <div className="flex items-center">
+                      <Building className="h-3 w-3 mr-1" />
+                      {opportunity.company}
+                    </div>
+                  )}
+                  
+                  {opportunity.phone && (
+                    <div className="flex items-center">
+                      <Phone className="h-3 w-3 mr-1" />
+                      {opportunity.phone}
+                    </div>
+                  )}
+                  
+                  {opportunity.email && (
+                    <div className="flex items-center">
+                      <Mail className="h-3 w-3 mr-1" />
+                      {opportunity.email}
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex justify-between items-center mt-1">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center text-xs text-muted-foreground">

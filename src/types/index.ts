@@ -1,4 +1,3 @@
-
 // Domain models
 export interface Funnel {
   id: string;
@@ -26,6 +25,9 @@ export interface Opportunity {
   stageId: string;
   funnelId: string;
   scheduledActions?: ScheduledAction[];
+  phone?: string;
+  email?: string;
+  company?: string;
 }
 
 export interface WebhookConfig {
@@ -73,6 +75,9 @@ export interface OpportunityFormData {
   client: string;
   stageId: string;
   funnelId: string;
+  phone?: string;
+  email?: string;
+  company?: string;
 }
 
 export interface WebhookFormData {
