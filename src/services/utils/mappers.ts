@@ -25,6 +25,9 @@ export const mapDbOpportunityToOpportunity = (dbOpportunity: any): Omit<Opportun
   createdAt: new Date(dbOpportunity.created_at),
   stageId: dbOpportunity.stage_id,
   funnelId: dbOpportunity.funnel_id,
+  company: dbOpportunity.company,  // Ensure these fields are included
+  phone: dbOpportunity.phone,
+  email: dbOpportunity.email,
 });
 
 export const mapDbWebhookToWebhook = (dbWebhook: any): WebhookConfig => ({

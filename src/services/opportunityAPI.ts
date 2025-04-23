@@ -89,15 +89,16 @@ export const opportunityAPI = {
   },
 
   create: async (data: OpportunityFormData): Promise<Opportunity> => {
+    // Make sure we're explicitly passing all fields
     const { data: created, error } = await supabase.from('opportunities').insert([{
       title: data.title,
       value: data.value,
       client: data.client,
       stage_id: data.stageId,
       funnel_id: data.funnelId,
-      company: data.company,
-      phone: data.phone,
-      email: data.email
+      company: data.company || null,
+      phone: data.phone || null,
+      email: data.email || null
     }]).select().single();
     
     if (error || !created) throw error || new Error("Opportunity create error");
@@ -113,14 +114,21 @@ export const opportunityAPI = {
   },
 
   update: async (id: string, data: Partial<OpportunityFormData>): Promise<Opportunity | null> => {
-    const dbData: any = { ...data };
+    // Ensure we're correctly handling all fields for DB update
+    const dbData: any = {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.client !== undefined && { client: data.client }),
+      ...(data.value !== undefined && { value: data.value }),
+      ...(data.company !== undefined && { company: data.company }),
+      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.email !== undefined && { email: data.email }),
+    };
+    
     if (data.stageId !== undefined) {
       dbData.stage_id = data.stageId;
-      delete dbData.stageId;
     }
     if (data.funnelId !== undefined) {
       dbData.funnel_id = data.funnelId;
-      delete dbData.funnelId;
     }
     
     const { data: updated, error } = await supabase.from('opportunities').update(dbData).eq('id', id).select().single();

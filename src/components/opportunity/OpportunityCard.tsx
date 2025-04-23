@@ -31,6 +31,9 @@ const OpportunityCard = ({ opportunity, index }: OpportunityCardProps) => {
     action => action.status === 'pending'
   );
 
+  // Ensure we display company, email and phone if they exist
+  const hasContactInfo = opportunity.company || opportunity.email || opportunity.phone;
+
   return (
     <>
       <Draggable draggableId={opportunity.id} index={index}>
