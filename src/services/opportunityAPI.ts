@@ -7,7 +7,10 @@ import { triggerEntityWebhooks } from "./utils/webhook";
 
 export const opportunityAPI = {
   getAll: async (): Promise<Opportunity[]> => {
-    const { data, error } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('opportunities')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     
     const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
@@ -25,7 +28,11 @@ export const opportunityAPI = {
   },
 
   getByStageId: async (stageId: string): Promise<Opportunity[]> => {
-    const { data, error } = await supabase.from('opportunities').select('*').eq('stage_id', stageId).order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('stage_id', stageId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     
     const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
@@ -43,7 +50,11 @@ export const opportunityAPI = {
   },
 
   getByFunnelId: async (funnelId: string): Promise<Opportunity[]> => {
-    const { data, error } = await supabase.from('opportunities').select('*').eq('funnel_id', funnelId).order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('funnel_id', funnelId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     
     const opportunityBases = (data || []).map(mapDbOpportunityToOpportunity);
@@ -61,7 +72,11 @@ export const opportunityAPI = {
   },
 
   getById: async (id: string): Promise<Opportunity | null> => {
-    const { data, error } = await supabase.from('opportunities').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('id', id)
+      .single();
     if (error || !data) return null;
     
     const opportunityBase = mapDbOpportunityToOpportunity(data);
@@ -80,6 +95,9 @@ export const opportunityAPI = {
       client: data.client,
       stage_id: data.stageId,
       funnel_id: data.funnelId,
+      company: data.company,
+      phone: data.phone,
+      email: data.email
     }]).select().single();
     
     if (error || !created) throw error || new Error("Opportunity create error");

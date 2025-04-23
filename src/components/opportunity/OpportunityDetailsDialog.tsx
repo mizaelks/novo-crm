@@ -5,7 +5,7 @@ import { Opportunity, WebhookConfig } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Send, AlertCircle, Check, Loader2 } from "lucide-react";
+import { Calendar, Send, AlertCircle, Check, Loader2, Edit, Phone, Mail, Building } from "lucide-react";
 import { toast } from "sonner";
 import { dispatchWebhook } from "@/services/utils/webhook";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import EditOpportunityDialog from "./EditOpportunityDialog";
 
 interface OpportunityDetailsDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ const OpportunityDetailsDialog = ({
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSendingWebhook, setIsSendingWebhook] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Form for one-time webhook
   const form = useForm<WebhookFormValues>({
@@ -106,6 +108,9 @@ const OpportunityDetailsDialog = ({
             value: opportunity.value,
             stageId: opportunity.stageId,
             funnelId: opportunity.funnelId,
+            company: opportunity.company,
+            phone: opportunity.phone,
+            email: opportunity.email,
             createdAt: opportunity.createdAt,
             sentAt: new Date().toISOString()
           }
@@ -142,6 +147,10 @@ const OpportunityDetailsDialog = ({
       toast.error("Erro ao remover webhook");
     }
   };
+
+  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    setOpportunity(updatedOpportunity);
+  };
   
   if (loading || !opportunity) {
     return null;
@@ -168,140 +177,180 @@ const OpportunityDetailsDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>{opportunity.title}</DialogTitle>
-          <DialogDescription>Detalhes da oportunidade</DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <div>
+              <DialogTitle>{opportunity.title}</DialogTitle>
+              <DialogDescription>Detalhes da oportunidade</DialogDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setEditDialogOpen(true);
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
 
-        <div className="mt-2 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Cliente</p>
-              <p className="font-medium">{opportunity.client}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Valor</p>
-              <p className="font-medium text-primary">{formattedValue}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground flex items-center">
-                <Calendar className="h-3 w-3 mr-1" />
-                Data de criação
-              </p>
-              <p className="text-sm">{formattedDate}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">ID da Oportunidade</p>
-              <p className="text-xs font-mono">{opportunity.id}</p>
-            </div>
-          </div>
-          
-          <Tabs defaultValue="webhooks">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="webhooks">Webhooks Configurados</TabsTrigger>
-              <TabsTrigger value="send">Enviar Webhook</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="webhooks" className="space-y-4">
-              {webhooks.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum webhook configurado para esta oportunidade</p>
-                </div>
-              ) : (
-                <div className="space-y-3 mt-4">
-                  {webhooks.map(webhook => (
-                    <div 
-                      key={webhook.id} 
-                      className="p-3 border rounded-md bg-white flex justify-between items-center"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{formatEvent(webhook.event)}</Badge>
-                          <span className="text-xs text-muted-foreground">{webhook.id}</span>
-                        </div>
-                        <div className="mt-1 text-xs font-mono break-all">
-                          {webhook.url}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteWebhook(webhook.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
+          <div className="mt-2 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="font-medium">{opportunity.client}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Valor</p>
+                <p className="font-medium text-primary">{formattedValue}</p>
+              </div>
+              {opportunity.company && (
+                <div className="flex items-start gap-1">
+                  <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <p className="text-sm">{opportunity.company}</p>
                 </div>
               )}
-            </TabsContent>
-            
-            <TabsContent value="send">
-              <Form {...form}>
-                <form className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL do webhook</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://api.exemplo.com/webhook" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Button
-                      type="button"
-                      onClick={handleSendWebhook}
-                      className="w-full"
-                      disabled={isSendingWebhook || !form.formState.isValid}
-                    >
-                      {isSendingWebhook ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Enviar único
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleCreateWebhook('update')}
-                      className="w-full"
-                      disabled={isSendingWebhook || !form.formState.isValid}
-                    >
-                      <Check className="mr-2 h-4 w-4" />
-                      Configurar permanente
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-              
-              <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
-                <p className="text-muted-foreground">
-                  ℹ️ Use "Enviar único" para disparar o webhook uma única vez, ou "Configurar permanente" 
-                  para registrar um webhook que será acionado sempre que esta oportunidade for atualizada.
+              {opportunity.phone && (
+                <div className="flex items-start gap-1">
+                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <p className="text-sm">{opportunity.phone}</p>
+                </div>
+              )}
+              {opportunity.email && (
+                <div className="col-span-2 flex items-start gap-1">
+                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <p className="text-sm">{opportunity.email}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Data de criação
                 </p>
+                <p className="text-sm">{formattedDate}</p>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </DialogContent>
-    </Dialog>
+              <div>
+                <p className="text-sm text-muted-foreground">ID da Oportunidade</p>
+                <p className="text-xs font-mono">{opportunity.id}</p>
+              </div>
+            </div>
+            
+            <Tabs defaultValue="webhooks">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="webhooks">Webhooks Configurados</TabsTrigger>
+                <TabsTrigger value="send">Enviar Webhook</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="webhooks" className="space-y-4">
+                {webhooks.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum webhook configurado para esta oportunidade</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-4">
+                    {webhooks.map(webhook => (
+                      <div 
+                        key={webhook.id} 
+                        className="p-3 border rounded-md bg-white flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{formatEvent(webhook.event)}</Badge>
+                            <span className="text-xs text-muted-foreground">{webhook.id}</span>
+                          </div>
+                          <div className="mt-1 text-xs font-mono break-all">
+                            {webhook.url}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteWebhook(webhook.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="send">
+                <Form {...form}>
+                  <form className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL do webhook</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://api.exemplo.com/webhook" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        onClick={handleSendWebhook}
+                        className="w-full"
+                        disabled={isSendingWebhook || !form.formState.isValid}
+                      >
+                        {isSendingWebhook ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Enviar único
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleCreateWebhook('update')}
+                        className="w-full"
+                        disabled={isSendingWebhook || !form.formState.isValid}
+                      >
+                        <Check className="mr-2 h-4 w-4" />
+                        Configurar permanente
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+                
+                <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
+                  <p className="text-muted-foreground">
+                    ℹ️ Use "Enviar único" para disparar o webhook uma única vez, ou "Configurar permanente" 
+                    para registrar um webhook que será acionado sempre que esta oportunidade for atualizada.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <EditOpportunityDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        opportunityId={opportunityId}
+        onOpportunityUpdated={handleOpportunityUpdated}
+      />
+    </>
   );
 };
 

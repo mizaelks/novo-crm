@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(2, "Título deve ter pelo menos 2 caracteres"),
@@ -22,22 +23,21 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface CreateOpportunityDialogProps {
+interface EditOpportunityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  stageId: string;
-  funnelId: string;
-  onOpportunityCreated: (opportunity: Opportunity) => void;
+  opportunityId: string;
+  onOpportunityUpdated: (opportunity: Opportunity) => void;
 }
 
-const CreateOpportunityDialog = ({
+const EditOpportunityDialog = ({
   open,
   onOpenChange,
-  stageId,
-  funnelId,
-  onOpportunityCreated
-}: CreateOpportunityDialogProps) => {
+  opportunityId,
+  onOpportunityUpdated
+}: EditOpportunityDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,37 +51,79 @@ const CreateOpportunityDialog = ({
     }
   });
 
+  useEffect(() => {
+    const loadOpportunity = async () => {
+      if (open && opportunityId) {
+        setIsLoading(true);
+        try {
+          const opportunity = await opportunityAPI.getById(opportunityId);
+          if (opportunity) {
+            form.reset({
+              title: opportunity.title,
+              client: opportunity.client,
+              value: opportunity.value,
+              company: opportunity.company || "",
+              phone: opportunity.phone || "",
+              email: opportunity.email || ""
+            });
+          }
+        } catch (error) {
+          console.error("Error loading opportunity:", error);
+          toast.error("Erro ao carregar detalhes da oportunidade");
+          onOpenChange(false);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadOpportunity();
+  }, [open, opportunityId, form, onOpenChange]);
+
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
-      const newOpportunity = await opportunityAPI.create({
+      const updatedOpportunity = await opportunityAPI.update(opportunityId, {
         title: values.title,
         client: values.client,
         value: values.value,
-        stageId,
-        funnelId,
         company: values.company || undefined,
         phone: values.phone || undefined,
         email: values.email || undefined
       });
       
-      toast.success("Oportunidade criada com sucesso!");
-      onOpportunityCreated(newOpportunity);
-      form.reset();
-      onOpenChange(false);
+      if (updatedOpportunity) {
+        toast.success("Oportunidade atualizada com sucesso!");
+        onOpportunityUpdated(updatedOpportunity);
+        onOpenChange(false);
+      } else {
+        throw new Error("Não foi possível atualizar a oportunidade");
+      }
     } catch (error) {
-      console.error("Error creating opportunity:", error);
-      toast.error("Erro ao criar oportunidade. Tente novamente.");
+      console.error("Error updating opportunity:", error);
+      toast.error("Erro ao atualizar oportunidade. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar nova oportunidade</DialogTitle>
+          <DialogTitle>Editar oportunidade</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -188,7 +230,7 @@ const CreateOpportunityDialog = ({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Criando..." : "Criar oportunidade"}
+                {isSubmitting ? "Salvando..." : "Salvar alterações"}
               </Button>
             </DialogFooter>
           </form>
@@ -198,4 +240,4 @@ const CreateOpportunityDialog = ({
   );
 };
 
-export default CreateOpportunityDialog;
+export default EditOpportunityDialog;
