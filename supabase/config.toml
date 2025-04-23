@@ -47,4 +47,5 @@ port = 54327
 truncate_all_on_setup = true
 
 [functions.api]
-verify_jwt = true
+verify_jwt = false
+
