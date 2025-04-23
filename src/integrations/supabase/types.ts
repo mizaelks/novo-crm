@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip: string | null
+          method: string
+          path: string
+          token_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip?: string | null
+          method: string
+          path: string
+          token_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip?: string | null
+          method?: string
+          path?: string
+          token_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_logs_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "api_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          token?: string
+        }
+        Relationships: []
+      }
       funnels: {
         Row: {
           created_at: string | null
@@ -36,27 +95,36 @@ export type Database = {
       opportunities: {
         Row: {
           client: string | null
+          company: string | null
           created_at: string | null
+          email: string | null
           funnel_id: string | null
           id: string
+          phone: string | null
           stage_id: string | null
           title: string
           value: number | null
         }
         Insert: {
           client?: string | null
+          company?: string | null
           created_at?: string | null
+          email?: string | null
           funnel_id?: string | null
           id?: string
+          phone?: string | null
           stage_id?: string | null
           title: string
           value?: number | null
         }
         Update: {
           client?: string | null
+          company?: string | null
           created_at?: string | null
+          email?: string | null
           funnel_id?: string | null
           id?: string
+          phone?: string | null
           stage_id?: string | null
           title?: string
           value?: number | null

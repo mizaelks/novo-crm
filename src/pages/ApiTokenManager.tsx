@@ -10,8 +10,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+interface ApiToken {
+  id: string;
+  name: string;
+  token: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 const ApiTokenManager = () => {
-  const [tokens, setTokens] = useState<any[]>([]);
+  const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [tokenName, setTokenName] = useState("");
   const [loading, setLoading] = useState(true);
   const [generatingToken, setGeneratingToken] = useState(false);
@@ -30,7 +38,7 @@ const ApiTokenManager = () => {
       const { data, error } = await supabase
         .from('api_tokens')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: ApiToken[] | null; error: any };
       
       if (error) throw error;
       setTokens(data || []);
@@ -64,7 +72,7 @@ const ApiTokenManager = () => {
           is_active: true
         }])
         .select()
-        .single();
+        .single() as { data: ApiToken | null; error: any };
       
       if (error) throw error;
       
@@ -85,7 +93,7 @@ const ApiTokenManager = () => {
       const { error } = await supabase
         .from('api_tokens')
         .update({ is_active: false })
-        .eq('id', id);
+        .eq('id', id) as { error: any };
       
       if (error) throw error;
       
