@@ -18,11 +18,13 @@ export const webhookTemplateAPI = {
   getAll: async (): Promise<WebhookTemplate[]> => {
     // Using RPC function to get webhook templates
     const { data, error } = await supabase
-      .from('webhook_templates').select('*').order('created_at', { ascending: false });
+      .rpc('get_webhook_templates');
     
     if (error) throw error;
     
-    return (data || []).map(template => ({
+    const templates = data as WebhookTemplateResponse[] || [];
+    
+    return templates.map(template => ({
       id: template.id,
       name: template.name,
       description: template.description || '',
@@ -37,88 +39,85 @@ export const webhookTemplateAPI = {
   getById: async (id: string): Promise<WebhookTemplate | null> => {
     // Using RPC function to get webhook template by ID
     const { data, error } = await supabase
-      .from('webhook_templates').select('*').eq('id', id).single();
+      .rpc('get_webhook_template_by_id', { template_id: id });
     
     if (error || !data) return null;
     
+    const template = data as WebhookTemplateResponse;
+    
     return {
-      id: data.id,
-      name: data.name,
-      description: data.description || '',
-      url: data.url,
-      targetType: data.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: data.event as 'create' | 'update' | 'move',
-      payload: data.payload,
-      createdAt: new Date(data.created_at)
+      id: template.id,
+      name: template.name,
+      description: template.description || '',
+      url: template.url,
+      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: template.event as 'create' | 'update' | 'move',
+      payload: template.payload,
+      createdAt: new Date(template.created_at)
     };
   },
 
   create: async (data: WebhookTemplateFormData): Promise<WebhookTemplate> => {
-    // Insert into webhook_templates table instead of using RPC
+    // Using RPC function to create webhook template
     const { data: created, error } = await supabase
-      .from('webhook_templates')
-      .insert([{
-        name: data.name,
-        description: data.description || '',
-        url: data.url,
-        target_type: data.targetType,
-        event: data.event,
-        payload: data.payload
-      }])
-      .select()
-      .single();
+      .rpc('create_webhook_template', {
+        p_name: data.name,
+        p_description: data.description || '',
+        p_url: data.url,
+        p_target_type: data.targetType,
+        p_event: data.event,
+        p_payload: data.payload
+      });
     
     if (error || !created) throw error || new Error("Webhook template create error");
     
+    const template = created as WebhookTemplateResponse;
+    
     return {
-      id: created.id,
-      name: created.name,
-      description: created.description || '',
-      url: created.url,
-      targetType: created.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: created.event as 'create' | 'update' | 'move',
-      payload: created.payload,
-      createdAt: new Date(created.created_at)
+      id: template.id,
+      name: template.name,
+      description: template.description || '',
+      url: template.url,
+      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: template.event as 'create' | 'update' | 'move',
+      payload: template.payload,
+      createdAt: new Date(template.created_at)
     };
   },
 
   update: async (id: string, data: Partial<WebhookTemplateFormData>): Promise<WebhookTemplate | null> => {
-    // Update webhook_templates table instead of using RPC
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.url !== undefined) updateData.url = data.url;
-    if (data.targetType !== undefined) updateData.target_type = data.targetType;
-    if (data.event !== undefined) updateData.event = data.event;
-    if (data.payload !== undefined) updateData.payload = data.payload;
-    
+    // Using RPC function to update webhook template
     const { data: updated, error } = await supabase
-      .from('webhook_templates')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+      .rpc('update_webhook_template', {
+        p_id: id,
+        p_name: data.name || null,
+        p_description: data.description || null,
+        p_url: data.url || null,
+        p_target_type: data.targetType || null,
+        p_event: data.event || null,
+        p_payload: data.payload || null
+      });
     
     if (error || !updated) return null;
     
+    const template = updated as WebhookTemplateResponse;
+    
     return {
-      id: updated.id,
-      name: updated.name,
-      description: updated.description || '',
-      url: updated.url,
-      targetType: updated.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: updated.event as 'create' | 'update' | 'move',
-      payload: updated.payload,
-      createdAt: new Date(updated.created_at)
+      id: template.id,
+      name: template.name,
+      description: template.description || '',
+      url: template.url,
+      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: template.event as 'create' | 'update' | 'move',
+      payload: template.payload,
+      createdAt: new Date(template.created_at)
     };
   },
 
   delete: async (id: string): Promise<boolean> => {
-    // Delete from webhook_templates table instead of using RPC
+    // Using RPC function to delete webhook template
     const { error } = await supabase
-      .from('webhook_templates')
-      .delete()
-      .eq('id', id);
+      .rpc('delete_webhook_template', { template_id: id });
     
     return !error;
   }
