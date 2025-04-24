@@ -5,7 +5,7 @@ import { Opportunity, WebhookConfig } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Send, AlertCircle, Check, Loader2, Edit, Phone, Mail, Building } from "lucide-react";
+import { Calendar, Send, AlertCircle, Check, Loader2, Edit, Phone, Mail, Building, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { dispatchWebhook } from "@/services/utils/webhook";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import EditOpportunityDialog from "./EditOpportunityDialog";
+import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
+import { ScheduledAction } from "@/types";
 
 interface OpportunityDetailsDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ const OpportunityDetailsDialog = ({
 }: OpportunityDetailsDialogProps) => {
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
+  const [scheduledActions, setScheduledActions] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSendingWebhook, setIsSendingWebhook] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -59,6 +62,10 @@ const OpportunityDetailsDialog = ({
           // Load webhooks configured for this opportunity
           const webhooksData = await webhookAPI.getByTarget('opportunity', opportunityId);
           setWebhooks(webhooksData);
+          
+          // Load scheduled actions for this opportunity
+          const actionsData = await opportunityAPI.getScheduledActions(opportunityId);
+          setScheduledActions(actionsData);
         } catch (error) {
           console.error("Error loading opportunity details:", error);
           toast.error("Erro ao carregar detalhes da oportunidade");
@@ -151,6 +158,20 @@ const OpportunityDetailsDialog = ({
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
     setOpportunity(updatedOpportunity);
   };
+
+  const handleActionScheduled = (action: ScheduledAction) => {
+    setScheduledActions([...scheduledActions, action]);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
   
   if (loading || !opportunity) {
     return null;
@@ -240,9 +261,10 @@ const OpportunityDetailsDialog = ({
             </div>
             
             <Tabs defaultValue="webhooks">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="webhooks">Webhooks Configurados</TabsTrigger>
                 <TabsTrigger value="send">Enviar Webhook</TabsTrigger>
+                <TabsTrigger value="schedule">Agendar Webhook</TabsTrigger>
               </TabsList>
               
               <TabsContent value="webhooks" className="space-y-4">
@@ -277,6 +299,39 @@ const OpportunityDetailsDialog = ({
                         </Button>
                       </div>
                     ))}
+                  </div>
+                )}
+                
+                {scheduledActions.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium mb-2 mt-6">Webhooks Agendados</h3>
+                    <div className="space-y-3">
+                      {scheduledActions.map(action => (
+                        <div 
+                          key={action.id} 
+                          className="p-3 border rounded-md bg-white flex justify-between items-center"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="bg-blue-50">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Agendado
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{action.id}</span>
+                            </div>
+                            <div className="mt-1 text-xs font-mono break-all">
+                              {action.actionConfig.url}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Data: {formatDate(new Date(action.scheduledDateTime))}
+                            </div>
+                          </div>
+                          <div className="text-xs px-2 py-1 rounded-full bg-gray-100">
+                            {action.status}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -337,6 +392,23 @@ const OpportunityDetailsDialog = ({
                     ℹ️ Use "Enviar único" para disparar o webhook uma única vez, ou "Configurar permanente" 
                     para registrar um webhook que será acionado sempre que esta oportunidade for atualizada.
                   </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="schedule">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Agendar webhook para envio futuro</h3>
+                  <ScheduleActionForm 
+                    opportunityId={opportunityId} 
+                    onActionScheduled={handleActionScheduled}
+                  />
+
+                  <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
+                    <p className="text-muted-foreground">
+                      ℹ️ Os webhooks agendados serão executados automaticamente na data e hora definidas.
+                      Você pode visualizar os webhooks agendados na aba "Webhooks Configurados".
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>

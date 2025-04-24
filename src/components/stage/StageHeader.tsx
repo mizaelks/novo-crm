@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 interface StageHeaderProps {
   stage: Stage;
-  dragHandleProps?: any; // Added this prop to match what's being passed
+  dragHandleProps?: any;
   updateStage?: (updatedStage: Stage) => void;
 }
 
@@ -32,6 +32,12 @@ const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) 
   
   const stageColor = stage.color || '#CCCCCC';
   const textColor = getTextColor(stageColor);
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <div 
@@ -63,7 +69,7 @@ const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) 
           variant="ghost"
           size="sm"
           className={`ml-2 h-8 w-8 p-0 ${textColor} hover:bg-opacity-20 hover:bg-white`}
-          onClick={() => setIsEditDialogOpen(true)}
+          onClick={handleEditClick}
         >
           <EditIcon className="h-4 w-4" />
         </Button>
