@@ -226,7 +226,7 @@ const OpportunityList = () => {
                   <SelectValue placeholder="Selecionar funil" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os funis</SelectItem>
+                  <SelectItem value="all">Todos os funis</SelectItem>
                   {funnels.map(funnel => (
                     <SelectItem key={funnel.id} value={funnel.id}>
                       {funnel.name}
@@ -240,13 +240,13 @@ const OpportunityList = () => {
               <Select 
                 value={filterStage} 
                 onValueChange={setFilterStage}
-                disabled={!filterFunnel}
+                disabled={!filterFunnel || filterFunnel === "all"}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecionar etapa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as etapas</SelectItem>
+                  <SelectItem value="all">Todas as etapas</SelectItem>
                   {availableStages.map(stage => (
                     <SelectItem key={stage.id} value={stage.id}>
                       {stage.name}
@@ -262,7 +262,7 @@ const OpportunityList = () => {
                   <SelectValue placeholder="Selecionar cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os clientes</SelectItem>
+                  <SelectItem value="all">Todos os clientes</SelectItem>
                   {uniqueClients.map(client => (
                     <SelectItem key={client} value={client}>
                       {client}

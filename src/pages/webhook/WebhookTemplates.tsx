@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import { formatDateTimeBRT } from "@/services/utils/dateUtils";
 
-// Fixed import issue by removing Tab which doesn't exist
+// Fixed import - Removed Tab which doesn't exist
 
 const WebhookTemplates = () => {
   const [templates, setTemplates] = useState<WebhookTemplate[]>([]);

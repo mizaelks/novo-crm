@@ -85,7 +85,7 @@ const WebhookTemplateForm = ({
 
       if (isEditing && templateId) {
         // Update existing template
-        const updated = await webhookTemplateAPI.update(templateId, values as WebhookTemplateFormData);
+        const updated = await webhookTemplateAPI.update(templateId, values);
         if (!updated) {
           toast.error("Erro ao atualizar modelo");
           return;

@@ -2,12 +2,23 @@
 import { supabase } from "@/integrations/supabase/client";
 import { WebhookTemplate, WebhookTemplateFormData } from "@/types";
 
+type WebhookTemplateResponse = {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string;
+  target_type: string;
+  event: string;
+  payload: string;
+  created_at: string;
+};
+
 export const webhookTemplateAPI = {
   getAll: async (): Promise<WebhookTemplate[]> => {
-    // Using raw SQL query since the table isn't typed in Supabase client yet
+    // Using RPC function to get webhook templates
     const { data, error } = await supabase
-      .rpc('get_webhook_templates') // Use an RPC function instead of direct table access
-      .returns<any[]>();
+      .rpc('get_webhook_templates')
+      .returns<WebhookTemplateResponse[]>();
     
     if (error) throw error;
     
@@ -24,10 +35,10 @@ export const webhookTemplateAPI = {
   },
 
   getById: async (id: string): Promise<WebhookTemplate | null> => {
-    // Using raw SQL query since the table isn't typed in Supabase client yet
+    // Using RPC function to get webhook template by ID
     const { data, error } = await supabase
       .rpc('get_webhook_template_by_id', { template_id: id })
-      .returns<any>();
+      .returns<WebhookTemplateResponse>();
     
     if (error || !data) return null;
     
@@ -44,7 +55,7 @@ export const webhookTemplateAPI = {
   },
 
   create: async (data: WebhookTemplateFormData): Promise<WebhookTemplate> => {
-    // Using raw SQL query since the table isn't typed in Supabase client yet
+    // Using RPC function to create webhook template
     const { data: created, error } = await supabase
       .rpc('create_webhook_template', {
         p_name: data.name,
@@ -54,7 +65,7 @@ export const webhookTemplateAPI = {
         p_event: data.event,
         p_payload: data.payload
       })
-      .returns<any>();
+      .returns<WebhookTemplateResponse>();
     
     if (error || !created) throw error || new Error("Webhook template create error");
     
@@ -71,18 +82,18 @@ export const webhookTemplateAPI = {
   },
 
   update: async (id: string, data: Partial<WebhookTemplateFormData>): Promise<WebhookTemplate | null> => {
-    // Using raw SQL query since the table isn't typed in Supabase client yet
+    // Using RPC function to update webhook template
     const { data: updated, error } = await supabase
       .rpc('update_webhook_template', {
         p_id: id,
-        p_name: data.name,
-        p_description: data.description,
-        p_url: data.url,
-        p_target_type: data.targetType,
-        p_event: data.event,
-        p_payload: data.payload
+        p_name: data.name || null,
+        p_description: data.description || null,
+        p_url: data.url || null,
+        p_target_type: data.targetType || null,
+        p_event: data.event || null,
+        p_payload: data.payload || null
       })
-      .returns<any>();
+      .returns<WebhookTemplateResponse>();
     
     if (error || !updated) return null;
     
@@ -99,7 +110,7 @@ export const webhookTemplateAPI = {
   },
 
   delete: async (id: string): Promise<boolean> => {
-    // Using raw SQL query since the table isn't typed in Supabase client yet
+    // Using RPC function to delete webhook template
     const { error } = await supabase
       .rpc('delete_webhook_template', { template_id: id });
     
