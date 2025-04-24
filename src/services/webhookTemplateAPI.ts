@@ -16,13 +16,16 @@ type WebhookTemplateResponse = {
 
 export const webhookTemplateAPI = {
   getAll: async (): Promise<WebhookTemplate[]> => {
-    // Using RPC function to get webhook templates
+    // Using RPC function to get webhook templates with explicit type casting
     const { data, error } = await supabase
-      .rpc('get_webhook_templates');
+      .rpc('get_webhook_templates') as unknown as { 
+        data: WebhookTemplateResponse[], 
+        error: Error | null 
+      };
     
     if (error) throw error;
     
-    const templates = data as WebhookTemplateResponse[] || [];
+    const templates = data || [];
     
     return templates.map(template => ({
       id: template.id,
@@ -37,28 +40,29 @@ export const webhookTemplateAPI = {
   },
 
   getById: async (id: string): Promise<WebhookTemplate | null> => {
-    // Using RPC function to get webhook template by ID
+    // Using RPC function to get webhook template by ID with explicit type casting
     const { data, error } = await supabase
-      .rpc('get_webhook_template_by_id', { template_id: id });
+      .rpc('get_webhook_template_by_id', { template_id: id }) as unknown as { 
+        data: WebhookTemplateResponse, 
+        error: Error | null 
+      };
     
     if (error || !data) return null;
     
-    const template = data as WebhookTemplateResponse;
-    
     return {
-      id: template.id,
-      name: template.name,
-      description: template.description || '',
-      url: template.url,
-      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: template.event as 'create' | 'update' | 'move',
-      payload: template.payload,
-      createdAt: new Date(template.created_at)
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      url: data.url,
+      targetType: data.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: data.event as 'create' | 'update' | 'move',
+      payload: data.payload,
+      createdAt: new Date(data.created_at)
     };
   },
 
   create: async (data: WebhookTemplateFormData): Promise<WebhookTemplate> => {
-    // Using RPC function to create webhook template
+    // Using RPC function to create webhook template with explicit type casting
     const { data: created, error } = await supabase
       .rpc('create_webhook_template', {
         p_name: data.name,
@@ -67,26 +71,27 @@ export const webhookTemplateAPI = {
         p_target_type: data.targetType,
         p_event: data.event,
         p_payload: data.payload
-      });
+      }) as unknown as { 
+        data: WebhookTemplateResponse, 
+        error: Error | null 
+      };
     
     if (error || !created) throw error || new Error("Webhook template create error");
     
-    const template = created as WebhookTemplateResponse;
-    
     return {
-      id: template.id,
-      name: template.name,
-      description: template.description || '',
-      url: template.url,
-      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: template.event as 'create' | 'update' | 'move',
-      payload: template.payload,
-      createdAt: new Date(template.created_at)
+      id: created.id,
+      name: created.name,
+      description: created.description || '',
+      url: created.url,
+      targetType: created.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: created.event as 'create' | 'update' | 'move',
+      payload: created.payload,
+      createdAt: new Date(created.created_at)
     };
   },
 
   update: async (id: string, data: Partial<WebhookTemplateFormData>): Promise<WebhookTemplate | null> => {
-    // Using RPC function to update webhook template
+    // Using RPC function to update webhook template with explicit type casting
     const { data: updated, error } = await supabase
       .rpc('update_webhook_template', {
         p_id: id,
@@ -96,28 +101,32 @@ export const webhookTemplateAPI = {
         p_target_type: data.targetType || null,
         p_event: data.event || null,
         p_payload: data.payload || null
-      });
+      }) as unknown as { 
+        data: WebhookTemplateResponse, 
+        error: Error | null 
+      };
     
     if (error || !updated) return null;
     
-    const template = updated as WebhookTemplateResponse;
-    
     return {
-      id: template.id,
-      name: template.name,
-      description: template.description || '',
-      url: template.url,
-      targetType: template.target_type as 'funnel' | 'stage' | 'opportunity',
-      event: template.event as 'create' | 'update' | 'move',
-      payload: template.payload,
-      createdAt: new Date(template.created_at)
+      id: updated.id,
+      name: updated.name,
+      description: updated.description || '',
+      url: updated.url,
+      targetType: updated.target_type as 'funnel' | 'stage' | 'opportunity',
+      event: updated.event as 'create' | 'update' | 'move',
+      payload: updated.payload,
+      createdAt: new Date(updated.created_at)
     };
   },
 
   delete: async (id: string): Promise<boolean> => {
-    // Using RPC function to delete webhook template
+    // Using RPC function to delete webhook template with explicit type casting
     const { error } = await supabase
-      .rpc('delete_webhook_template', { template_id: id });
+      .rpc('delete_webhook_template', { template_id: id }) as unknown as { 
+        data: null, 
+        error: Error | null 
+      };
     
     return !error;
   }

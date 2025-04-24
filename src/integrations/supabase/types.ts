@@ -219,6 +219,39 @@ export type Database = {
           },
         ]
       }
+      webhook_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          event: string
+          id: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event: string
+          id?: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event?: string
+          id?: string
+          name?: string
+          payload?: string
+          target_type?: string
+          url?: string
+        }
+        Relationships: []
+      }
       webhooks: {
         Row: {
           created_at: string | null
@@ -251,7 +284,77 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_webhook_template: {
+        Args: {
+          p_name: string
+          p_description: string
+          p_url: string
+          p_target_type: string
+          p_event: string
+          p_payload: string
+        }
+        Returns: {
+          created_at: string
+          description: string | null
+          event: string
+          id: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }
+      }
+      delete_webhook_template: {
+        Args: { template_id: string }
+        Returns: undefined
+      }
+      get_webhook_template_by_id: {
+        Args: { template_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          event: string
+          id: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }
+      }
+      get_webhook_templates: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          description: string | null
+          event: string
+          id: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }[]
+      }
+      update_webhook_template: {
+        Args: {
+          p_id: string
+          p_name?: string
+          p_description?: string
+          p_url?: string
+          p_target_type?: string
+          p_event?: string
+          p_payload?: string
+        }
+        Returns: {
+          created_at: string
+          description: string | null
+          event: string
+          id: string
+          name: string
+          payload: string
+          target_type: string
+          url: string
+        }
+      }
     }
     Enums: {
       [_ in never]: never
