@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tab, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WebhookTemplate } from "@/types";
 import { webhookTemplateAPI } from "@/services/api";
 import WebhookTemplateForm from "@/components/webhook/WebhookTemplateForm";
@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDateTimeBRT } from "@/services/utils/dateUtils";
+
+// Fixed import issue by removing Tab which doesn't exist
 
 const WebhookTemplates = () => {
   const [templates, setTemplates] = useState<WebhookTemplate[]>([]);

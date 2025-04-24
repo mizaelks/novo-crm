@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 
 interface StageHeaderProps {
   stage: Stage;
-  updateStage: (updatedStage: Stage) => void;
+  dragHandleProps?: any; // Added this prop to match what's being passed
+  updateStage?: (updatedStage: Stage) => void;
 }
 
-const StageHeader = ({ stage, updateStage }: StageHeaderProps) => {
+const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Calculate text color based on stage color for optimal contrast
@@ -36,6 +37,7 @@ const StageHeader = ({ stage, updateStage }: StageHeaderProps) => {
     <div 
       className="p-2 flex items-center justify-between rounded-t-md"
       style={{ backgroundColor: stageColor }}
+      {...dragHandleProps}
     >
       <div className="flex items-center">
         <h3 className={`font-medium ${textColor}`}>{stage.name}</h3>
@@ -67,12 +69,14 @@ const StageHeader = ({ stage, updateStage }: StageHeaderProps) => {
         </Button>
       </div>
       
-      <EditStageDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        stageId={stage.id}
-        onStageUpdated={updateStage}
-      />
+      {updateStage && (
+        <EditStageDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          stageId={stage.id}
+          onStageUpdated={updateStage}
+        />
+      )}
     </div>
   );
 };

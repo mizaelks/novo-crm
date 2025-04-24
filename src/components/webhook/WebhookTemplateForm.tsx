@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,14 +64,13 @@ const WebhookTemplateForm = ({
 }: WebhookTemplateFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const defaultValues: Partial<FormValues> = {
-    name: "",
-    description: "",
-    url: "",
-    targetType: "opportunity", // Default value
-    event: "create", // Default value
-    payload: JSON.stringify({ example: "value" }, null, 2),
-    ...initialValues,
+  const defaultValues: FormValues = {
+    name: initialValues?.name || "",
+    description: initialValues?.description || "",
+    url: initialValues?.url || "",
+    targetType: initialValues?.targetType || "opportunity",
+    event: initialValues?.event || "create",
+    payload: initialValues?.payload || JSON.stringify({ example: "value" }, null, 2),
   };
 
   const form = useForm<FormValues>({
@@ -87,7 +85,7 @@ const WebhookTemplateForm = ({
 
       if (isEditing && templateId) {
         // Update existing template
-        const updated = await webhookTemplateAPI.update(templateId, values);
+        const updated = await webhookTemplateAPI.update(templateId, values as WebhookTemplateFormData);
         if (!updated) {
           toast.error("Erro ao atualizar modelo");
           return;
@@ -96,7 +94,7 @@ const WebhookTemplateForm = ({
         toast.success("Modelo atualizado com sucesso");
       } else {
         // Create new template
-        template = await webhookTemplateAPI.create(values);
+        template = await webhookTemplateAPI.create(values as WebhookTemplateFormData);
         toast.success("Modelo criado com sucesso");
         form.reset(defaultValues);
       }
