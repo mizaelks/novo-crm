@@ -18,7 +18,7 @@ export const webhookTemplateAPI = {
   getAll: async (): Promise<WebhookTemplate[]> => {
     // Using RPC function to get webhook templates
     const { data, error } = await supabase
-      .rpc<WebhookTemplateResponse>('get_webhook_templates');
+      .rpc('get_webhook_templates');
     
     if (error) throw error;
     
@@ -37,7 +37,7 @@ export const webhookTemplateAPI = {
   getById: async (id: string): Promise<WebhookTemplate | null> => {
     // Using RPC function to get webhook template by ID
     const { data, error } = await supabase
-      .rpc<WebhookTemplateResponse>('get_webhook_template_by_id', { template_id: id });
+      .rpc('get_webhook_template_by_id', { template_id: id });
     
     if (error || !data) return null;
     
@@ -56,7 +56,7 @@ export const webhookTemplateAPI = {
   create: async (data: WebhookTemplateFormData): Promise<WebhookTemplate> => {
     // Using RPC function to create webhook template
     const { data: created, error } = await supabase
-      .rpc<WebhookTemplateResponse>('create_webhook_template', {
+      .rpc('create_webhook_template', {
         p_name: data.name,
         p_description: data.description || '',
         p_url: data.url,
@@ -82,7 +82,7 @@ export const webhookTemplateAPI = {
   update: async (id: string, data: Partial<WebhookTemplateFormData>): Promise<WebhookTemplate | null> => {
     // Using RPC function to update webhook template
     const { data: updated, error } = await supabase
-      .rpc<WebhookTemplateResponse>('update_webhook_template', {
+      .rpc('update_webhook_template', {
         p_id: id,
         p_name: data.name || null,
         p_description: data.description || null,
