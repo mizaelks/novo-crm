@@ -1,59 +1,79 @@
 
+import { useState } from "react";
 import { Stage } from "@/types";
-import { CardHeader, CardTitle } from "@/components/ui/card";
+import { EditIcon, BadgeCheck, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import EditStageDialog from "./EditStageDialog";
 import { Button } from "@/components/ui/button";
-import { Hash } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface StageHeaderProps {
   stage: Stage;
-  dragHandleProps?: any;
+  updateStage: (updatedStage: Stage) => void;
 }
 
-const StageHeader = ({ stage, dragHandleProps }: StageHeaderProps) => {
-  const totalValue = stage.opportunities.reduce((sum, opp) => sum + opp.value, 0);
-  const formattedTotalValue = new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
-  }).format(totalValue);
+const StageHeader = ({ stage, updateStage }: StageHeaderProps) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Calculate text color based on stage color for optimal contrast
+  const getTextColor = (backgroundColor: string) => {
+    // Remove the '#' and convert to RGB
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Calculate brightness
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // Return black for light colors, white for dark colors
+    return brightness > 125 ? 'text-black' : 'text-white';
+  };
+  
+  const stageColor = stage.color || '#CCCCCC';
+  const textColor = getTextColor(stageColor);
 
   return (
-    <CardHeader 
-      className="pb-2 border-b" 
-      {...dragHandleProps}
+    <div 
+      className="p-2 flex items-center justify-between rounded-t-md"
+      style={{ backgroundColor: stageColor }}
     >
-      <div className="flex justify-between items-center mb-1">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-sm font-medium">
-            {stage.name}
-          </CardTitle>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-5 px-1"
-                onClick={() => navigator.clipboard.writeText(stage.id)}
-              >
-                <Hash className="h-3 w-3 mr-1" />
-                <span className="text-xs font-mono">{stage.id.split('-')[0]}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Clique para copiar o ID</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <Badge variant="outline" className="text-xs">
+      <div className="flex items-center">
+        <h3 className={`font-medium ${textColor}`}>{stage.name}</h3>
+        {stage.isWinStage && (
+          <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+            <BadgeCheck className="h-3 w-3 mr-1" />
+            Vitória
+          </Badge>
+        )}
+        {stage.isLossStage && (
+          <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
+            <XCircle className="h-3 w-3 mr-1" />
+            Perda
+          </Badge>
+        )}
+      </div>
+      
+      <div className="flex items-center">
+        <Badge variant="secondary" className={textColor}>
           {stage.opportunities.length}
         </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`ml-2 h-8 w-8 p-0 ${textColor} hover:bg-opacity-20 hover:bg-white`}
+          onClick={() => setIsEditDialogOpen(true)}
+        >
+          <EditIcon className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="text-xs text-muted-foreground flex justify-between">
-        <span>{stage.description}</span>
-        <span className="font-medium">{formattedTotalValue}</span>
-      </div>
-    </CardHeader>
+      
+      <EditStageDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        stageId={stage.id}
+        onStageUpdated={updateStage}
+      />
+    </div>
   );
 };
 

@@ -93,6 +93,9 @@ serve(async (req) => {
       case 'webhooks':
         result = await handleWebhookRequest(req, supabaseClient, idOrAction, action);
         break;
+      case 'tokens':
+        result = await handleTokenRequest(req, supabaseClient, idOrAction, action);
+        break;
       default:
         return new Response(JSON.stringify({
           success: false,
@@ -121,6 +124,95 @@ serve(async (req) => {
     });
   }
 });
+
+// Handle token requests (new function)
+async function handleTokenRequest(req, supabaseClient, id, action) {
+  switch (req.method) {
+    case 'GET':
+      if (id) {
+        const { data, error } = await supabaseClient
+          .from('api_tokens')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabaseClient
+          .from('api_tokens')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        return data;
+      }
+    case 'POST':
+      const postBody = await req.json();
+      const { data: newToken, error: createError } = await supabaseClient
+        .from('api_tokens')
+        .insert({
+          name: postBody.name,
+          token: crypto.randomUUID().replace(/-/g, ''),
+          is_active: true
+        })
+        .select()
+        .single();
+        
+      if (createError) throw createError;
+      return newToken;
+    case 'PATCH':
+      if (!id) throw new Error("ID is required for update");
+      const patchBody = await req.json();
+      const { data: updatedToken, error: updateError } = await supabaseClient
+        .from('api_tokens')
+        .update({
+          is_active: patchBody.is_active
+        })
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (updateError) throw updateError;
+      return updatedToken;
+    case 'DELETE':
+      if (!id) throw new Error("ID is required for delete");
+      
+      // First check if token exists and is inactive
+      if (action === 'permanent') {
+        // Permanently delete the token
+        const { error: deleteError } = await supabaseClient
+          .from('api_tokens')
+          .delete()
+          .eq('id', id);
+          
+        if (deleteError) throw deleteError;
+        
+        // Also delete associated logs
+        await supabaseClient
+          .from('api_logs')
+          .delete()
+          .eq('token_id', id);
+          
+        return { id, permanently_deleted: true };
+      } else {
+        // Just deactivate the token (soft delete)
+        const { data: deactivatedToken, error: updateError } = await supabaseClient
+          .from('api_tokens')
+          .update({
+            is_active: false
+          })
+          .eq('id', id)
+          .select()
+          .single();
+          
+        if (updateError) throw updateError;
+        return { id, deactivated: true, token: deactivatedToken };
+      }
+    default:
+      throw new Error(`Method ${req.method} not allowed for tokens`);
+  }
+}
 
 // Handle funnel requests
 async function handleFunnelRequest(req, supabaseClient, id, action) {
@@ -288,7 +380,8 @@ async function handleOpportunityRequest(req, supabaseClient, id, action) {
           phone: postBody.phone || null,
           email: postBody.email || null,
           stage_id: postBody.stageId,
-          funnel_id: postBody.funnelId
+          funnel_id: postBody.funnelId,
+          custom_fields: postBody.customFields || null
         })
         .select()
         .single();
@@ -310,6 +403,7 @@ async function handleOpportunityRequest(req, supabaseClient, id, action) {
       if (patchBody.email !== undefined) updateData.email = patchBody.email;
       if (patchBody.stageId !== undefined) updateData.stage_id = patchBody.stageId;
       if (patchBody.funnelId !== undefined) updateData.funnel_id = patchBody.funnelId;
+      if (patchBody.customFields !== undefined) updateData.custom_fields = patchBody.customFields;
       
       const { data: updatedOpportunity, error: updateError } = await supabaseClient
         .from('opportunities')

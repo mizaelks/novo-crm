@@ -7,6 +7,7 @@ import { Calendar, Clock, Hash, Phone, Mail, Building } from "lucide-react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -16,16 +17,8 @@ interface OpportunityCardProps {
 const OpportunityCard = ({ opportunity, index }: OpportunityCardProps) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
-  const formattedValue = new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
-  }).format(opportunity.value);
-
-  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  }).format(new Date(opportunity.createdAt));
+  const formattedValue = formatCurrency(opportunity.value);
+  const formattedDate = formatDateBRT(opportunity.createdAt);
 
   const hasScheduledActions = opportunity.scheduledActions?.some(
     action => action.status === 'pending'

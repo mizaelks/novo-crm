@@ -1,3 +1,4 @@
+
 // Domain models
 export interface Funnel {
   id: string;
@@ -14,6 +15,19 @@ export interface Stage {
   order: number;
   funnelId: string;
   opportunities: Opportunity[];
+  color?: string; // Color for the stage
+  isWinStage?: boolean; // Whether this is a "win" stage
+  isLossStage?: boolean; // Whether this is a "loss" stage
+  requiredFields?: RequiredField[]; // Required fields for opportunities in this stage
+}
+
+export interface RequiredField {
+  id: string;
+  name: string;
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
+  options?: string[]; // For select type fields
+  isRequired: boolean;
+  stageId: string;
 }
 
 export interface Opportunity {
@@ -28,6 +42,7 @@ export interface Opportunity {
   phone?: string;
   email?: string;
   company?: string;
+  customFields?: Record<string, any>; // For storing custom field values
 }
 
 export interface WebhookConfig {
@@ -36,6 +51,17 @@ export interface WebhookConfig {
   targetId: string;
   url: string;
   event: 'create' | 'update' | 'move';
+}
+
+export interface WebhookTemplate {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  targetType: 'funnel' | 'stage' | 'opportunity';
+  event: 'create' | 'update' | 'move';
+  payload: string; // JSON template
+  createdAt: Date;
 }
 
 export interface ScheduledAction {
@@ -47,6 +73,7 @@ export interface ScheduledAction {
     email?: string;
     subject?: string;
     body?: string;
+    templateId?: string; // ID of webhook template
   };
   scheduledDateTime: Date;
   status: 'pending' | 'completed' | 'failed';
@@ -67,6 +94,17 @@ export interface StageFormData {
   name: string;
   description: string;
   funnelId: string;
+  color?: string;
+  isWinStage?: boolean;
+  isLossStage?: boolean;
+}
+
+export interface RequiredFieldFormData {
+  name: string;
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
+  options?: string[]; // For select type fields
+  isRequired: boolean;
+  stageId: string;
 }
 
 export interface OpportunityFormData {
@@ -78,6 +116,7 @@ export interface OpportunityFormData {
   phone?: string;
   email?: string;
   company?: string;
+  customFields?: Record<string, any>;
 }
 
 export interface WebhookFormData {
@@ -85,6 +124,15 @@ export interface WebhookFormData {
   targetId: string;
   url: string;
   event: 'create' | 'update' | 'move';
+}
+
+export interface WebhookTemplateFormData {
+  name: string;
+  description: string;
+  url: string;
+  targetType: 'funnel' | 'stage' | 'opportunity';
+  event: 'create' | 'update' | 'move';
+  payload: string; // JSON template
 }
 
 export interface ScheduledActionFormData {
@@ -95,6 +143,7 @@ export interface ScheduledActionFormData {
     email?: string;
     subject?: string;
     body?: string;
+    templateId?: string;
   };
   scheduledDateTime: Date;
 }
