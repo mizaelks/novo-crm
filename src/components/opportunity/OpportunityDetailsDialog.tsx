@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { opportunityAPI, webhookAPI } from "@/services/api";
 import { Opportunity, WebhookConfig } from "@/types";
@@ -64,8 +63,14 @@ const OpportunityDetailsDialog = ({
           setWebhooks(webhooksData);
           
           // Load scheduled actions for this opportunity
-          const actionsData = await opportunityAPI.getScheduledActions(opportunityId);
-          setScheduledActions(actionsData);
+          if (oppData && oppData.scheduledActions) {
+            setScheduledActions(oppData.scheduledActions);
+          } else {
+            // If scheduledActions isn't part of the opportunity, we might need to fetch them separately
+            // This would be an alternative approach if needed
+            const actionsData = await scheduledActionAPI.getByOpportunityId(opportunityId);
+            setScheduledActions(actionsData);
+          }
         } catch (error) {
           console.error("Error loading opportunity details:", error);
           toast.error("Erro ao carregar detalhes da oportunidade");
