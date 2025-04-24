@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { WebhookTemplate, WebhookTemplateFormData } from "@/types";
 
+// Define the explicit type for the response from the RPC functions
 type WebhookTemplateResponse = {
   id: string;
   name: string;
@@ -17,8 +18,7 @@ export const webhookTemplateAPI = {
   getAll: async (): Promise<WebhookTemplate[]> => {
     // Using RPC function to get webhook templates
     const { data, error } = await supabase
-      .rpc('get_webhook_templates')
-      .returns<WebhookTemplateResponse[]>();
+      .rpc<WebhookTemplateResponse>('get_webhook_templates');
     
     if (error) throw error;
     
@@ -37,8 +37,7 @@ export const webhookTemplateAPI = {
   getById: async (id: string): Promise<WebhookTemplate | null> => {
     // Using RPC function to get webhook template by ID
     const { data, error } = await supabase
-      .rpc('get_webhook_template_by_id', { template_id: id })
-      .returns<WebhookTemplateResponse>();
+      .rpc<WebhookTemplateResponse>('get_webhook_template_by_id', { template_id: id });
     
     if (error || !data) return null;
     
@@ -57,15 +56,14 @@ export const webhookTemplateAPI = {
   create: async (data: WebhookTemplateFormData): Promise<WebhookTemplate> => {
     // Using RPC function to create webhook template
     const { data: created, error } = await supabase
-      .rpc('create_webhook_template', {
+      .rpc<WebhookTemplateResponse>('create_webhook_template', {
         p_name: data.name,
         p_description: data.description || '',
         p_url: data.url,
         p_target_type: data.targetType,
         p_event: data.event,
         p_payload: data.payload
-      })
-      .returns<WebhookTemplateResponse>();
+      });
     
     if (error || !created) throw error || new Error("Webhook template create error");
     
@@ -84,7 +82,7 @@ export const webhookTemplateAPI = {
   update: async (id: string, data: Partial<WebhookTemplateFormData>): Promise<WebhookTemplate | null> => {
     // Using RPC function to update webhook template
     const { data: updated, error } = await supabase
-      .rpc('update_webhook_template', {
+      .rpc<WebhookTemplateResponse>('update_webhook_template', {
         p_id: id,
         p_name: data.name || null,
         p_description: data.description || null,
@@ -92,8 +90,7 @@ export const webhookTemplateAPI = {
         p_target_type: data.targetType || null,
         p_event: data.event || null,
         p_payload: data.payload || null
-      })
-      .returns<WebhookTemplateResponse>();
+      });
     
     if (error || !updated) return null;
     

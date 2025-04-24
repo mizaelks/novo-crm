@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { opportunityAPI, webhookAPI } from "@/services/api";
+import { opportunityAPI, webhookAPI, scheduledActionAPI } from "@/services/api";
 import { Opportunity, WebhookConfig } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
