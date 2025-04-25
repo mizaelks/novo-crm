@@ -57,6 +57,10 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
     setCurrentOpportunity(updatedOpportunity);
   };
 
+  const handleCardClick = () => {
+    setIsDetailsDialogOpen(true);
+  };
+
   return (
     <Draggable draggableId={currentOpportunity.id} index={index}>
       {(provided, snapshot) => (
@@ -66,17 +70,25 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
           {...provided.draggableProps}
           {...provided.dragHandleProps}
         >
-          <Card className={`${snapshot.isDragging ? "shadow-lg" : ""}`}>
+          <Card 
+            className={`${snapshot.isDragging ? "shadow-lg" : ""} cursor-pointer hover:border-primary/50 transition-colors`}
+            onClick={handleCardClick}
+          >
             <CardHeader className="py-3 px-3">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-sm font-medium">{currentOpportunity.title}</CardTitle>
                 <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => e.stopPropagation()} // Evita que o clique propague para o Card
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => handleMenuItemClick("details")}>
                       Ver detalhes
                     </DropdownMenuItem>
@@ -150,6 +162,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
               onOpenChange={setIsDetailsDialogOpen}
               opportunity={currentOpportunity}
               stage={stage}
+              onEdit={() => setIsEditDialogOpen(true)}
             />
           )}
         </div>

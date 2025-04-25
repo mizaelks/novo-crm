@@ -71,8 +71,12 @@ const EditStageDialog = ({
     const loadStage = async () => {
       if (open && stageId) {
         setLoading(true);
+        console.log("Carregando dados da etapa:", stageId);
+        
         try {
           const stageData = await stageAPI.getById(stageId);
+          console.log("Etapa carregada:", stageData);
+          
           if (stageData) {
             setStage(stageData);
             form.reset({
@@ -96,9 +100,23 @@ const EditStageDialog = ({
   }, [open, stageId, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!stage) return;
+    if (!stage) {
+      console.error("Stage data not loaded");
+      toast.error("Dados da etapa não carregados");
+      return;
+    }
     
     try {
+      console.log("Enviando atualização para a etapa:", stageId);
+      console.log("Dados:", {
+        name: values.name,
+        description: values.description,
+        funnelId: stage.funnelId,
+        color: values.color,
+        isWinStage: values.isWinStage,
+        isLossStage: values.isLossStage
+      });
+      
       setIsSubmitting(true);
       
       const updatedStage = await stageAPI.update(stageId, {
@@ -109,6 +127,8 @@ const EditStageDialog = ({
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage
       });
+      
+      console.log("Resposta da API:", updatedStage);
       
       if (updatedStage) {
         onStageUpdated(updatedStage);

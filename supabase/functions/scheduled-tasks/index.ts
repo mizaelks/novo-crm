@@ -82,31 +82,44 @@ serve(async (req) => {
           
           // Se tiver um template_id, use os dados do template
           if (action.template_id) {
-            const { data: template } = await supabaseClient
+            console.log(`Using template ID: ${action.template_id}`);
+            const { data: template, error: templateError } = await supabaseClient
               .from('webhook_templates')
               .select('*')
               .eq('id', action.template_id)
               .single();
               
+            if (templateError) {
+              console.error("Error fetching template:", templateError);
+            }
+              
             if (template) {
+              console.log(`Template found: ${template.name}`);
               url = template.url;
               try {
                 // Tentar fazer parse do payload do template
                 const templatePayload = JSON.parse(template.payload);
                 payload = { ...templatePayload, ...payload };
+                console.log(`Template payload parsed successfully`);
               } catch (e) {
                 console.error("Error parsing template payload:", e);
               }
+            } else {
+              console.log(`No template found for ID: ${action.template_id}`);
             }
           }
           
           // Buscar dados da oportunidade
           if (action.opportunity_id) {
-            const { data: opportunity } = await supabaseClient
+            const { data: opportunity, error: opportunityError } = await supabaseClient
               .from('opportunities')
               .select('*')
               .eq('id', action.opportunity_id)
               .single();
+              
+            if (opportunityError) {
+              console.error("Error fetching opportunity:", opportunityError);
+            }
               
             if (opportunity) {
               // Adicionar dados da oportunidade ao payload
@@ -114,50 +127,80 @@ serve(async (req) => {
                 ...payload,
                 opportunity: opportunity
               };
+              console.log(`Opportunity data added to payload`);
+            } else {
+              console.log(`No opportunity found for ID: ${action.opportunity_id}`);
             }
           }
           
           console.log(`Dispatching webhook to ${url}`);
           console.log(`Payload: ${JSON.stringify(payload)}`);
+          console.log(`Method: ${method}`);
           
           // Enviar o webhook
-          const webhookResponse = await fetch(url, {
-            method: method,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-          });
-          
-          const success = webhookResponse.ok;
-          const responseStatus = webhookResponse.status;
-          const responseText = await webhookResponse.text();
-          
-          console.log(`Webhook response: ${responseStatus}, success: ${success}`);
-          console.log(`Response body: ${responseText}`);
-          
-          // Atualizar o status da ação
-          const { error: updateError } = await supabaseClient
-            .from('scheduled_actions')
-            .update({ 
-              status: success ? 'completed' : 'failed',
-              action_config: {
-                ...action.action_config,
-                response: {
-                  status: responseStatus,
-                  body: responseText,
-                  success: success
-                }
-              }
-            })
-            .eq('id', action.id);
+          try {
+            const webhookResponse = await fetch(url, {
+              method: method,
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Supabase Scheduled Action'
+              },
+              body: JSON.stringify(payload)
+            });
             
-          if (updateError) {
-            console.error(`Error updating action status: ${updateError.message}`);
-            return { id: action.id, success: false, error: updateError.message };
+            const success = webhookResponse.ok;
+            const responseStatus = webhookResponse.status;
+            const responseText = await webhookResponse.text();
+            
+            console.log(`Webhook response: ${responseStatus}, success: ${success}`);
+            console.log(`Response body: ${responseText}`);
+            
+            // Atualizar o status da ação
+            const { error: updateError } = await supabaseClient
+              .from('scheduled_actions')
+              .update({ 
+                status: success ? 'completed' : 'failed',
+                action_config: {
+                  ...action.action_config,
+                  response: {
+                    status: responseStatus,
+                    body: responseText,
+                    success: success
+                  }
+                }
+              })
+              .eq('id', action.id);
+              
+            if (updateError) {
+              console.error(`Error updating action status: ${updateError.message}`);
+              return { id: action.id, success: false, error: updateError.message };
+            }
+            
+            return { id: action.id, success: success };
+          } catch (fetchError) {
+            console.error(`Error sending webhook: ${fetchError.message}`);
+            
+            // Atualizar o status da ação para falha
+            const { error: updateError } = await supabaseClient
+              .from('scheduled_actions')
+              .update({ 
+                status: 'failed',
+                action_config: {
+                  ...action.action_config,
+                  response: {
+                    error: fetchError.message,
+                    success: false
+                  }
+                }
+              })
+              .eq('id', action.id);
+              
+            if (updateError) {
+              console.error(`Error updating action status: ${updateError.message}`);
+            }
+            
+            return { id: action.id, success: false, error: fetchError.message };
           }
-          
-          return { id: action.id, success: success };
         } else {
           console.log(`Action type ${action.action_type} not supported`);
           return { id: action.id, success: false, error: `Action type ${action.action_type} not supported` };
@@ -166,10 +209,14 @@ serve(async (req) => {
         console.error(`Error processing action ${action.id}:`, e);
         
         // Marcar a ação como falhou
-        await supabaseClient
-          .from('scheduled_actions')
-          .update({ status: 'failed' })
-          .eq('id', action.id);
+        try {
+          await supabaseClient
+            .from('scheduled_actions')
+            .update({ status: 'failed' })
+            .eq('id', action.id);
+        } catch (updateError) {
+          console.error(`Error updating action status to failed: ${updateError}`);
+        }
           
         return { id: action.id, success: false, error: e.message };
       }

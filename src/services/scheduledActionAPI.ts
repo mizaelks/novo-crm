@@ -28,15 +28,31 @@ export const scheduledActionAPI = {
       ? data.scheduledDateTime.toISOString() 
       : new Date(data.scheduledDateTime).toISOString();
       
+    // Log detalhado para debug
+    console.log("Criando ação agendada:", {
+      opportunity_id: data.opportunityId,
+      action_type: data.actionType,
+      action_config: data.actionConfig,
+      scheduled_datetime: scheduledDateTime,
+      template_id: data.templateId || null,
+      status: 'pending'
+    });
+    
     const { data: created, error } = await supabase.from('scheduled_actions').insert({
       opportunity_id: data.opportunityId,
       action_type: data.actionType,
       action_config: data.actionConfig as Json,
       scheduled_datetime: scheduledDateTime,
+      template_id: data.templateId || null,
       status: 'pending'
     }).select().single();
     
-    if (error || !created) throw error || new Error("Scheduled action create error");
+    if (error || !created) {
+      console.error("Erro ao criar ação agendada:", error);
+      throw error || new Error("Scheduled action create error");
+    }
+    
+    console.log("Ação agendada criada com sucesso:", created);
     return mapDbScheduledActionToScheduledAction(created);
   },
 
@@ -56,6 +72,9 @@ export const scheduledActionAPI = {
       dbData.scheduled_datetime = data.scheduledDateTime instanceof Date 
         ? data.scheduledDateTime.toISOString() 
         : new Date(data.scheduledDateTime).toISOString();
+    }
+    if (data.templateId !== undefined) {
+      dbData.template_id = data.templateId;
     }
     
     const { data: updated, error: updateErr } = await supabase.from('scheduled_actions').update(dbData).eq('id', id).select().single();
