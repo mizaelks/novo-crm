@@ -158,7 +158,9 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
               {action.actionType === 'webhook' && action.actionConfig && (
                 <>
                   <p><strong>URL:</strong> {action.actionConfig.url}</p>
-                  {action.actionConfig.method && <p><strong>Método:</strong> {action.actionConfig.method}</p>}
+                  {action.actionConfig.method && (
+                    <p><strong>Método:</strong> {action.actionConfig.method}</p>
+                  )}
                 </>
               )}
             </div>

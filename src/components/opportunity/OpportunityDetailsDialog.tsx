@@ -4,11 +4,11 @@ import { Opportunity, Stage } from "@/types";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { formatCurrency } from "@/services/utils/mappers";
 import { Edit, Calendar, Clock, User, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
 import ScheduledActionList from "../scheduledAction/ScheduledActionList";
+import { formatCurrency } from "@/services/utils/dateUtils";
 
 interface OpportunityDetailsDialogProps {
   opportunity: Opportunity;
@@ -25,6 +25,12 @@ const OpportunityDetailsDialog = ({
   onOpenChange,
   onEdit
 }: OpportunityDetailsDialogProps) => {
+  // Handler para quando uma ação é agendada com sucesso
+  const handleActionScheduled = () => {
+    // Recarregar a lista de ações agendadas
+    // Na verdade o componente já faz isso por si mesmo, então apenas confirmamos que o handler existe
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -107,7 +113,10 @@ const OpportunityDetailsDialog = ({
           </TabsList>
           
           <TabsContent value="schedule" className="py-4">
-            <ScheduleActionForm opportunityId={opportunity.id} />
+            <ScheduleActionForm 
+              opportunityId={opportunity.id} 
+              onActionScheduled={handleActionScheduled} 
+            />
           </TabsContent>
           
           <TabsContent value="scheduled" className="py-4">

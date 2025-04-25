@@ -26,7 +26,9 @@ interface ScheduleActionFormProps {
 const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleActionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Configuração para default com data atual com 1 hora à frente
   const today = new Date();
+  today.setHours(today.getHours() + 1);
   const formattedDate = today.toISOString().split('T')[0];
   const formattedTime = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
 
@@ -47,7 +49,10 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
       const scheduledDateTime = new Date(`${values.scheduledDate}T${values.scheduledTime}:00`);
       
       // Create the action config based on the webhook URL
-      const actionConfig = { url: values.url };
+      const actionConfig = { 
+        url: values.url,
+        method: 'POST' // Adicionando método padrão para correção do erro
+      };
       
       const newAction = await scheduledActionAPI.create({
         opportunityId,

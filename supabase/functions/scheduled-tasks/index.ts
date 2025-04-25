@@ -1,8 +1,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { format } from 'https://esm.sh/date-fns-tz@2.0.0/format';
-import { utcToZonedTime } from 'https://esm.sh/date-fns-tz@2.0.0/utcToZonedTime';
+
+// Atualizando a importação para usar a versão mais recente de date-fns-tz
+// A versão 3.0.0 foi lançada em abril de 2024 e é compatível com date-fns v3
+import { format } from 'https://esm.sh/date-fns@3.3.1/format';
+import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.0.0/toZonedTime';
 
 interface ScheduledAction {
   id: string;
@@ -43,7 +46,7 @@ serve(async (req) => {
     console.log(`Current UTC time: ${now.toISOString()}`);
     
     // Converter para o fuso horário do Brasil (GMT-3)
-    const brasiliaTime = utcToZonedTime(now, timezoneBrasilia);
+    const brasiliaTime = toZonedTime(now, timezoneBrasilia);
     console.log(`Brasilia time: ${format(brasiliaTime, 'yyyy-MM-dd HH:mm:ss', { timeZone: timezoneBrasilia })}`);
     
     // Formatar a data atual no formato do banco

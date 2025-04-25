@@ -74,6 +74,7 @@ export interface ScheduledAction {
     subject?: string;
     body?: string;
     templateId?: string; // ID of webhook template
+    method?: string; // Método HTTP (POST, GET, etc)
   };
   scheduledDateTime: Date;
   status: 'pending' | 'completed' | 'failed';
@@ -144,6 +145,7 @@ export interface ScheduledActionFormData {
     subject?: string;
     body?: string;
     templateId?: string;
+    method?: string; // Método HTTP (POST, GET, etc)
   };
   scheduledDateTime: Date;
 }
