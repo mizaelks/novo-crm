@@ -1,178 +1,150 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Opportunity, Stage } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, Hash, Phone, Mail, Building } from "lucide-react";
-import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
+import { formatCurrency } from "@/services/utils/mappers";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, MoreVertical, PhoneIcon, MailIcon, Building2Icon } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
-import { ScrollArea } from "../ui/scroll-area";
-import { useStageAPI } from "@/services/api";
-import { useEffect, useRef } from "react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
+import EditOpportunityDialog from "./EditOpportunityDialog";
+import { stageAPI } from "@/services/api";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
   index: number;
-  stageId: string; // Adicionar stageId como propriedade
+  stageId: string;
 }
 
 const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) => {
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [stage, setStage] = useState<Stage | null>(null);
-  const { stageAPI } = useStageAPI();
-  
-  useEffect(() => {
+
+  React.useEffect(() => {
     const loadStage = async () => {
       try {
-        const loadedStage = await stageAPI.getById(stageId);
-        if (loadedStage) {
-          setStage(loadedStage);
-        }
+        const stageData = await stageAPI.getById(stageId);
+        setStage(stageData);
       } catch (error) {
-        console.error("Error loading stage:", error);
+        console.error("Error loading stage data:", error);
       }
     };
     
     loadStage();
-  }, [stageId, stageAPI]);
-  
-  const formattedValue = formatCurrency(opportunity.value);
-  const formattedDate = formatDateBRT(opportunity.createdAt);
+  }, [stageId]);
 
-  const hasScheduledActions = opportunity.scheduledActions?.some(
-    action => action.status === 'pending'
-  );
-
-  // Ensure we display company, email and phone if they exist
-  const hasContactInfo = opportunity.company || opportunity.email || opportunity.phone;
-
-  if (!stage) {
-    // Retornar um card básico enquanto carrega o stage
-    return (
-      <Draggable draggableId={opportunity.id} index={index}>
-        {(provided) => (
-          <Card
-            className="mb-2"
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}
-          >
-            <CardContent className="p-3">
-              <div className="flex justify-between items-start">
-                <h3 className="font-medium text-sm">{opportunity.title}</h3>
-                <span className="text-primary font-semibold text-sm">
-                  {formattedValue}
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Cliente: {opportunity.client}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </Draggable>
-    );
-  }
+  const handleMenuItemClick = (action: string) => {
+    setIsMenuOpen(false);
+    
+    if (action === "edit") {
+      setIsEditDialogOpen(true);
+    } else if (action === "details") {
+      setIsDetailsDialogOpen(true);
+    }
+  };
 
   return (
-    <>
-      <Draggable draggableId={opportunity.id} index={index}>
-        {(provided, snapshot) => (
-          <Card 
-            className={`mb-2 hover:shadow-md transition-all ${
-              snapshot.isDragging ? "shadow-lg dragging" : ""
-            }`}
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}
-            onClick={() => setIsDetailsOpen(true)}
-          >
-            <CardContent className="p-3">
-              <ScrollArea className="max-h-[300px]">
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-sm">{opportunity.title}</h3>
-                    <span className="text-primary font-semibold text-sm">
-                      {formattedValue}
-                    </span>
-                  </div>
+    <Draggable draggableId={opportunity.id} index={index}>
+      {(provided, snapshot) => (
+        <div
+          className="mb-2"
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+        >
+          <Card className={`${snapshot.isDragging ? "shadow-lg" : ""}`}>
+            <CardHeader className="py-3 px-3">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-sm font-medium">{opportunity.title}</CardTitle>
+                <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleMenuItemClick("details")}>
+                      Ver detalhes
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMenuItemClick("edit")}>
+                      Editar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
 
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>Cliente: {opportunity.client}</div>
-                    
-                    {opportunity.company && (
-                      <div className="flex items-center">
-                        <Building className="h-3 w-3 mr-1" />
-                        {opportunity.company}
-                      </div>
-                    )}
-                    
-                    {opportunity.phone && (
-                      <div className="flex items-center">
-                        <Phone className="h-3 w-3 mr-1" />
-                        {opportunity.phone}
-                      </div>
-                    )}
-                    
-                    {opportunity.email && (
-                      <div className="flex items-center">
-                        <Mail className="h-3 w-3 mr-1" />
-                        {opportunity.email}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center mt-1">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {formattedDate}
-                      </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-5 px-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(opportunity.id);
-                            }}
-                          >
-                            <Hash className="h-3 w-3 mr-1" />
-                            <span className="text-xs font-mono">{opportunity.id.split('-')[0]}</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Clique para copiar o ID</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    {hasScheduledActions && (
-                      <div className="flex items-center text-xs text-secondary">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Ação agendada
-                      </div>
-                    )}
-                  </div>
+            <CardContent className="py-2 px-3">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cliente:</span>
+                  <span className="font-medium">{opportunity.client}</span>
                 </div>
-              </ScrollArea>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Valor:</span>
+                  <span className="font-medium">{formatCurrency(opportunity.value)}</span>
+                </div>
+                
+                {opportunity.phone && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <PhoneIcon className="h-3 w-3" /> 
+                    {opportunity.phone}
+                  </div>
+                )}
+                
+                {opportunity.email && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MailIcon className="h-3 w-3" /> 
+                    {opportunity.email}
+                  </div>
+                )}
+                
+                {opportunity.company && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Building2Icon className="h-3 w-3" /> 
+                    {opportunity.company}
+                  </div>
+                )}
+              </div>
             </CardContent>
+            
+            <CardFooter className="pt-0 pb-2 px-3 flex justify-between items-center">
+              <div className="flex items-center text-xs text-muted-foreground">
+                <CalendarIcon className="h-3 w-3 mr-1" />
+                <span>{format(new Date(opportunity.createdAt), "dd/MM/yyyy")}</span>
+              </div>
+              
+              {opportunity.scheduledActions && opportunity.scheduledActions.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {opportunity.scheduledActions.length} ações
+                </Badge>
+              )}
+            </CardFooter>
           </Card>
-        )}
-      </Draggable>
+          
+          <EditOpportunityDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            opportunity={opportunity}
+          />
 
-      {stage && (
-        <OpportunityDetailsDialog
-          open={isDetailsOpen}
-          onOpenChange={setIsDetailsOpen}
-          opportunity={opportunity}
-          stage={stage}
-        />
+          {stage && (
+            <OpportunityDetailsDialog
+              open={isDetailsDialogOpen}
+              onOpenChange={setIsDetailsDialogOpen}
+              opportunity={opportunity}
+              stage={stage}
+            />
+          )}
+        </div>
       )}
-    </>
+    </Draggable>
   );
 };
 

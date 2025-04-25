@@ -15,7 +15,8 @@ import { toast } from "sonner";
 // Form validation schema
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  description: z.string().optional()
+  description: z.string().optional(),
+  color: z.string().regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i, "Cor inválida").optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,7 +40,8 @@ const CreateStageDialog = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      description: ""
+      description: "",
+      color: "#CCCCCC"
     }
   });
 
@@ -51,7 +53,8 @@ const CreateStageDialog = ({
       const newStage = await stageAPI.create({
         name: values.name,
         description: values.description || "",
-        funnelId
+        funnelId,
+        color: values.color || "#CCCCCC"
       });
       
       // Show success notification
@@ -65,6 +68,9 @@ const CreateStageDialog = ({
         description: newStage.description,
         order: newStage.order,
         funnelId: newStage.funnelId,
+        color: newStage.color || "#CCCCCC",
+        isWinStage: newStage.isWinStage || false,
+        isLossStage: newStage.isLossStage || false,
         opportunities: []
       };
       
@@ -121,6 +127,29 @@ const CreateStageDialog = ({
                       value={field.value || ""}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cor da etapa</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <FormControl>
+                      <Input type="color" {...field} className="w-14 h-10 p-1" />
+                    </FormControl>
+                    <Input 
+                      placeholder="#CCCCCC" 
+                      value={field.value} 
+                      onChange={e => field.onChange(e.target.value)}
+                      className="font-mono"
+                      maxLength={7}
+                    />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

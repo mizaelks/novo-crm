@@ -97,14 +97,7 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
       setIsSubmitting(true);
       
       // Se applyToAll estiver marcado, usamos um ID especial "*" para indicar todos os alvos
-      const targetId = values.applyToAll ? "*" : values.targetId || "";
-      
-      // Check if targetId is provided when applyToAll is false
-      if (!values.applyToAll && !targetId) {
-        toast.error("Selecione um ID de alvo ou marque 'Aplicar a todos'");
-        setIsSubmitting(false);
-        return;
-      }
+      const targetId = values.applyToAll ? "*" : values.targetId || "*";
       
       // Create a properly typed WebhookFormData object from the form values
       const webhookData: WebhookFormData = {
@@ -193,12 +186,12 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
             name="targetId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>ID do alvo</FormLabel>
+                <FormLabel>ID do alvo (opcional)</FormLabel>
                 {availableTargets.length > 0 ? (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={loadingTargets ? "Carregando..." : "Selecione o ID"} />
+                        <SelectValue placeholder={loadingTargets ? "Carregando..." : "Selecione o ID (opcional)"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -212,7 +205,7 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
                 ) : (
                   <FormControl>
                     <Input 
-                      placeholder={loadingTargets ? "Carregando..." : "Ex: 1234-5678-9012"} 
+                      placeholder={loadingTargets ? "Carregando..." : "Ex: 1234-5678-9012 (opcional)"} 
                       {...field} 
                       disabled={loadingTargets || applyToAll}
                     />
@@ -220,8 +213,8 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
                 )}
                 <FormDescription>
                   {targetType === "opportunity" ? 
-                    "Para oportunidades específicas, você pode copiar o ID da URL ao visualizar a oportunidade" :
-                    "Selecione um ID da lista ou insira manualmente"}
+                    "Deixe em branco para monitorar todas as oportunidades" :
+                    "Selecione um ID específico ou deixe em branco para monitorar todos"}
                 </FormDescription>
                 <FormMessage />
               </FormItem>

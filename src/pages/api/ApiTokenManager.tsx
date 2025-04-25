@@ -121,6 +121,27 @@ const ApiTokenManager = () => {
     }
   };
 
+  // Revogar token (inativação)
+  const handleRevokeToken = async (tokenId: string) => {
+    try {
+      const { error } = await supabase
+        .from("api_tokens")
+        .update({ is_active: false })
+        .eq("id", tokenId);
+
+      if (error) throw error;
+
+      setTokens(tokens.map((token) => 
+        token.id === tokenId ? { ...token, is_active: false } : token
+      ));
+      
+      toast.success("Token de API revogado com sucesso");
+    } catch (error) {
+      console.error("Error revoking API token:", error);
+      toast.error("Erro ao revogar token de API");
+    }
+  };
+
   return (
     <div className="container mx-auto py-10 space-y-6">
       <div className="flex justify-between items-center">
@@ -162,17 +183,33 @@ const ApiTokenManager = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{token.name}</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="flex items-center">
                       Criado em {format(new Date(token.created_at), "dd/MM/yyyy HH:mm")}
+                      {token.is_active ? (
+                        <Badge variant="success" className="ml-2 bg-green-100 text-green-800">Ativo</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="ml-2">Revogado</Badge>
+                      )}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setTokenToDelete(token.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    {token.is_active ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRevokeToken(token.id)}
+                      >
+                        Revogar
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setTokenToDelete(token.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>

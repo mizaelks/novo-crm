@@ -56,6 +56,9 @@ export const stageAPI = {
   },
 
   create: async (data: StageFormData): Promise<Stage> => {
+    // Verificar se todos os campos necessários estão presentes
+    console.log("Criando etapa com os dados:", data);
+    
     const { data: created, error } = await supabase.from('stages').insert([{ 
       name: data.name, 
       description: data.description, 
@@ -65,7 +68,10 @@ export const stageAPI = {
       is_loss_stage: data.isLossStage || false
     }]).select().single();
     
-    if (error || !created) throw error || new Error('Stage create error');
+    if (error || !created) {
+      console.error("Erro ao criar etapa:", error);
+      throw error || new Error('Stage create error');
+    }
     
     const stageBase = mapDbStageToStage(created);
     
@@ -78,6 +84,7 @@ export const stageAPI = {
   },
 
   update: async (id: string, data: Partial<StageFormData>): Promise<Stage | null> => {
+    console.log("Atualizando etapa:", id, "com dados:", data);
     const dbData: any = {};
     
     if (data.name !== undefined) dbData.name = data.name;
@@ -91,7 +98,16 @@ export const stageAPI = {
     }
     
     const { data: updated, error } = await supabase.from('stages').update(dbData).eq('id', id).select().single();
-    if (error || !updated) return null;
+    
+    if (error) {
+      console.error("Erro ao atualizar etapa:", error);
+      return null;
+    }
+    
+    if (!updated) {
+      console.error("Não foi possível atualizar a etapa. Nenhum dado retornado.");
+      return null;
+    }
     
     await triggerEntityWebhooks('stage', id, 'update', updated);
     
