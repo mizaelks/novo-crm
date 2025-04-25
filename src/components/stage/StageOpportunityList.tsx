@@ -27,6 +27,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
               key={opportunity.id}
               opportunity={opportunity}
               index={index}
+              stageId={stageId}
             />
           ))}
           {provided.placeholder}
