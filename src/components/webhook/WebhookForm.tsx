@@ -11,12 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   targetType: z.enum(["funnel", "stage", "opportunity"]),
-  targetId: z.string().min(1, "ID do alvo é obrigatório"),
+  targetId: z.string().optional(),
   url: z.string().url("URL inválida"),
-  event: z.enum(["create", "update", "move"])
+  event: z.enum(["create", "update", "move"]),
+  applyToAll: z.boolean().default(false)
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -36,15 +38,22 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
       targetType: "funnel",
       targetId: "",
       url: "",
-      event: "create"
+      event: "create",
+      applyToAll: false
     }
   });
 
   const targetType = form.watch("targetType");
+  const applyToAll = form.watch("applyToAll");
   
   // Fetch available targets based on selected type
   useEffect(() => {
     const fetchAvailableTargets = async () => {
+      if (applyToAll) {
+        setAvailableTargets([]);
+        return;
+      }
+      
       setLoadingTargets(true);
       try {
         let targets: Array<{id: string, name: string}> = [];
@@ -68,7 +77,7 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
             }
             break;
           case "opportunity":
-            // For opportunities, we'll just recommend using stages instead
+            // Para oportunidades, recomendamos usar estágios
             break;
         }
         
@@ -81,16 +90,26 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
     };
     
     fetchAvailableTargets();
-  }, [targetType]);
+  }, [targetType, applyToAll]);
 
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
       
+      // Se applyToAll estiver marcado, usamos um ID especial "*" para indicar todos os alvos
+      const targetId = values.applyToAll ? "*" : values.targetId || "";
+      
+      // Check if targetId is provided when applyToAll is false
+      if (!values.applyToAll && !targetId) {
+        toast.error("Selecione um ID de alvo ou marque 'Aplicar a todos'");
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Create a properly typed WebhookFormData object from the form values
       const webhookData: WebhookFormData = {
         targetType: values.targetType,
-        targetId: values.targetId,
+        targetId: targetId,
         url: values.url,
         event: values.event
       };
@@ -149,43 +168,66 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
         
         <FormField
           control={form.control}
-          name="targetId"
+          name="applyToAll"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>ID do alvo</FormLabel>
-              {availableTargets.length > 0 ? (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={loadingTargets ? "Carregando..." : "Selecione o ID"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {availableTargets.map(target => (
-                      <SelectItem key={target.id} value={target.id}>
-                        {target.name} ({target.id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <FormControl>
-                  <Input 
-                    placeholder={loadingTargets ? "Carregando..." : "Ex: 1234-5678-9012"} 
-                    {...field} 
-                    disabled={loadingTargets}
-                  />
-                </FormControl>
-              )}
-              <FormDescription>
-                {targetType === "opportunity" ? 
-                  "Para oportunidades específicas, você pode copiar o ID da URL ao visualizar a oportunidade" :
-                  "Selecione um ID da lista ou insira manualmente"}
-              </FormDescription>
-              <FormMessage />
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Aplicar a todos</FormLabel>
+                <FormDescription>
+                  Disparar este webhook para todos os {targetType === "funnel" ? "funis" : targetType === "stage" ? "estágios" : "oportunidades"}
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />
+        
+        {!applyToAll && (
+          <FormField
+            control={form.control}
+            name="targetId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID do alvo</FormLabel>
+                {availableTargets.length > 0 ? (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingTargets ? "Carregando..." : "Selecione o ID"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableTargets.map(target => (
+                        <SelectItem key={target.id} value={target.id}>
+                          {target.name} ({target.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <FormControl>
+                    <Input 
+                      placeholder={loadingTargets ? "Carregando..." : "Ex: 1234-5678-9012"} 
+                      {...field} 
+                      disabled={loadingTargets || applyToAll}
+                    />
+                  </FormControl>
+                )}
+                <FormDescription>
+                  {targetType === "opportunity" ? 
+                    "Para oportunidades específicas, você pode copiar o ID da URL ao visualizar a oportunidade" :
+                    "Selecione um ID da lista ou insira manualmente"}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         
         <FormField
           control={form.control}

@@ -9,9 +9,10 @@ interface KanbanStagesProps {
   funnelId: string;
   onDragEnd: (result: DropResult) => void;
   onOpportunityCreated: (opportunity: any) => void;
+  onStageUpdated?: (stage: Stage) => void; // Nova prop para atualizar o estágio
 }
 
-const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated }: KanbanStagesProps) => {
+const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated, onStageUpdated }: KanbanStagesProps) => {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable droppableId="all-stages" direction="horizontal" type="stage">
@@ -28,6 +29,7 @@ const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated }: Kan
                 index={index} 
                 funnelId={funnelId}
                 onOpportunityCreated={onOpportunityCreated}
+                onStageUpdated={onStageUpdated}
               />
             ))}
             {provided.placeholder}

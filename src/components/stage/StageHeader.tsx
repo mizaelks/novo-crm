@@ -75,14 +75,15 @@ const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) 
         </Button>
       </div>
       
-      {updateStage && (
-        <EditStageDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          stageId={stage.id}
-          onStageUpdated={updateStage}
-        />
-      )}
+      {/* Passando a função updateStage do KanbanBoard para o EditStageDialog */}
+      <EditStageDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        stageId={stage.id}
+        onStageUpdated={updateStage || ((updatedStage) => {
+          console.log('Stage updated but no update handler provided', updatedStage);
+        })}
+      />
     </div>
   );
 };

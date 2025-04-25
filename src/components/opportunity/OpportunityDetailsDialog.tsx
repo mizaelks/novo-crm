@@ -1,433 +1,121 @@
-import { useState, useEffect } from "react";
-import { opportunityAPI, webhookAPI, scheduledActionAPI } from "@/services/api";
-import { Opportunity, WebhookConfig } from "@/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+
+import React from "react";
+import { Opportunity, Stage } from "@/types";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Send, AlertCircle, Check, Loader2, Edit, Phone, Mail, Building, Clock } from "lucide-react";
-import { toast } from "sonner";
-import { dispatchWebhook } from "@/services/utils/webhook";
-import { Badge } from "@/components/ui/badge";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import EditOpportunityDialog from "./EditOpportunityDialog";
+import { format } from "date-fns";
+import { formatCurrency } from "@/services/utils/mappers";
+import { Edit, Calendar, Clock, User, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
-import { ScheduledAction } from "@/types";
+import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 
 interface OpportunityDetailsDialogProps {
+  opportunity: Opportunity;
+  stage: Stage;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  opportunityId: string;
+  onEdit?: () => void;
 }
 
-// Schema for webhook form
-const webhookFormSchema = z.object({
-  url: z.string().url("URL inválida").min(1, "URL é obrigatória"),
-});
-
-type WebhookFormValues = z.infer<typeof webhookFormSchema>;
-
 const OpportunityDetailsDialog = ({
+  opportunity,
+  stage,
   open,
   onOpenChange,
-  opportunityId
+  onEdit
 }: OpportunityDetailsDialogProps) => {
-  const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
-  const [scheduledActions, setScheduledActions] = useState<ScheduledAction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSendingWebhook, setIsSendingWebhook] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-
-  // Form for one-time webhook
-  const form = useForm<WebhookFormValues>({
-    resolver: zodResolver(webhookFormSchema),
-    defaultValues: {
-      url: "",
-    },
-  });
-
-  useEffect(() => {
-    const loadData = async () => {
-      if (open && opportunityId) {
-        setLoading(true);
-        try {
-          const oppData = await opportunityAPI.getById(opportunityId);
-          setOpportunity(oppData);
-          
-          // Load webhooks configured for this opportunity
-          const webhooksData = await webhookAPI.getByTarget('opportunity', opportunityId);
-          setWebhooks(webhooksData);
-          
-          // Load scheduled actions for this opportunity
-          if (oppData && oppData.scheduledActions) {
-            setScheduledActions(oppData.scheduledActions);
-          } else {
-            // If scheduledActions isn't part of the opportunity, we might need to fetch them separately
-            // This would be an alternative approach if needed
-            const actionsData = await scheduledActionAPI.getByOpportunityId(opportunityId);
-            setScheduledActions(actionsData);
-          }
-        } catch (error) {
-          console.error("Error loading opportunity details:", error);
-          toast.error("Erro ao carregar detalhes da oportunidade");
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadData();
-  }, [open, opportunityId]);
-
-  const handleCreateWebhook = async (event: 'create' | 'update' | 'move') => {
-    if (!opportunity) return;
-
-    try {
-      const newWebhook = await webhookAPI.create({
-        targetType: 'opportunity',
-        targetId: opportunity.id,
-        url: form.getValues().url,
-        event: event
-      });
-
-      setWebhooks([...webhooks, newWebhook]);
-      toast.success(`Webhook para evento "${event}" configurado com sucesso!`);
-      form.reset();
-    } catch (error) {
-      console.error("Error creating webhook:", error);
-      toast.error("Erro ao configurar webhook");
-    }
-  };
-
-  const handleSendWebhook = async () => {
-    if (!opportunity) return;
-    
-    try {
-      const values = form.getValues();
-      setIsSendingWebhook(true);
-      
-      const result = await dispatchWebhook(
-        {
-          event: 'opportunity.manual',
-          data: {
-            id: opportunity.id,
-            title: opportunity.title,
-            client: opportunity.client,
-            value: opportunity.value,
-            stageId: opportunity.stageId,
-            funnelId: opportunity.funnelId,
-            company: opportunity.company,
-            phone: opportunity.phone,
-            email: opportunity.email,
-            createdAt: opportunity.createdAt,
-            sentAt: new Date().toISOString()
-          }
-        },
-        values.url
-      );
-      
-      if (result.success) {
-        toast.success(`Webhook enviado com sucesso! Status: ${result.status}`);
-      } else {
-        toast.error(`Erro ao enviar webhook: ${result.error || `Status ${result.status}`}`);
-      }
-      
-      form.reset();
-    } catch (error) {
-      console.error("Error sending webhook:", error);
-      toast.error("Erro ao enviar webhook");
-    } finally {
-      setIsSendingWebhook(false);
-    }
-  };
-  
-  const handleDeleteWebhook = async (id: string) => {
-    try {
-      const success = await webhookAPI.delete(id);
-      if (success) {
-        setWebhooks(webhooks.filter(webhook => webhook.id !== id));
-        toast.success("Webhook removido com sucesso!");
-      } else {
-        toast.error("Erro ao remover webhook");
-      }
-    } catch (error) {
-      console.error("Error deleting webhook:", error);
-      toast.error("Erro ao remover webhook");
-    }
-  };
-
-  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
-    setOpportunity(updatedOpportunity);
-  };
-
-  const handleActionScheduled = (action: ScheduledAction) => {
-    setScheduledActions([...scheduledActions, action]);
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  };
-  
-  if (loading || !opportunity) {
-    return null;
-  }
-  
-  const formattedValue = new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
-  }).format(opportunity.value);
-  
-  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  }).format(new Date(opportunity.createdAt));
-
-  const formatEvent = (event: string) => {
-    switch (event) {
-      case "create": return "Criação";
-      case "update": return "Atualização";
-      case "move": return "Movimentação";
-      default: return event;
-    }
-  };
-
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader className="flex flex-row items-center justify-between">
-            <div>
-              <DialogTitle>{opportunity.title}</DialogTitle>
-              <DialogDescription>Detalhes da oportunidade</DialogDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setEditDialogOpen(true);
-              }}
-            >
-              <Edit className="h-4 w-4" />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">{opportunity.title}</h2>
+            <p className="text-muted-foreground">
+              Adicionado em {format(new Date(opportunity.createdAt), "dd/MM/yyyy")}
+            </p>
+          </div>
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
             </Button>
-          </DialogHeader>
+          )}
+        </div>
 
-          <div className="mt-2 space-y-6">
+        <div className="grid grid-cols-2 gap-4 my-4">
+          <div className="flex items-center">
+            <User className="h-4 w-4 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Cliente</p>
+              <p className="font-medium">{opportunity.client}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center">
+            <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Empresa</p>
+              <p className="font-medium">{opportunity.company || "Não informado"}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Valor</p>
+              <p className="font-medium">{formatCurrency(opportunity.value)}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Etapa</p>
+              <p className="font-medium">{stage.name}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Display contact information if available */}
+        {(opportunity.phone || opportunity.email) && (
+          <>
+            <div className="h-px bg-border my-4" />
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Cliente</p>
-                <p className="font-medium">{opportunity.client}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Valor</p>
-                <p className="font-medium text-primary">{formattedValue}</p>
-              </div>
-              {opportunity.company && (
-                <div className="flex items-start gap-1">
-                  <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <p className="text-sm">{opportunity.company}</p>
-                </div>
-              )}
               {opportunity.phone && (
-                <div className="flex items-start gap-1">
-                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <p className="text-sm">{opportunity.phone}</p>
+                <div>
+                  <p className="text-sm text-muted-foreground">Telefone</p>
+                  <p>{opportunity.phone}</p>
                 </div>
               )}
               {opportunity.email && (
-                <div className="col-span-2 flex items-start gap-1">
-                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <p className="text-sm">{opportunity.email}</p>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p>{opportunity.email}</p>
                 </div>
               )}
-              <div>
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Data de criação
-                </p>
-                <p className="text-sm">{formattedDate}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">ID da Oportunidade</p>
-                <p className="text-xs font-mono">{opportunity.id}</p>
-              </div>
             </div>
-            
-            <Tabs defaultValue="webhooks">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="webhooks">Webhooks Configurados</TabsTrigger>
-                <TabsTrigger value="send">Enviar Webhook</TabsTrigger>
-                <TabsTrigger value="schedule">Agendar Webhook</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="webhooks" className="space-y-4">
-                {webhooks.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    <p>Nenhum webhook configurado para esta oportunidade</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 mt-4">
-                    {webhooks.map(webhook => (
-                      <div 
-                        key={webhook.id} 
-                        className="p-3 border rounded-md bg-white flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{formatEvent(webhook.event)}</Badge>
-                            <span className="text-xs text-muted-foreground">{webhook.id}</span>
-                          </div>
-                          <div className="mt-1 text-xs font-mono break-all">
-                            {webhook.url}
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteWebhook(webhook.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <AlertCircle className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {scheduledActions.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium mb-2 mt-6">Webhooks Agendados</h3>
-                    <div className="space-y-3">
-                      {scheduledActions.map(action => (
-                        <div 
-                          key={action.id} 
-                          className="p-3 border rounded-md bg-white flex justify-between items-center"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-blue-50">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Agendado
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">{action.id}</span>
-                            </div>
-                            <div className="mt-1 text-xs font-mono break-all">
-                              {action.actionConfig.url}
-                            </div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              Data: {formatDate(new Date(action.scheduledDateTime))}
-                            </div>
-                          </div>
-                          <div className="text-xs px-2 py-1 rounded-full bg-gray-100">
-                            {action.status}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="send">
-                <Form {...form}>
-                  <form className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL do webhook</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://api.exemplo.com/webhook" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <Button
-                        type="button"
-                        onClick={handleSendWebhook}
-                        className="w-full"
-                        disabled={isSendingWebhook || !form.formState.isValid}
-                      >
-                        {isSendingWebhook ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Enviar único
-                          </>
-                        )}
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleCreateWebhook('update')}
-                        className="w-full"
-                        disabled={isSendingWebhook || !form.formState.isValid}
-                      >
-                        <Check className="mr-2 h-4 w-4" />
-                        Configurar permanente
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-                
-                <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
-                  <p className="text-muted-foreground">
-                    ℹ️ Use "Enviar único" para disparar o webhook uma única vez, ou "Configurar permanente" 
-                    para registrar um webhook que será acionado sempre que esta oportunidade for atualizada.
-                  </p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="schedule">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Agendar webhook para envio futuro</h3>
-                  <ScheduleActionForm 
-                    opportunityId={opportunityId} 
-                    onActionScheduled={handleActionScheduled}
-                  />
-
-                  <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
-                    <p className="text-muted-foreground">
-                      ℹ️ Os webhooks agendados serão executados automaticamente na data e hora definidas.
-                      Você pode visualizar os webhooks agendados na aba "Webhooks Configurados".
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      <EditOpportunityDialog 
-        open={editDialogOpen} 
-        onOpenChange={setEditDialogOpen} 
-        opportunityId={opportunityId}
-        onOpportunityUpdated={handleOpportunityUpdated}
-      />
-    </>
+          </>
+        )}
+        
+        <div className="h-px bg-border my-4" />
+        
+        <Tabs defaultValue="schedule">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="schedule">Agendar Ação</TabsTrigger>
+            <TabsTrigger value="scheduled">Ações Agendadas</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="schedule" className="py-4">
+            <ScheduleActionForm opportunityId={opportunity.id} />
+          </TabsContent>
+          
+          <TabsContent value="scheduled" className="py-4">
+            <ScheduledActionList opportunityId={opportunity.id} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -41,12 +41,13 @@ export const triggerEntityWebhooks = async (
   console.log(`Triggering ${eventType} webhooks for ${entityType} ${entityId}`, data);
 
   try {
+    // Buscar webhooks específicos para esta entidade e também os webhooks genéricos (target_id = '*')
     const { data: webhooks, error } = await supabase
       .from('webhooks')
       .select('*')
       .eq('target_type', entityType)
-      .eq('target_id', entityId)
-      .eq('event', eventType);
+      .eq('event', eventType)
+      .or(`target_id.eq.${entityId},target_id.eq.*`);
 
     if (error) {
       console.error("Failed to fetch webhooks:", error);

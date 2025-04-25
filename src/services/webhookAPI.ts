@@ -17,10 +17,11 @@ export const webhookAPI = {
   },
 
   getByTarget: async (targetType: 'funnel' | 'stage' | 'opportunity', targetId: string): Promise<WebhookConfig[]> => {
+    // Busca webhooks específicos para este alvo ou webhooks com wildcard (targetId = '*')
     const { data, error } = await supabase.from('webhooks')
       .select('*')
       .eq('target_type', targetType)
-      .eq('target_id', targetId);
+      .or(`target_id.eq.${targetId},target_id.eq.*`);
     
     if (error) {
       console.error("Error fetching webhooks for target:", error);

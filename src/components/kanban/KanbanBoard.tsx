@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DropResult } from "react-beautiful-dnd";
 import { Funnel, Stage, Opportunity } from "@/types";
@@ -195,6 +194,29 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     );
   };
 
+  const handleStageUpdated = (updatedStage: Stage) => {
+    const updatedStages = stages.map(stage => 
+      stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
+    );
+    setStages(updatedStages);
+    
+    // Trigger webhook for stage update
+    triggerEntityWebhooks(
+      'stage', 
+      updatedStage.id, 
+      'update',
+      {
+        id: updatedStage.id,
+        name: updatedStage.name,
+        description: updatedStage.description,
+        color: updatedStage.color,
+        funnelId: funnelId,
+        isWinStage: updatedStage.isWinStage,
+        isLossStage: updatedStage.isLossStage
+      }
+    );
+  };
+
   if (loading) {
     return <KanbanSkeleton />;
   }
@@ -219,6 +241,7 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         funnelId={funnelId}
         onDragEnd={handleDragEnd}
         onOpportunityCreated={handleOpportunityCreated}
+        onStageUpdated={handleStageUpdated}
       />
       
       <CreateStageDialog 

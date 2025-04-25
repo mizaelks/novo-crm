@@ -186,6 +186,7 @@ export type Database = {
       }
       stages: {
         Row: {
+          color: string | null
           created_at: string | null
           description: string | null
           funnel_id: string | null
@@ -194,6 +195,7 @@ export type Database = {
           order: number | null
         }
         Insert: {
+          color?: string | null
           created_at?: string | null
           description?: string | null
           funnel_id?: string | null
@@ -202,6 +204,7 @@ export type Database = {
           order?: number | null
         }
         Update: {
+          color?: string | null
           created_at?: string | null
           description?: string | null
           funnel_id?: string | null
