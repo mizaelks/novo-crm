@@ -24,6 +24,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [stage, setStage] = useState<Stage | null>(null);
+  const [currentOpportunity, setCurrentOpportunity] = useState<Opportunity>(opportunity);
 
   React.useEffect(() => {
     const loadStage = async () => {
@@ -38,6 +39,10 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
     loadStage();
   }, [stageId]);
 
+  React.useEffect(() => {
+    setCurrentOpportunity(opportunity);
+  }, [opportunity]);
+
   const handleMenuItemClick = (action: string) => {
     setIsMenuOpen(false);
     
@@ -48,8 +53,12 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
     }
   };
 
+  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    setCurrentOpportunity(updatedOpportunity);
+  };
+
   return (
-    <Draggable draggableId={opportunity.id} index={index}>
+    <Draggable draggableId={currentOpportunity.id} index={index}>
       {(provided, snapshot) => (
         <div
           className="mb-2"
@@ -60,7 +69,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
           <Card className={`${snapshot.isDragging ? "shadow-lg" : ""}`}>
             <CardHeader className="py-3 px-3">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-sm font-medium">{opportunity.title}</CardTitle>
+                <CardTitle className="text-sm font-medium">{currentOpportunity.title}</CardTitle>
                 <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -83,32 +92,32 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cliente:</span>
-                  <span className="font-medium">{opportunity.client}</span>
+                  <span className="font-medium">{currentOpportunity.client}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor:</span>
-                  <span className="font-medium">{formatCurrency(opportunity.value)}</span>
+                  <span className="font-medium">{formatCurrency(currentOpportunity.value)}</span>
                 </div>
                 
-                {opportunity.phone && (
+                {currentOpportunity.phone && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <PhoneIcon className="h-3 w-3" /> 
-                    {opportunity.phone}
+                    {currentOpportunity.phone}
                   </div>
                 )}
                 
-                {opportunity.email && (
+                {currentOpportunity.email && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <MailIcon className="h-3 w-3" /> 
-                    {opportunity.email}
+                    {currentOpportunity.email}
                   </div>
                 )}
                 
-                {opportunity.company && (
+                {currentOpportunity.company && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Building2Icon className="h-3 w-3" /> 
-                    {opportunity.company}
+                    {currentOpportunity.company}
                   </div>
                 )}
               </div>
@@ -117,12 +126,12 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
             <CardFooter className="pt-0 pb-2 px-3 flex justify-between items-center">
               <div className="flex items-center text-xs text-muted-foreground">
                 <CalendarIcon className="h-3 w-3 mr-1" />
-                <span>{format(new Date(opportunity.createdAt), "dd/MM/yyyy")}</span>
+                <span>{format(new Date(currentOpportunity.createdAt), "dd/MM/yyyy")}</span>
               </div>
               
-              {opportunity.scheduledActions && opportunity.scheduledActions.length > 0 && (
+              {currentOpportunity.scheduledActions && currentOpportunity.scheduledActions.length > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  {opportunity.scheduledActions.length} ações
+                  {currentOpportunity.scheduledActions.length} ações
                 </Badge>
               )}
             </CardFooter>
@@ -131,14 +140,15 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
           <EditOpportunityDialog
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            opportunityId={opportunity.id}
+            opportunityId={currentOpportunity.id}
+            onOpportunityUpdated={handleOpportunityUpdated}
           />
 
           {stage && (
             <OpportunityDetailsDialog
               open={isDetailsDialogOpen}
               onOpenChange={setIsDetailsDialogOpen}
-              opportunity={opportunity}
+              opportunity={currentOpportunity}
               stage={stage}
             />
           )}
