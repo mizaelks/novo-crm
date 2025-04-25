@@ -59,6 +59,7 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
         actionType: "webhook", // Only using webhook type now
         actionConfig,
         scheduledDateTime,
+        templateId: null // Setting templateId to null explicitly since we don't use templates here
       });
       
       toast.success("Webhook agendado com sucesso!");

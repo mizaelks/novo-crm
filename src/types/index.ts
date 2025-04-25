@@ -1,4 +1,3 @@
-
 // Domain models
 export interface Funnel {
   id: string;
@@ -148,4 +147,5 @@ export interface ScheduledActionFormData {
     method?: string; // Método HTTP (POST, GET, etc)
   };
   scheduledDateTime: Date;
+  templateId?: string; // Adding the missing templateId property
 }
