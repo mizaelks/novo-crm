@@ -54,12 +54,20 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
         method: 'POST' // Adicionando método padrão para correção do erro
       };
       
-      const newAction = await scheduledActionAPI.create({
+      console.log("Agendando webhook:", {
         opportunityId,
-        actionType: "webhook", // Only using webhook type now
+        actionType: "webhook",
         actionConfig,
         scheduledDateTime,
-        templateId: null // Setting templateId to null explicitly since we don't use templates here
+        templateId: null
+      });
+      
+      const newAction = await scheduledActionAPI.create({
+        opportunityId,
+        actionType: "webhook",
+        actionConfig,
+        scheduledDateTime,
+        templateId: null // Definido explicitamente como null
       });
       
       toast.success("Webhook agendado com sucesso!");
@@ -70,7 +78,7 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
         scheduledTime: formattedTime,
       });
     } catch (error) {
-      console.error("Error scheduling webhook:", error);
+      console.error("Erro ao agendar webhook:", error);
       toast.error("Erro ao agendar webhook. Tente novamente.");
     } finally {
       setIsSubmitting(false);

@@ -28,14 +28,14 @@ SELECT cron.schedule(
     'SELECT check_scheduled_actions()'
 );
 
--- Adiciona coluna template_id na tabela scheduled_actions se ainda não existir
+-- Adiciona coluna template_id na tabela scheduled_actions
 DO $$ 
 BEGIN
   IF NOT EXISTS (
     SELECT FROM information_schema.columns
-    WHERE table_name = 'scheduled_actions' AND column_name = 'template_id'
+    WHERE table_schema = 'public' AND table_name = 'scheduled_actions' AND column_name = 'template_id'
   ) THEN
-    ALTER TABLE scheduled_actions ADD COLUMN template_id UUID REFERENCES webhook_templates(id);
+    ALTER TABLE public.scheduled_actions ADD COLUMN template_id UUID REFERENCES webhook_templates(id);
   END IF;
 END $$;
 
@@ -70,12 +70,12 @@ BEGIN
   -- Encontrar ações programadas que já passaram do horário agendado (usando timezone do Brasil)
   FOR scheduled_action IN 
     SELECT *
-    FROM scheduled_actions
+    FROM public.scheduled_actions
     WHERE status = 'pending'
     AND scheduled_date_time <= (now() AT TIME ZONE 'America/Sao_Paulo')
   LOOP
     -- Marcar como em processamento
-    UPDATE scheduled_actions
+    UPDATE public.scheduled_actions
     SET status = 'processing'
     WHERE id = scheduled_action.id;
 
@@ -112,13 +112,13 @@ BEGIN
       END CASE;
       
       -- Marcar como concluído
-      UPDATE scheduled_actions
+      UPDATE public.scheduled_actions
       SET status = 'completed'
       WHERE id = scheduled_action.id;
       
     EXCEPTION WHEN OTHERS THEN
       -- Em caso de erro, marcar como falha
-      UPDATE scheduled_actions
+      UPDATE public.scheduled_actions
       SET status = 'failed'
       WHERE id = scheduled_action.id;
     END;

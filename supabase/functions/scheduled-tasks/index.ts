@@ -45,6 +45,20 @@ serve(async (req) => {
     const now = new Date();
     console.log(`Current UTC time: ${now.toISOString()}`);
     
+    // Verificar esquema de database para debug
+    console.log("Verificando esquema da tabela scheduled_actions");
+    const { data: columns, error: schemaError } = await supabaseClient
+      .from('scheduled_actions')
+      .select('*')
+      .limit(1);
+      
+    if (schemaError) {
+      console.error("Erro ao verificar esquema:", schemaError);
+    } else {
+      console.log("Esquema da tabela scheduled_actions:", 
+        Object.keys(columns?.[0] || {}).join(", "));
+    }
+    
     // Converter para o fuso horário do Brasil (GMT-3)
     const brasiliaTime = toZonedTime(now, timezoneBrasilia);
     console.log(`Brasilia time: ${format(brasiliaTime, 'yyyy-MM-dd HH:mm:ss', { timeZone: timezoneBrasilia })}`);
