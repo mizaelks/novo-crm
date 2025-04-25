@@ -131,7 +131,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
           <EditOpportunityDialog
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            opportunity={opportunity}
+            opportunityId={opportunity.id}
           />
 
           {stage && (

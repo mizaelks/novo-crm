@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 interface ApiToken {
@@ -186,7 +187,7 @@ const ApiTokenManager = () => {
                     <CardDescription className="flex items-center">
                       Criado em {format(new Date(token.created_at), "dd/MM/yyyy HH:mm")}
                       {token.is_active ? (
-                        <Badge variant="success" className="ml-2 bg-green-100 text-green-800">Ativo</Badge>
+                        <Badge variant="success" className="ml-2">Ativo</Badge>
                       ) : (
                         <Badge variant="destructive" className="ml-2">Revogado</Badge>
                       )}

@@ -76,3 +76,11 @@ export const mapDbWebhookTemplateToWebhookTemplate = (dbTemplate: any): WebhookT
   payload: dbTemplate.payload,
   createdAt: toBrasiliaTimezone(dbTemplate.created_at),
 });
+
+// Add the formatCurrency function
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};
