@@ -1,3 +1,4 @@
+
 // Domain models
 export interface Funnel {
   id: string;
@@ -74,6 +75,13 @@ export interface ScheduledAction {
     body?: string;
     templateId?: string; // ID of webhook template
     method?: string; // Método HTTP (POST, GET, etc)
+    response?: {
+      status?: number;
+      body?: string;
+      success?: boolean;
+      executed_at?: string;
+      error?: string;
+    }
   };
   scheduledDateTime: Date;
   status: 'pending' | 'completed' | 'failed';
@@ -145,6 +153,13 @@ export interface ScheduledActionFormData {
     body?: string;
     templateId?: string;
     method?: string; // Método HTTP (POST, GET, etc)
+    response?: {
+      status?: number;
+      body?: string;
+      success?: boolean;
+      executed_at?: string;
+      error?: string;
+    }
   };
   scheduledDateTime: Date;
   templateId?: string; // Adding the missing templateId property
