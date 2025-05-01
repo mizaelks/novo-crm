@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 const formSchema = z.object({
   url: z.string().url("URL inválida").min(1, "URL é obrigatória"),
+  method: z.string().min(1, "Método é obrigatório"),
   scheduledDate: z.string().min(1, "Data é obrigatória"),
   scheduledTime: z.string().min(1, "Horário é obrigatório"),
 });
@@ -26,7 +28,7 @@ interface ScheduleActionFormProps {
 const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleActionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Configuração para default com data atual com 1 hora à frente
+  // Set default date to current date + 1 hour
   const today = new Date();
   today.setHours(today.getHours() + 1);
   const formattedDate = today.toISOString().split('T')[0];
@@ -36,6 +38,7 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
     resolver: zodResolver(formSchema),
     defaultValues: {
       url: "",
+      method: "POST",
       scheduledDate: formattedDate,
       scheduledTime: formattedTime,
     },
@@ -48,7 +51,7 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
       // Combine date and time into a single Date object
       const scheduledDateTime = new Date(`${values.scheduledDate}T${values.scheduledTime}:00`);
       
-      // Verificar se a data é futura
+      // Verify the date is in the future
       const now = new Date();
       if (scheduledDateTime <= now) {
         toast.error("A data e hora agendadas devem ser no futuro");
@@ -56,13 +59,14 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
         return;
       }
       
-      // Create the action config based on the webhook URL
+      // Create action config with webhook details
       const actionConfig = { 
         url: values.url,
-        method: 'POST', // Método padrão para webhook
+        method: values.method,
         payload: {
           scheduled: true,
-          scheduledTime: scheduledDateTime.toISOString()
+          scheduledTime: scheduledDateTime.toISOString(),
+          createdAt: new Date().toISOString()
         }
       };
       
@@ -79,15 +83,23 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
         actionType: "webhook",
         actionConfig,
         scheduledDateTime,
-        templateId: null // Definido explicitamente como null
+        templateId: null
       });
       
       toast.success("Webhook agendado com sucesso!");
       onActionScheduled(newAction);
+      
+      // Reset form with fresh time defaults
+      const newToday = new Date();
+      newToday.setHours(newToday.getHours() + 1);
+      const newFormattedDate = newToday.toISOString().split('T')[0];
+      const newFormattedTime = `${String(newToday.getHours()).padStart(2, '0')}:${String(newToday.getMinutes()).padStart(2, '0')}`;
+      
       form.reset({
         url: "",
-        scheduledDate: formattedDate,
-        scheduledTime: formattedTime,
+        method: "POST",
+        scheduledDate: newFormattedDate,
+        scheduledTime: newFormattedTime,
       });
     } catch (error) {
       console.error("Erro ao agendar webhook:", error);
@@ -114,6 +126,33 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
           )}
         />
         
+        <FormField
+          control={form.control}
+          name="method"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Método</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o método HTTP" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -122,7 +161,7 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
               <FormItem>
                 <FormLabel>Data</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" {...field} min={new Date().toISOString().split('T')[0]} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
