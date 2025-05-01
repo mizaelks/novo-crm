@@ -34,7 +34,7 @@ export const scheduledActionAPI = {
       action_type: data.actionType,
       action_config: data.actionConfig,
       scheduled_datetime: scheduledDateTime,
-      template_id: data.templateId || null,
+      template_id: data.templateId,
       status: 'pending'
     });
     
@@ -43,7 +43,7 @@ export const scheduledActionAPI = {
       action_type: data.actionType,
       action_config: data.actionConfig as Json,
       scheduled_datetime: scheduledDateTime,
-      template_id: data.templateId || null,
+      template_id: data.templateId,
       status: 'pending'
     }).select().single();
     

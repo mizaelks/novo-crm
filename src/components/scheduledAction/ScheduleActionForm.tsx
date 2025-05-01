@@ -59,7 +59,11 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
       // Create the action config based on the webhook URL
       const actionConfig = { 
         url: values.url,
-        method: 'POST' // Método padrão para webhook
+        method: 'POST', // Método padrão para webhook
+        payload: {
+          scheduled: true,
+          scheduledTime: scheduledDateTime.toISOString()
+        }
       };
       
       console.log("Agendando webhook:", {

@@ -3,9 +3,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 // Atualizando a importação para usar a versão mais recente de date-fns-tz
-// A versão 3.0.0 foi lançada em abril de 2024 e é compatível com date-fns v3
 import { format } from 'https://esm.sh/date-fns@3.3.1/format';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.0.0/toZonedTime';
+import { isPast } from 'https://esm.sh/date-fns@3.3.1/isPast';
+import { addSeconds } from 'https://esm.sh/date-fns@3.3.1/addSeconds';
 
 interface ScheduledAction {
   id: string;
@@ -17,66 +18,56 @@ interface ScheduledAction {
   template_id?: string;
 }
 
-interface WebhookTemplate {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  target_type: string;
-  event: string;
-  payload: string;
-}
-
 // Configura o cliente Supabase usando as variáveis de ambiente
 const supabaseClient = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// Logs para debug, muito úteis para entender o que está acontecendo
-console.log("Scheduled tasks function starting...");
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Log de inicialização
+console.log("Scheduled tasks function initialized");
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
     const timezoneBrasilia = 'America/Sao_Paulo';
     console.log("Scheduled tasks function handling request");
     
-    // Obter a hora atual em UTC
+    // Obter a hora atual
     const now = new Date();
     console.log(`Current UTC time: ${now.toISOString()}`);
-    
-    // Verificar esquema de database para debug
-    console.log("Verificando esquema da tabela scheduled_actions");
-    const { data: columns, error: schemaError } = await supabaseClient
-      .from('scheduled_actions')
-      .select('*')
-      .limit(1);
-      
-    if (schemaError) {
-      console.error("Erro ao verificar esquema:", schemaError);
-    } else {
-      console.log("Esquema da tabela scheduled_actions:", 
-        Object.keys(columns?.[0] || {}).join(", "));
-    }
     
     // Converter para o fuso horário do Brasil (GMT-3)
     const brasiliaTime = toZonedTime(now, timezoneBrasilia);
     console.log(`Brasilia time: ${format(brasiliaTime, 'yyyy-MM-dd HH:mm:ss', { timeZone: timezoneBrasilia })}`);
     
-    // Formatar a data atual no formato do banco
-    const currentTime = now.toISOString();
-    
     // Buscar ações agendadas que estão pendentes e já passaram do tempo de execução
+    // Adicionamos uma margem de 2 minutos para garantir que ações recentes também sejam capturadas
+    const twoMinutesAgo = addSeconds(now, -120).toISOString();
+    
+    // Log de depuração para verificar a consulta
+    console.log(`Fetching actions scheduled before: ${now.toISOString()}`);
+    console.log(`Including actions from the last 2 minutes: ${twoMinutesAgo}`);
+    
     const { data: actions, error } = await supabaseClient
       .from('scheduled_actions')
       .select('*')
       .eq('status', 'pending')
-      .lte('scheduled_datetime', currentTime);
+      .lte('scheduled_datetime', now.toISOString());
     
     if (error) {
       console.error("Error fetching scheduled actions:", error);
       return new Response(JSON.stringify({ error: "Failed to fetch scheduled actions" }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500
       });
     }
@@ -93,6 +84,13 @@ serve(async (req) => {
           let url = action.action_config.url;
           let payload = action.action_config.payload || {};
           let method = action.action_config.method || 'POST';
+          
+          // Verificar se temos uma URL válida
+          if (!url) {
+            throw new Error("No URL specified for webhook action");
+          }
+          
+          console.log(`Action config: ${JSON.stringify(action.action_config)}`);
           
           // Se tiver um template_id, use os dados do template
           if (action.template_id) {
@@ -124,8 +122,6 @@ serve(async (req) => {
               console.log(`No template found for ID: ${action.template_id}`);
               throw new Error(`No template found for ID: ${action.template_id}`);
             }
-          } else if (!url) {
-            throw new Error("No URL specified for webhook action");
           }
           
           // Buscar dados da oportunidade
@@ -159,6 +155,9 @@ serve(async (req) => {
           
           // Enviar o webhook
           try {
+            // Verificar se a URL é válida antes de enviar
+            new URL(url); // Isso lançará um erro se a URL for inválida
+            
             const webhookResponse = await fetch(url, {
               method: method,
               headers: {
@@ -185,7 +184,8 @@ serve(async (req) => {
                   response: {
                     status: responseStatus,
                     body: responseText,
-                    success: success
+                    success: success,
+                    executed_at: new Date().toISOString()
                   }
                 }
               })
@@ -209,7 +209,8 @@ serve(async (req) => {
                   ...action.action_config,
                   response: {
                     error: fetchError.message,
-                    success: false
+                    success: false,
+                    executed_at: new Date().toISOString()
                   }
                 }
               })
@@ -238,7 +239,8 @@ serve(async (req) => {
                 ...action.action_config,
                 response: {
                   error: e.message,
-                  success: false
+                  success: false,
+                  executed_at: new Date().toISOString()
                 }
               }
             })
@@ -252,13 +254,13 @@ serve(async (req) => {
     }));
     
     return new Response(JSON.stringify({ processed: results.length, results }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200
     });
   } catch (e) {
     console.error("Error in scheduled tasks function:", e);
     return new Response(JSON.stringify({ error: e.message }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500
     });
   }

@@ -4,7 +4,7 @@ import { ScheduledAction } from "@/types";
 import { scheduledActionAPI } from "@/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Trash2, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Clock, Trash2, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { 
@@ -25,6 +25,7 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
   const [loading, setLoading] = useState(true);
   const [actionToDelete, setActionToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadActions = async () => {
     try {
@@ -42,6 +43,12 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
   useEffect(() => {
     loadActions();
   }, [opportunityId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadActions();
+    setRefreshing(false);
+  };
 
   const handleDeleteAction = async () => {
     if (!actionToDelete) return;
@@ -118,55 +125,81 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
     );
   }
 
-  if (actions.length === 0) {
-    return (
-      <div className="text-center p-4 text-muted-foreground">
-        Nenhuma ação agendada encontrada.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {actions.map((action) => (
-        <Card key={action.id} className="mb-4">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-base">{formatActionType(action.actionType)}</CardTitle>
-                <CardDescription>
-                  Agendado para: {format(new Date(action.scheduledDateTime), "dd/MM/yyyy HH:mm")}
-                </CardDescription>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Ações Agendadas</h3>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-1" />
+          )}
+          Atualizar
+        </Button>
+      </div>
+
+      {actions.length === 0 ? (
+        <div className="text-center p-4 text-muted-foreground">
+          Nenhuma ação agendada encontrada.
+        </div>
+      ) : (
+        actions.map((action) => (
+          <Card key={action.id} className="mb-4">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-base">{formatActionType(action.actionType)}</CardTitle>
+                  <CardDescription>
+                    Agendado para: {format(new Date(action.scheduledDateTime), "dd/MM/yyyy HH:mm")}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(action.status)}
+                  {action.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-destructive" 
+                      onClick={() => setActionToDelete(action.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(action.status)}
-                {action.status === 'pending' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 w-8 p-0 text-destructive" 
-                    onClick={() => setActionToDelete(action.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-sm">
+                {action.actionType === 'webhook' && action.actionConfig && (
+                  <>
+                    <p><strong>URL:</strong> {action.actionConfig.url}</p>
+                    {action.actionConfig.method && (
+                      <p><strong>Método:</strong> {action.actionConfig.method}</p>
+                    )}
+                    {action.actionConfig.response && (
+                      <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                        <p><strong>Resposta:</strong> {action.actionConfig.response.status || "-"}</p>
+                        {action.actionConfig.response.executed_at && (
+                          <p><strong>Executado em:</strong> {format(new Date(action.actionConfig.response.executed_at), "dd/MM/yyyy HH:mm:ss")}</p>
+                        )}
+                        {action.actionConfig.response.error && (
+                          <p><strong>Erro:</strong> {action.actionConfig.response.error}</p>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-sm">
-              {action.actionType === 'webhook' && action.actionConfig && (
-                <>
-                  <p><strong>URL:</strong> {action.actionConfig.url}</p>
-                  {action.actionConfig.method && (
-                    <p><strong>Método:</strong> {action.actionConfig.method}</p>
-                  )}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        ))
+      )}
 
       <Dialog open={!!actionToDelete} onOpenChange={(open) => !open && setActionToDelete(null)}>
         <DialogContent>
