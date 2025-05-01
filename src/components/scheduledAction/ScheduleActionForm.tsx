@@ -48,17 +48,25 @@ const ScheduleActionForm = ({ opportunityId, onActionScheduled }: ScheduleAction
       // Combine date and time into a single Date object
       const scheduledDateTime = new Date(`${values.scheduledDate}T${values.scheduledTime}:00`);
       
+      // Verificar se a data é futura
+      const now = new Date();
+      if (scheduledDateTime <= now) {
+        toast.error("A data e hora agendadas devem ser no futuro");
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Create the action config based on the webhook URL
       const actionConfig = { 
         url: values.url,
-        method: 'POST' // Adicionando método padrão para correção do erro
+        method: 'POST' // Método padrão para webhook
       };
       
       console.log("Agendando webhook:", {
         opportunityId,
         actionType: "webhook",
         actionConfig,
-        scheduledDateTime,
+        scheduledDateTime: scheduledDateTime.toISOString(),
         templateId: null
       });
       

@@ -71,7 +71,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
           {...provided.dragHandleProps}
         >
           <Card 
-            className={`${snapshot.isDragging ? "shadow-lg" : ""} cursor-pointer hover:border-primary/50 transition-colors`}
+            className={`${snapshot.isDragging ? "shadow-lg" : ""} cursor-pointer hover:border-primary/50 transition-colors overflow-visible`}
             onClick={handleCardClick}
           >
             <CardHeader className="py-3 px-3">
@@ -83,7 +83,7 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0"
-                      onClick={(e) => e.stopPropagation()} // Evita que o clique propague para o Card
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>

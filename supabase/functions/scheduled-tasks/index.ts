@@ -105,6 +105,7 @@ serve(async (req) => {
               
             if (templateError) {
               console.error("Error fetching template:", templateError);
+              throw new Error(`Template fetch error: ${templateError.message}`);
             }
               
             if (template) {
@@ -117,10 +118,14 @@ serve(async (req) => {
                 console.log(`Template payload parsed successfully`);
               } catch (e) {
                 console.error("Error parsing template payload:", e);
+                throw new Error(`Template payload parse error: ${e.message}`);
               }
             } else {
               console.log(`No template found for ID: ${action.template_id}`);
+              throw new Error(`No template found for ID: ${action.template_id}`);
             }
+          } else if (!url) {
+            throw new Error("No URL specified for webhook action");
           }
           
           // Buscar dados da oportunidade
@@ -133,6 +138,7 @@ serve(async (req) => {
               
             if (opportunityError) {
               console.error("Error fetching opportunity:", opportunityError);
+              throw new Error(`Opportunity fetch error: ${opportunityError.message}`);
             }
               
             if (opportunity) {
@@ -226,7 +232,16 @@ serve(async (req) => {
         try {
           await supabaseClient
             .from('scheduled_actions')
-            .update({ status: 'failed' })
+            .update({ 
+              status: 'failed',
+              action_config: {
+                ...action.action_config,
+                response: {
+                  error: e.message,
+                  success: false
+                }
+              }
+            })
             .eq('id', action.id);
         } catch (updateError) {
           console.error(`Error updating action status to failed: ${updateError}`);

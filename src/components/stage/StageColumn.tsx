@@ -13,7 +13,7 @@ interface StageColumnProps {
   index: number;
   funnelId: string;
   onOpportunityCreated: (opportunity: Opportunity) => void;
-  onStageUpdated?: (stage: Stage) => void; // Nova prop para atualizar o estágio
+  onStageUpdated?: (stage: Stage) => void;
 }
 
 const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpdated }: StageColumnProps) => {
@@ -33,8 +33,8 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
               dragHandleProps={provided.dragHandleProps}
               updateStage={onStageUpdated}
             />
-            <CardContent className="p-2 flex-1">
-              <ScrollArea className="h-[calc(100vh-260px)]">
+            <CardContent className="p-2 flex-1 overflow-hidden">
+              <ScrollArea className="h-[calc(100vh-260px)]" type="auto">
                 <StageOpportunityList
                   stageId={stage.id}
                   opportunities={stage.opportunities}

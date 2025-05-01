@@ -155,6 +155,7 @@ export type Database = {
           opportunity_id: string | null
           scheduled_datetime: string
           status: string
+          template_id: string | null
         }
         Insert: {
           action_config?: Json
@@ -164,6 +165,7 @@ export type Database = {
           opportunity_id?: string | null
           scheduled_datetime: string
           status?: string
+          template_id?: string | null
         }
         Update: {
           action_config?: Json
@@ -173,6 +175,7 @@ export type Database = {
           opportunity_id?: string | null
           scheduled_datetime?: string
           status?: string
+          template_id?: string | null
         }
         Relationships: [
           {
@@ -180,6 +183,13 @@ export type Database = {
             columns: ["opportunity_id"]
             isOneToOne: false
             referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_actions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -191,6 +201,8 @@ export type Database = {
           description: string | null
           funnel_id: string | null
           id: string
+          is_loss_stage: boolean | null
+          is_win_stage: boolean | null
           name: string
           order: number | null
         }
@@ -200,6 +212,8 @@ export type Database = {
           description?: string | null
           funnel_id?: string | null
           id?: string
+          is_loss_stage?: boolean | null
+          is_win_stage?: boolean | null
           name: string
           order?: number | null
         }
@@ -209,6 +223,8 @@ export type Database = {
           description?: string | null
           funnel_id?: string | null
           id?: string
+          is_loss_stage?: boolean | null
+          is_win_stage?: boolean | null
           name?: string
           order?: number | null
         }
