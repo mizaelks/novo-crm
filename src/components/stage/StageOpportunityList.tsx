@@ -17,26 +17,30 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
     <Droppable droppableId={stageId} type="opportunity">
       {(provided, snapshot) => (
         <div
-          className={`min-h-[150px] h-full p-1 rounded-sm ${
-            snapshot.isDraggingOver ? "bg-accent/70" : ""
-          }`}
-          ref={provided.innerRef}
-          {...provided.droppableProps}
+          className="flex flex-col h-full"
         >
-          <ScrollArea className="h-[calc(100vh-300px)]">
-            {opportunities.map((opportunity, index) => (
-              <OpportunityCard
-                key={opportunity.id}
-                opportunity={opportunity}
-                index={index}
-                stageId={stageId}
-              />
-            ))}
-            {provided.placeholder}
+          <ScrollArea className="flex-1 h-[calc(100vh-280px)]">
+            <div
+              className={`min-h-[50px] p-1 rounded-sm ${
+                snapshot.isDraggingOver ? "bg-accent/70" : ""
+              }`}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {opportunities.map((opportunity, index) => (
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                  index={index}
+                  stageId={stageId}
+                />
+              ))}
+              {provided.placeholder}
+            </div>
           </ScrollArea>
           <Button
             variant="ghost"
-            className="w-full mt-2 text-muted-foreground border border-dashed border-muted-foreground/30"
+            className="w-full mt-4 text-muted-foreground border border-dashed border-muted-foreground/30"
             onClick={onAddClick}
           >
             <Plus className="h-4 w-4 mr-1" />

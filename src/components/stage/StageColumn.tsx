@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import CreateOpportunityDialog from "../opportunity/CreateOpportunityDialog";
 import StageHeader from "./StageHeader";
 import StageOpportunityList from "./StageOpportunityList";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StageColumnProps {
   stage: Stage;
@@ -34,13 +33,11 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
               updateStage={onStageUpdated}
             />
             <CardContent className="p-2 flex-1 overflow-hidden">
-              <ScrollArea className="h-[calc(100vh-260px)]" type="auto">
-                <StageOpportunityList
-                  stageId={stage.id}
-                  opportunities={stage.opportunities}
-                  onAddClick={() => setIsDialogOpen(true)}
-                />
-              </ScrollArea>
+              <StageOpportunityList
+                stageId={stage.id}
+                opportunities={stage.opportunities}
+                onAddClick={() => setIsDialogOpen(true)}
+              />
             </CardContent>
           </Card>
           
