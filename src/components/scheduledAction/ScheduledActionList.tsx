@@ -1,20 +1,16 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ScheduledAction } from "@/types";
 import { scheduledActionAPI } from "@/services/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Trash2, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ActionStatusBadge } from "./ActionStatusBadge";
+import { ActionHeader } from "./ActionHeader";
+import { ActionContent } from "./ActionContent";
 
 interface ScheduledActionListProps {
   opportunityId: string;
@@ -23,9 +19,8 @@ interface ScheduledActionListProps {
 const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
   const [actions, setActions] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionToDelete, setActionToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { ConfirmDialog, showConfirmation } = useConfirmDialog();
 
   const loadActions = async () => {
     try {
@@ -50,79 +45,30 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
     setRefreshing(false);
   };
 
-  const handleDeleteAction = async () => {
-    if (!actionToDelete) return;
+  const handleDeleteAction = async (actionId: string) => {
+    const confirmDelete = await showConfirmation(
+      "Excluir ação agendada", 
+      "Tem certeza que deseja excluir esta ação agendada? Esta ação não pode ser desfeita."
+    );
     
-    try {
-      setIsDeleting(true);
-      const success = await scheduledActionAPI.delete(actionToDelete);
-      if (success) {
-        setActions(actions.filter(action => action.id !== actionToDelete));
-        toast.success("Ação agendada excluída com sucesso");
-        setActionToDelete(null);
-      } else {
+    if (confirmDelete) {
+      try {
+        const success = await scheduledActionAPI.delete(actionId);
+        if (success) {
+          setActions(actions.filter(action => action.id !== actionId));
+          toast.success("Ação agendada excluída com sucesso");
+        } else {
+          toast.error("Erro ao excluir ação agendada");
+        }
+      } catch (error) {
+        console.error("Error deleting scheduled action:", error);
         toast.error("Erro ao excluir ação agendada");
       }
-    } catch (error) {
-      console.error("Error deleting scheduled action:", error);
-      toast.error("Erro ao excluir ação agendada");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <Clock className="h-3 w-3 mr-1" />
-            Pendente
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Concluído
-          </span>
-        );
-      case 'failed':
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Falhou
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        );
-    }
-  };
-
-  const formatActionType = (type: string) => {
-    switch (type) {
-      case 'webhook':
-        return 'Webhook';
-      case 'email':
-        return 'Email';
-      case 'notification':
-        return 'Notificação';
-      default:
-        return type;
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Carregando ações agendadas...</span>
-      </div>
-    );
+    return <ActionListSkeleton />;
   }
 
   return (
@@ -145,92 +91,53 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
       </div>
 
       {actions.length === 0 ? (
-        <div className="text-center p-4 text-muted-foreground">
-          Nenhuma ação agendada encontrada.
-        </div>
+        <EmptyState />
       ) : (
         actions.map((action) => (
-          <Card key={action.id} className="mb-4">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-base">{formatActionType(action.actionType)}</CardTitle>
-                  <CardDescription>
-                    Agendado para: {format(new Date(action.scheduledDateTime), "dd/MM/yyyy HH:mm")}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(action.status)}
-                  {action.status === 'pending' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0 text-destructive" 
-                      onClick={() => setActionToDelete(action.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-sm">
-                {action.actionType === 'webhook' && action.actionConfig && (
-                  <>
-                    <p><strong>URL:</strong> {action.actionConfig.url}</p>
-                    {action.actionConfig.method && (
-                      <p><strong>Método:</strong> {action.actionConfig.method}</p>
-                    )}
-                    {action.actionConfig.response && (
-                      <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                        <p><strong>Resposta:</strong> {action.actionConfig.response.status || "-"}</p>
-                        {action.actionConfig.response.executed_at && (
-                          <p><strong>Executado em:</strong> {format(new Date(action.actionConfig.response.executed_at), "dd/MM/yyyy HH:mm:ss")}</p>
-                        )}
-                        {action.actionConfig.response.error && (
-                          <p><strong>Erro:</strong> {action.actionConfig.response.error}</p>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ActionCard 
+            key={action.id} 
+            action={action} 
+            onDelete={handleDeleteAction} 
+          />
         ))
       )}
 
-      <Dialog open={!!actionToDelete} onOpenChange={(open) => !open && setActionToDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir ação agendada</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir esta ação agendada?
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setActionToDelete(null)} disabled={isDeleting}>
-              Cancelar
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteAction}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
-                </>
-              ) : "Excluir"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog />
     </div>
   );
 };
+
+// ActionCard component for displaying individual scheduled actions
+const ActionCard = ({ action, onDelete }: { 
+  action: ScheduledAction; 
+  onDelete: (id: string) => void;
+}) => {
+  return (
+    <Card key={action.id} className="mb-4">
+      <ActionHeader 
+        action={action} 
+        onDelete={() => onDelete(action.id)} 
+      />
+      <CardContent className="pt-0">
+        <ActionContent action={action} />
+      </CardContent>
+    </Card>
+  );
+};
+
+// Empty state component
+const EmptyState = () => (
+  <div className="text-center p-4 text-muted-foreground">
+    Nenhuma ação agendada encontrada.
+  </div>
+);
+
+// Loading skeleton
+const ActionListSkeleton = () => (
+  <div className="flex items-center justify-center p-4">
+    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+    <span>Carregando ações agendadas...</span>
+  </div>
+);
 
 export default ScheduledActionList;
