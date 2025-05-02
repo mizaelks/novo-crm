@@ -28,12 +28,26 @@ declare module 'react-beautiful-dnd' {
     droppableId: string;
     type?: string;
     direction?: 'horizontal' | 'vertical';
-    children: (provided: any, snapshot: any) => React.ReactNode;
+    children: (provided: {
+      droppableProps: any;
+      innerRef: React.RefObject<any>;
+      placeholder: React.ReactNode;
+    }, snapshot: {
+      isDraggingOver: boolean;
+      draggingOverWith?: string;
+    }) => React.ReactNode;
   }>;
   
   export const Draggable: React.ComponentType<{
     draggableId: string;
     index: number;
-    children: (provided: any, snapshot: any) => React.ReactNode;
+    children: (provided: {
+      draggableProps: any;
+      dragHandleProps?: any;
+      innerRef: React.RefObject<any>;
+    }, snapshot: {
+      isDragging: boolean;
+      draggingOver?: string;
+    }) => React.ReactNode;
   }>;
 }

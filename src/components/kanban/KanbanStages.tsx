@@ -42,7 +42,7 @@ const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated, onSta
             </Droppable>
           </div>
           <ScrollBar orientation="horizontal" />
-        </div>
+        </ScrollArea>
       </div>
     </DragDropContext>
   );
