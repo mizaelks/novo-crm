@@ -16,9 +16,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
   return (
     <Droppable droppableId={stageId} type="opportunity">
       {(provided, snapshot) => (
-        <div
-          className="flex flex-col h-full"
-        >
+        <div className="flex flex-col h-full">
           <ScrollArea className="flex-1 h-[calc(100vh-280px)]">
             <div
               className={`min-h-[50px] p-1 rounded-sm ${
