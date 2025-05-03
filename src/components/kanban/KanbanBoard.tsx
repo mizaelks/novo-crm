@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DropResult } from "react-beautiful-dnd";
 import { Funnel, Stage, Opportunity } from "@/types";
@@ -174,6 +173,12 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         const originalStages = await stageAPI.getByFunnelId(funnelId);
         setStages(originalStages);
       }
+    }
+
+    // Handle stage reordering if needed
+    if (type === "stage") {
+      console.log("Stage reordering not implemented yet");
+      // You could implement stage reordering here if needed
     }
   };
 
