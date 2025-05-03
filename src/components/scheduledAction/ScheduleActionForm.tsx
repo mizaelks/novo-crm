@@ -7,17 +7,12 @@ import { Stage } from "@/types";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 // Schema de validação para webhook
 const webhookSchema = z.object({
@@ -229,15 +224,15 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
-        <input type="hidden" {...form.register("taskType")} />
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="webhook">Webhook</TabsTrigger>
-            <TabsTrigger value="task">Tarefa</TabsTrigger>
-          </TabsList>
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="webhook">Webhook</TabsTrigger>
+        <TabsTrigger value="task">Tarefa</TabsTrigger>
+      </TabsList>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
+          <input type="hidden" {...form.register("taskType")} />
           
           <TabsContent value="webhook" className="space-y-4">
             <FormField
