@@ -67,14 +67,24 @@ export interface WebhookTemplate {
 export interface ScheduledAction {
   id: string;
   opportunityId: string;
-  actionType: 'email' | 'webhook';
+  actionType: 'email' | 'webhook' | 'task';
   actionConfig: {
+    // Webhook-specific fields
     url?: string;
+    method?: string; // Método HTTP (POST, GET, etc)
+    payload?: any;
+    // Email-specific fields
     email?: string;
     subject?: string;
     body?: string;
+    // Task-specific fields
+    title?: string;
+    assignedTo?: string;
+    // Common fields
+    description?: string;
     templateId?: string; // ID of webhook template
-    method?: string; // Método HTTP (POST, GET, etc)
+    moveToNextStage?: boolean;
+    nextStageId?: string;
     response?: {
       status?: number;
       body?: string;
@@ -145,14 +155,24 @@ export interface WebhookTemplateFormData {
 
 export interface ScheduledActionFormData {
   opportunityId: string;
-  actionType: 'email' | 'webhook';
+  actionType: 'email' | 'webhook' | 'task';
   actionConfig: {
+    // Webhook-specific fields
     url?: string;
+    method?: string;
+    payload?: any;
+    // Email-specific fields
     email?: string;
     subject?: string;
     body?: string;
+    // Task-specific fields
+    title?: string;
+    assignedTo?: string;
+    // Common fields
+    description?: string;
     templateId?: string;
-    method?: string; // Método HTTP (POST, GET, etc)
+    moveToNextStage?: boolean;
+    nextStageId?: string;
     response?: {
       status?: number;
       body?: string;

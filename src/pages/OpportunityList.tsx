@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Opportunity, Funnel, Stage } from "@/types";
 import { opportunityAPI, funnelAPI, stageAPI } from "@/services/api";
@@ -58,6 +57,7 @@ import { pt } from "date-fns/locale";
 import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { DateFilterType, DateRange } from "@/hooks/useDateFilter";
 
 // Enum para os filtros de data
 enum DateFilterType {
@@ -88,7 +88,7 @@ const OpportunityList = () => {
   const [filterStage, setFilterStage] = useState<string>('');
   const [filterClient, setFilterClient] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<DateFilterType>(DateFilterType.ALL);
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined,
   });
@@ -325,6 +325,11 @@ const OpportunityList = () => {
 
     loadData();
   }, []);
+
+  // Função de callback para o seletor de intervalo de datas
+  const handleDateRangeSelect = (range: DateRange | any) => {
+    setDateRange(range);
+  };
 
   const handleDeleteOpportunity = async (id: string) => {
     try {
@@ -612,7 +617,7 @@ const OpportunityList = () => {
                       <Calendar
                         mode="range"
                         selected={dateRange}
-                        onSelect={setDateRange}
+                        onSelect={handleDateRangeSelect}
                         numberOfMonths={1}
                         locale={pt}
                         className={cn("p-3 pointer-events-auto")}
