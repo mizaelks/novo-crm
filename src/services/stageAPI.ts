@@ -231,7 +231,7 @@ export const stageAPI = {
     };
   },
 
-  delete: async (id: string): boolean => {
+  delete: async (id: string): Promise<boolean> => {
     // First delete all required fields for this stage
     await supabase.from('required_fields').delete().eq('stage_id', id);
     
