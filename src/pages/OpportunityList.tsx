@@ -57,18 +57,7 @@ import { pt } from "date-fns/locale";
 import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { DateFilterType, DateRange } from "@/hooks/useDateFilter";
-
-// Enum para os filtros de data
-enum DateFilterType {
-  ALL = "all",
-  TODAY = "today",
-  YESTERDAY = "yesterday",
-  THIS_WEEK = "thisWeek",
-  LAST_WEEK = "lastWeek",
-  THIS_MONTH = "thisMonth",
-  CUSTOM = "custom",
-}
+import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
 
 // Interface para configurações de arquivamento
 interface ArchiveSettings {
