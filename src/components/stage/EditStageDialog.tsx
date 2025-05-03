@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, StageFormData } from "@/types";
+import { Stage, StageFormData, RequiredField } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -24,6 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -55,6 +59,11 @@ const EditStageDialog = ({
   const [stage, setStage] = useState<Stage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [requiredFields, setRequiredFields] = useState<RequiredField[]>([]);
+  const [newFieldName, setNewFieldName] = useState("");
+  const [newFieldType, setNewFieldType] = useState<"text" | "number" | "date" | "checkbox" | "select">("text");
+  const [newFieldOptions, setNewFieldOptions] = useState("");
+  const [addingField, setAddingField] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,6 +88,7 @@ const EditStageDialog = ({
           
           if (stageData) {
             setStage(stageData);
+            setRequiredFields(stageData.requiredFields || []);
             form.reset({
               name: stageData.name,
               description: stageData.description || "",
@@ -114,7 +124,8 @@ const EditStageDialog = ({
         funnelId: stage.funnelId,
         color: values.color,
         isWinStage: values.isWinStage,
-        isLossStage: values.isLossStage
+        isLossStage: values.isLossStage,
+        requiredFields: requiredFields
       });
       
       setIsSubmitting(true);
@@ -125,7 +136,8 @@ const EditStageDialog = ({
         funnelId: stage.funnelId,
         color: values.color,
         isWinStage: values.isWinStage,
-        isLossStage: values.isLossStage
+        isLossStage: values.isLossStage,
+        requiredFields: requiredFields
       });
       
       console.log("Resposta da API:", updatedStage);
@@ -145,9 +157,41 @@ const EditStageDialog = ({
     }
   };
 
+  const handleAddRequiredField = () => {
+    if (!newFieldName.trim()) {
+      toast.error("O nome do campo é obrigatório");
+      return;
+    }
+
+    const newField: RequiredField = {
+      id: crypto.randomUUID(),
+      name: newFieldName.trim(),
+      type: newFieldType,
+      isRequired: true,
+      stageId: stageId
+    };
+
+    // Add options for select fields
+    if (newFieldType === "select" && newFieldOptions) {
+      newField.options = newFieldOptions.split(",").map(option => option.trim());
+    }
+
+    setRequiredFields([...requiredFields, newField]);
+    setNewFieldName("");
+    setNewFieldType("text");
+    setNewFieldOptions("");
+    setAddingField(false);
+    toast.success("Campo adicionado");
+  };
+
+  const handleRemoveField = (fieldId: string) => {
+    setRequiredFields(requiredFields.filter(field => field.id !== fieldId));
+    toast.success("Campo removido");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Editar etapa</DialogTitle>
         </DialogHeader>
@@ -256,6 +300,114 @@ const EditStageDialog = ({
                     </FormItem>
                   )}
                 />
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-medium">Campos obrigatórios</h3>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setAddingField(true)}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-1" />
+                    Adicionar campo
+                  </Button>
+                </div>
+                
+                {addingField && (
+                  <div className="border rounded-md p-4 mb-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <FormLabel>Nome do campo</FormLabel>
+                        <Input 
+                          value={newFieldName} 
+                          onChange={e => setNewFieldName(e.target.value)} 
+                          placeholder="Ex: Valor da proposta"
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Tipo do campo</FormLabel>
+                        <Select 
+                          value={newFieldType} 
+                          onValueChange={(value: any) => setNewFieldType(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Texto</SelectItem>
+                            <SelectItem value="number">Número</SelectItem>
+                            <SelectItem value="date">Data</SelectItem>
+                            <SelectItem value="checkbox">Checkbox</SelectItem>
+                            <SelectItem value="select">Seleção</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    {newFieldType === "select" && (
+                      <div>
+                        <FormLabel>Opções (separadas por vírgula)</FormLabel>
+                        <Input 
+                          value={newFieldOptions} 
+                          onChange={e => setNewFieldOptions(e.target.value)} 
+                          placeholder="Ex: Opção 1, Opção 2, Opção 3"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        onClick={() => setAddingField(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        type="button" 
+                        onClick={handleAddRequiredField}
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {requiredFields.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    Nenhum campo obrigatório configurado
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {requiredFields.map(field => (
+                      <div key={field.id} className="flex items-center justify-between p-2 border rounded-md">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{field.name}</span>
+                          <Badge variant="outline">
+                            {field.type === "text" && "Texto"}
+                            {field.type === "number" && "Número"}
+                            {field.type === "date" && "Data"}
+                            {field.type === "checkbox" && "Checkbox"}
+                            {field.type === "select" && "Seleção"}
+                          </Badge>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleRemoveField(field.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <DialogFooter className="pt-4">

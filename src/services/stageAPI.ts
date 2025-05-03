@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Stage, StageFormData } from "@/types";
+import { Stage, StageFormData, RequiredField } from "@/types";
 import { mapDbStageToStage } from "./utils/mappers";
 import { opportunityAPI } from "./opportunityAPI";
 import { triggerEntityWebhooks } from "./utils/webhook";
@@ -15,9 +15,12 @@ export const stageAPI = {
     
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
+      // Fetch required fields for this stage
+      const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
       stages.push({
         ...stageBase,
-        opportunities
+        opportunities,
+        requiredFields
       });
     }
     
@@ -33,9 +36,12 @@ export const stageAPI = {
     
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
+      // Fetch required fields for this stage
+      const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
       stages.push({
         ...stageBase,
-        opportunities
+        opportunities,
+        requiredFields
       });
     }
     
@@ -48,11 +54,35 @@ export const stageAPI = {
     
     const stageBase = mapDbStageToStage(data);
     const opportunities = await opportunityAPI.getByStageId(id);
+    // Fetch required fields for this stage
+    const requiredFields = await stageAPI.getRequiredFieldsByStageId(id);
     
     return {
       ...stageBase,
-      opportunities
+      opportunities,
+      requiredFields
     };
+  },
+
+  getRequiredFieldsByStageId: async (stageId: string): Promise<RequiredField[]> => {
+    const { data, error } = await supabase
+      .from('required_fields')
+      .select('*')
+      .eq('stage_id', stageId);
+      
+    if (error) {
+      console.error("Error fetching required fields:", error);
+      return [];
+    }
+    
+    return (data || []).map(field => ({
+      id: field.id,
+      name: field.name,
+      type: field.type,
+      options: field.options,
+      isRequired: field.is_required,
+      stageId: field.stage_id
+    }));
   },
 
   create: async (data: StageFormData): Promise<Stage> => {
@@ -75,11 +105,31 @@ export const stageAPI = {
     
     const stageBase = mapDbStageToStage(created);
     
+    // Create required fields if any
+    const requiredFields: RequiredField[] = [];
+    if (data.requiredFields && data.requiredFields.length > 0) {
+      for (const field of data.requiredFields) {
+        await stageAPI.addRequiredField({
+          name: field.name,
+          type: field.type,
+          options: field.options,
+          isRequired: field.isRequired,
+          stageId: created.id
+        });
+        requiredFields.push({
+          ...field,
+          id: crypto.randomUUID(), // temporary ID until we get the real one
+          stageId: created.id
+        });
+      }
+    }
+    
     await triggerEntityWebhooks('stage', created.id, 'create', created);
     
     return {
       ...stageBase,
-      opportunities: []
+      opportunities: [],
+      requiredFields
     };
   },
 
@@ -109,18 +159,66 @@ export const stageAPI = {
       return null;
     }
     
+    // Update required fields if provided
+    if (data.requiredFields) {
+      // First, delete all existing required fields for this stage
+      await supabase.from('required_fields').delete().eq('stage_id', id);
+      
+      // Then add the new ones
+      for (const field of data.requiredFields) {
+        await stageAPI.addRequiredField({
+          name: field.name,
+          type: field.type,
+          options: field.options,
+          isRequired: field.isRequired,
+          stageId: id
+        });
+      }
+    }
+    
     await triggerEntityWebhooks('stage', id, 'update', updated);
     
     const stageBase = mapDbStageToStage(updated);
     const opportunities = await opportunityAPI.getByStageId(id);
+    const requiredFields = data.requiredFields || await stageAPI.getRequiredFieldsByStageId(id);
     
     return {
       ...stageBase,
-      opportunities
+      opportunities,
+      requiredFields
+    };
+  },
+
+  // Add a required field to a stage
+  addRequiredField: async (fieldData: RequiredFieldFormData): Promise<RequiredField | null> => {
+    const { data, error } = await supabase.from('required_fields').insert([{
+      name: fieldData.name,
+      type: fieldData.type,
+      options: fieldData.options,
+      is_required: fieldData.isRequired,
+      stage_id: fieldData.stageId
+    }]).select().single();
+    
+    if (error || !data) {
+      console.error("Error adding required field:", error);
+      return null;
+    }
+    
+    return {
+      id: data.id,
+      name: data.name,
+      type: data.type,
+      options: data.options,
+      isRequired: data.is_required,
+      stageId: data.stage_id
     };
   },
 
   delete: async (id: string): Promise<boolean> => {
+    // First delete all required fields for this stage
+    await supabase.from('required_fields').delete().eq('stage_id', id);
+    
+    // Then delete the stage
     const { error } = await supabase.from('stages').delete().eq('id', id);
     return !error;
   }

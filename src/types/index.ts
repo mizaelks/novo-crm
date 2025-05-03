@@ -115,6 +115,7 @@ export interface StageFormData {
   color?: string;
   isWinStage?: boolean;
   isLossStage?: boolean;
+  requiredFields?: RequiredField[];
 }
 
 export interface RequiredFieldFormData {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DropResult } from "react-beautiful-dnd";
 import { Funnel, Stage, Opportunity } from "@/types";
@@ -38,6 +39,33 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     loadData();
   }, [funnelId]);
 
+  // Check if opportunity meets required fields for a stage
+  const checkRequiredFields = (opportunity: Opportunity, stageId: string): { valid: boolean, missingFields: string[] } => {
+    const stage = stages.find(s => s.id === stageId);
+    if (!stage || !stage.requiredFields || stage.requiredFields.length === 0) {
+      return { valid: true, missingFields: [] };
+    }
+    
+    const missingFields: string[] = [];
+    
+    for (const field of stage.requiredFields) {
+      if (!field.isRequired) continue;
+      
+      const fieldValue = opportunity.customFields?.[field.name];
+      
+      if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
+        missingFields.push(field.name);
+      } else if (field.type === 'checkbox' && fieldValue !== true) {
+        missingFields.push(field.name);
+      }
+    }
+    
+    return { 
+      valid: missingFields.length === 0,
+      missingFields
+    };
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
@@ -61,6 +89,23 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       const destinationStageId = destination.droppableId;
       
       try {
+        // Find the opportunity
+        const sourceStage = stages.find(stage => stage.id === sourceStageId);
+        if (!sourceStage) return;
+        
+        const opportunity = sourceStage.opportunities.find(opp => opp.id === opportunityId);
+        if (!opportunity) return;
+        
+        // Check if the opportunity meets the required fields for the destination stage
+        const { valid, missingFields } = checkRequiredFields(opportunity, destinationStageId);
+        
+        if (!valid) {
+          toast.error(
+            `Não é possível mover esta oportunidade para a etapa selecionada. Campos obrigatórios faltando: ${missingFields.join(', ')}`
+          );
+          return;
+        }
+        
         // Optimistically update the UI
         const updatedStages = stages.map(stage => {
           // If this is the source stage, remove the opportunity
@@ -75,13 +120,6 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
           }
           return stage;
         });
-        
-        // Find the opportunity from the source stage
-        const sourceStage = stages.find(stage => stage.id === sourceStageId);
-        if (!sourceStage) return;
-        
-        const opportunity = sourceStage.opportunities.find(opp => opp.id === opportunityId);
-        if (!opportunity) return;
         
         // Update the opportunity with the new stageId
         const updatedOpportunity = { ...opportunity, stageId: destinationStageId };

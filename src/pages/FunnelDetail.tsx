@@ -6,14 +6,16 @@ import { toast } from "sonner";
 import { funnelAPI } from "@/services/api";
 import { Funnel } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, InfoCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const FunnelDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [funnel, setFunnel] = useState<Funnel | null>(null);
+  const [showInfo, setShowInfo] = useState(true);
 
   useEffect(() => {
     const checkFunnelExists = async () => {
@@ -65,6 +67,27 @@ const FunnelDetail = () => {
               Voltar para funis
             </Button>
           </div>
+          
+          {showInfo && (
+            <Alert className="mb-4">
+              <InfoCircle className="h-4 w-4" />
+              <AlertTitle>Campos obrigatórios por etapa</AlertTitle>
+              <AlertDescription>
+                Você pode configurar campos obrigatórios para cada etapa do funil. Ao editar uma etapa, 
+                é possível adicionar campos que devem ser preenchidos antes que uma oportunidade possa 
+                ser movida para esta etapa.
+              </AlertDescription>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => setShowInfo(false)}
+              >
+                Entendi
+              </Button>
+            </Alert>
+          )}
+          
           <KanbanBoard funnelId={id!} />
         </>
       )}
