@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { funnelAPI } from "@/services/api";
 import { Funnel } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, InfoCircle } from "lucide-react";
+import { ChevronLeft, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -70,7 +70,7 @@ const FunnelDetail = () => {
           
           {showInfo && (
             <Alert className="mb-4">
-              <InfoCircle className="h-4 w-4" />
+              <Info className="h-4 w-4" />
               <AlertTitle>Campos obrigatórios por etapa</AlertTitle>
               <AlertDescription>
                 Você pode configurar campos obrigatórios para cada etapa do funil. Ao editar uma etapa, 

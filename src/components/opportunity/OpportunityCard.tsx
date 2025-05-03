@@ -156,13 +156,13 @@ const OpportunityCard = ({ opportunity, index, stageId }: OpportunityCardProps) 
             onOpportunityUpdated={handleOpportunityUpdated}
           />
 
-          {stage && (
+          {isDetailsDialogOpen && (
             <OpportunityDetailsDialog
               open={isDetailsDialogOpen}
               onOpenChange={setIsDetailsDialogOpen}
-              opportunity={currentOpportunity}
-              stage={stage}
-              onEdit={() => setIsEditDialogOpen(true)}
+              opportunityId={currentOpportunity.id}
+              onOpportunityUpdated={handleOpportunityUpdated}
+              onOpportunityDeleted={() => {}} // Add a simple empty handler
             />
           )}
         </div>

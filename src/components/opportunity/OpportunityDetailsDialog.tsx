@@ -323,13 +323,17 @@ const OpportunityDetailsDialog = ({
               
               <TabsContent value="actions">
                 <div className="mb-4">
-                  <ScheduleActionForm 
-                    opportunityId={opportunity.id} 
-                    onActionScheduled={() => {
-                      // Refresh the action list when a new action is scheduled
-                      setActiveTab("actions");
-                    }} 
-                  />
+                  {opportunity && (
+                    <ScheduleActionForm 
+                      opportunityId={opportunity.id}
+                      funnelId={opportunity.funnelId}
+                      stageId={opportunity.stageId}
+                      onActionScheduled={() => {
+                        // Refresh the action list when a new action is scheduled
+                        setActiveTab("actions");
+                      }} 
+                    />
+                  )}
                 </div>
                 
                 <Separator className="my-4" />

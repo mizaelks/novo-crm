@@ -1,20 +1,23 @@
-
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { scheduledActionAPI } from "@/services/api";
-import { ScheduledAction } from "@/types";
-import { Button } from "@/components/ui/button";
+import { scheduledActionAPI, stageAPI } from "@/services/api";
+import { Stage } from "@/types";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { stageAPI } from "@/services/api";
-import { Stage } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 // Schema de validação para webhook
 const webhookSchema = z.object({
@@ -47,7 +50,7 @@ interface ScheduleActionFormProps {
   opportunityId: string;
   funnelId: string;
   stageId: string;
-  onActionScheduled: (action: ScheduledAction) => void;
+  onActionScheduled: () => void;
 }
 
 const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionScheduled }: ScheduleActionFormProps) => {
@@ -184,7 +187,7 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
       });
       
       toast.success(`${values.taskType === "webhook" ? "Webhook" : "Tarefa"} agendado com sucesso!`);
-      onActionScheduled(newAction);
+      onActionScheduled();
       
       // Reset form with fresh time defaults
       const newToday = new Date();
@@ -226,15 +229,15 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="webhook">Webhook</TabsTrigger>
-        <TabsTrigger value="task">Tarefa</TabsTrigger>
-      </TabsList>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
-          <input type="hidden" {...form.register("taskType")} />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
+        <input type="hidden" {...form.register("taskType")} />
+        
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="webhook">Webhook</TabsTrigger>
+            <TabsTrigger value="task">Tarefa</TabsTrigger>
+          </TabsList>
           
           <TabsContent value="webhook" className="space-y-4">
             <FormField

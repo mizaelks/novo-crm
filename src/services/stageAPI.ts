@@ -109,18 +109,17 @@ export const stageAPI = {
     const requiredFields: RequiredField[] = [];
     if (data.requiredFields && data.requiredFields.length > 0) {
       for (const field of data.requiredFields) {
-        await stageAPI.addRequiredField({
+        const addedField = await stageAPI.addRequiredField({
           name: field.name,
           type: field.type,
           options: field.options,
           isRequired: field.isRequired,
           stageId: created.id
         });
-        requiredFields.push({
-          ...field,
-          id: crypto.randomUUID(), // temporary ID until we get the real one
-          stageId: created.id
-        });
+        
+        if (addedField) {
+          requiredFields.push(addedField);
+        }
       }
     }
     
@@ -190,7 +189,13 @@ export const stageAPI = {
   },
 
   // Add a required field to a stage
-  addRequiredField: async (fieldData: RequiredFieldFormData): Promise<RequiredField | null> => {
+  addRequiredField: async (fieldData: {
+    name: string;
+    type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
+    options?: string[];
+    isRequired: boolean;
+    stageId: string;
+  }): Promise<RequiredField | null> => {
     const { data, error } = await supabase.from('required_fields').insert([{
       name: fieldData.name,
       type: fieldData.type,

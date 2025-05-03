@@ -97,6 +97,7 @@ export type Database = {
           client: string | null
           company: string | null
           created_at: string | null
+          custom_fields: Json | null
           email: string | null
           funnel_id: string | null
           id: string
@@ -109,6 +110,7 @@ export type Database = {
           client?: string | null
           company?: string | null
           created_at?: string | null
+          custom_fields?: Json | null
           email?: string | null
           funnel_id?: string | null
           id?: string
@@ -121,6 +123,7 @@ export type Database = {
           client?: string | null
           company?: string | null
           created_at?: string | null
+          custom_fields?: Json | null
           email?: string | null
           funnel_id?: string | null
           id?: string
@@ -139,6 +142,47 @@ export type Database = {
           },
           {
             foreignKeyName: "opportunities_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      required_fields: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          name: string
+          options: string[] | null
+          stage_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name: string
+          options?: string[] | null
+          stage_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name?: string
+          options?: string[] | null
+          stage_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "required_fields_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "stages"
