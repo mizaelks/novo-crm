@@ -137,6 +137,67 @@ const OpportunityDetailsDialog = ({
     }
   };
 
+  // Renderizar os campos personalizados
+  const renderCustomFieldControl = (field: any, formField: any) => {
+    switch (field.type) {
+      case 'text':
+        return (
+          <Input 
+            {...formField}
+            value={formField.value || ''} 
+            placeholder={`Digite ${field.name}`} 
+          />
+        );
+      case 'number':
+        return (
+          <Input 
+            {...formField}
+            type="number"
+            value={formField.value || ''} 
+            placeholder={`Digite ${field.name}`} 
+          />
+        );
+      case 'date':
+        return (
+          <Input 
+            {...formField}
+            type="date"
+            value={formField.value || ''} 
+          />
+        );
+      case 'checkbox':
+        return (
+          <Checkbox 
+            checked={formField.value || false}
+            onCheckedChange={formField.onChange}
+          />
+        );
+      case 'select':
+        if (field.options) {
+          return (
+            <Select 
+              value={formField.value || ''}
+              onValueChange={formField.onChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`Selecione ${field.name}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {field.options.map((option: string, index: number) => (
+                  <SelectItem key={index} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        }
+        return null;
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,7 +304,7 @@ const OpportunityDetailsDialog = ({
                             control={customFieldsForm.control}
                             name={`customFields.${field.name}`}
                             render={({ field: formField }) => (
-                              <FormItem>
+                              <FormItem key={`item-${field.id}`}>
                                 <div className="flex items-center gap-2">
                                   <FormLabel>{field.name}</FormLabel>
                                   {field.isRequired && (
@@ -251,51 +312,7 @@ const OpportunityDetailsDialog = ({
                                   )}
                                 </div>
                                 <FormControl>
-                                  {field.type === 'text' && (
-                                    <Input 
-                                      {...formField}
-                                      value={formField.value || ''} 
-                                      placeholder={`Digite ${field.name}`} 
-                                    />
-                                  )}
-                                  {field.type === 'number' && (
-                                    <Input 
-                                      {...formField}
-                                      type="number"
-                                      value={formField.value || ''} 
-                                      placeholder={`Digite ${field.name}`} 
-                                    />
-                                  )}
-                                  {field.type === 'date' && (
-                                    <Input 
-                                      {...formField}
-                                      type="date"
-                                      value={formField.value || ''} 
-                                    />
-                                  )}
-                                  {field.type === 'checkbox' && (
-                                    <Checkbox 
-                                      checked={formField.value || false}
-                                      onCheckedChange={formField.onChange}
-                                    />
-                                  )}
-                                  {field.type === 'select' && field.options && (
-                                    <Select 
-                                      value={formField.value || ''}
-                                      onValueChange={formField.onChange}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder={`Selecione ${field.name}`} />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {field.options.map((option, index) => (
-                                          <SelectItem key={index} value={option}>
-                                            {option}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
+                                  {renderCustomFieldControl(field, formField)}
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
