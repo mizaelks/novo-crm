@@ -22,9 +22,9 @@ const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated, onSta
             <Droppable droppableId="all-stages" direction="horizontal" type="stage">
               {(provided) => (
                 <div 
-                  className="flex space-x-4 min-w-full pb-2"
-                  {...provided.droppableProps}
                   ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="flex space-x-4 min-w-full pb-2"
                 >
                   {stages.map((stage, index) => (
                     <StageColumn 

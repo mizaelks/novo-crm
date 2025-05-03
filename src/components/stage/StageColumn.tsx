@@ -20,36 +20,38 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
   
   return (
     <Draggable draggableId={`stage-${stage.id}`} index={index}>
-      {(provided) => (
-        <div 
-          className="w-80 flex-shrink-0"
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-        >
-          <Card className="h-full flex flex-col">
-            <StageHeader 
-              stage={stage}
-              dragHandleProps={provided.dragHandleProps}
-              updateStage={onStageUpdated}
-            />
-            <CardContent className="p-2 flex-1 overflow-hidden">
-              <StageOpportunityList
-                stageId={stage.id}
-                opportunities={stage.opportunities}
-                onAddClick={() => setIsDialogOpen(true)}
+      {(provided) => {
+        return (
+          <div 
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            className="w-80 flex-shrink-0"
+          >
+            <Card className="h-full flex flex-col">
+              <StageHeader 
+                stage={stage}
+                dragHandleProps={provided.dragHandleProps}
+                updateStage={onStageUpdated}
               />
-            </CardContent>
-          </Card>
-          
-          <CreateOpportunityDialog
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            stageId={stage.id}
-            funnelId={funnelId}
-            onOpportunityCreated={onOpportunityCreated}
-          />
-        </div>
-      )}
+              <CardContent className="p-2 flex-1 overflow-hidden">
+                <StageOpportunityList
+                  stageId={stage.id}
+                  opportunities={stage.opportunities}
+                  onAddClick={() => setIsDialogOpen(true)}
+                />
+              </CardContent>
+            </Card>
+            
+            <CreateOpportunityDialog
+              open={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              stageId={stage.id}
+              funnelId={funnelId}
+              onOpportunityCreated={onOpportunityCreated}
+            />
+          </div>
+        );
+      }}
     </Draggable>
   );
 };

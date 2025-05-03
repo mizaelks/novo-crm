@@ -19,11 +19,11 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
         <div className="flex flex-col h-full">
           <ScrollArea className="flex-1 h-[calc(100vh-280px)]">
             <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
               className={`min-h-[50px] p-1 rounded-sm ${
                 snapshot.isDraggingOver ? "bg-accent/70" : ""
               }`}
-              ref={provided.innerRef}
-              {...provided.droppableProps}
             >
               {opportunities.map((opportunity, index) => (
                 <OpportunityCard
