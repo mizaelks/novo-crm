@@ -1,9 +1,22 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Stage, StageFormData, RequiredField } from "@/types";
 import { mapDbStageToStage } from "./utils/mappers";
 import { opportunityAPI } from "./opportunityAPI";
 import { triggerEntityWebhooks } from "./utils/webhook";
+
+// Valid field types for RequiredField
+type ValidFieldType = "text" | "number" | "date" | "checkbox" | "select";
+
+// Helper to ensure type is one of the valid field types
+const validateFieldType = (type: string): ValidFieldType => {
+  const validTypes: ValidFieldType[] = ["text", "number", "date", "checkbox", "select"];
+  if (validTypes.includes(type as ValidFieldType)) {
+    return type as ValidFieldType;
+  }
+  // Default to text if invalid type
+  console.warn(`Invalid field type: ${type}, defaulting to "text"`);
+  return "text";
+};
 
 export const stageAPI = {
   getAll: async (): Promise<Stage[]> => {
@@ -78,7 +91,7 @@ export const stageAPI = {
     return (data || []).map(field => ({
       id: field.id,
       name: field.name,
-      type: field.type,
+      type: validateFieldType(field.type),
       options: field.options,
       isRequired: field.is_required,
       stageId: field.stage_id
@@ -86,7 +99,6 @@ export const stageAPI = {
   },
 
   create: async (data: StageFormData): Promise<Stage> => {
-    // Verificar se todos os campos necessários estão presentes
     console.log("Criando etapa com os dados:", data);
     
     const { data: created, error } = await supabase.from('stages').insert([{ 
@@ -191,7 +203,7 @@ export const stageAPI = {
   // Add a required field to a stage
   addRequiredField: async (fieldData: {
     name: string;
-    type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
+    type: "text" | "number" | "date" | "checkbox" | "select";
     options?: string[];
     isRequired: boolean;
     stageId: string;
@@ -212,14 +224,14 @@ export const stageAPI = {
     return {
       id: data.id,
       name: data.name,
-      type: data.type,
+      type: validateFieldType(data.type),
       options: data.options,
       isRequired: data.is_required,
       stageId: data.stage_id
     };
   },
 
-  delete: async (id: string): Promise<boolean> => {
+  delete: async (id: string): boolean => {
     // First delete all required fields for this stage
     await supabase.from('required_fields').delete().eq('stage_id', id);
     
