@@ -116,7 +116,9 @@ const OpportunityDetailsDialog = ({
             
             <TabsContent value="schedule" className="py-4">
               <ScheduleActionForm 
-                opportunityId={opportunity.id} 
+                opportunityId={opportunity.id}
+                funnelId={opportunity.funnelId}
+                stageId={opportunity.stageId}
                 onActionScheduled={handleActionScheduled} 
               />
             </TabsContent>
