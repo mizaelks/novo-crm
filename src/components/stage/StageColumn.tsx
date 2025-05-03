@@ -19,7 +19,7 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   return (
-    <Draggable draggableId={`stage-${stage.id}`} index={index} type="stage">
+    <Draggable draggableId={`stage-${stage.id}`} index={index}>
       {(provided) => (
         <div 
           className="w-80 flex-shrink-0"
