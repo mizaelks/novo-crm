@@ -9,6 +9,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { TemplateSelector } from "../customFields/TemplateSelector";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface StageRequiredFieldsProps {
   requiredFields: RequiredField[];
@@ -80,88 +82,99 @@ const StageRequiredFields = ({
             variant="outline" 
             size="sm"
             onClick={() => setAddingField(true)}
+            className="gap-1"
           >
-            <PlusCircle className="h-4 w-4 mr-1" />
+            <PlusCircle className="h-4 w-4" />
             Campo personalizado
           </Button>
         </div>
       </div>
       
-      <div className="mb-4">
-        <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
-      </div>
+      <Card className="mb-4">
+        <CardContent className="pt-4">
+          <p className="text-sm text-muted-foreground mb-3">
+            Selecione um modelo pré-definido ou crie um campo personalizado:
+          </p>
+          <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
+        </CardContent>
+      </Card>
       
       {addingField && (
-        <div className="border rounded-md p-4 mb-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <FormLabel>Nome do campo</FormLabel>
-              <Input 
-                value={newFieldName} 
-                onChange={e => setNewFieldName(e.target.value)} 
-                placeholder="Ex: Valor da proposta"
-              />
+        <Card className="mb-4 border-dashed">
+          <CardContent className="pt-4 space-y-3">
+            <h3 className="text-sm font-medium">Novo campo personalizado</h3>
+            <Separator className="my-2" />
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <FormLabel>Nome do campo</FormLabel>
+                <Input 
+                  value={newFieldName} 
+                  onChange={e => setNewFieldName(e.target.value)} 
+                  placeholder="Ex: Valor da proposta"
+                />
+              </div>
+              <div>
+                <FormLabel>Tipo do campo</FormLabel>
+                <Select 
+                  value={newFieldType} 
+                  onValueChange={(value: any) => setNewFieldType(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Texto</SelectItem>
+                    <SelectItem value="number">Número</SelectItem>
+                    <SelectItem value="date">Data</SelectItem>
+                    <SelectItem value="checkbox">Checkbox</SelectItem>
+                    <SelectItem value="select">Seleção</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <FormLabel>Tipo do campo</FormLabel>
-              <Select 
-                value={newFieldType} 
-                onValueChange={(value: any) => setNewFieldType(value)}
+            
+            {newFieldType === "select" && (
+              <div>
+                <FormLabel>Opções (separadas por vírgula)</FormLabel>
+                <Input 
+                  value={newFieldOptions} 
+                  onChange={e => setNewFieldOptions(e.target.value)} 
+                  placeholder="Ex: Opção 1, Opção 2, Opção 3"
+                />
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setAddingField(false)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">Texto</SelectItem>
-                  <SelectItem value="number">Número</SelectItem>
-                  <SelectItem value="date">Data</SelectItem>
-                  <SelectItem value="checkbox">Checkbox</SelectItem>
-                  <SelectItem value="select">Seleção</SelectItem>
-                </SelectContent>
-              </Select>
+                Cancelar
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleAddRequiredField}
+              >
+                Adicionar
+              </Button>
             </div>
-          </div>
-          
-          {newFieldType === "select" && (
-            <div>
-              <FormLabel>Opções (separadas por vírgula)</FormLabel>
-              <Input 
-                value={newFieldOptions} 
-                onChange={e => setNewFieldOptions(e.target.value)} 
-                placeholder="Ex: Opção 1, Opção 2, Opção 3"
-              />
-            </div>
-          )}
-          
-          <div className="flex justify-end gap-2">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={() => setAddingField(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleAddRequiredField}
-            >
-              Adicionar
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
       
       {requiredFields.length === 0 ? (
-        <div className="text-center py-4 text-muted-foreground">
+        <div className="text-center py-4 text-muted-foreground bg-muted/20 rounded-md">
           Nenhum campo obrigatório configurado
         </div>
       ) : (
         <div className="space-y-2">
           {requiredFields.map(field => (
-            <div key={field.id} className="flex items-center justify-between p-2 border rounded-md">
+            <div key={field.id} className="flex items-center justify-between p-3 border rounded-md hover:bg-accent/5">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{field.name}</span>
-                <Badge variant="outline">
+                <Badge variant="outline" className="ml-1">
                   {field.type === "text" && "Texto"}
                   {field.type === "number" && "Número"}
                   {field.type === "date" && "Data"}
@@ -173,6 +186,7 @@ const StageRequiredFields = ({
                 type="button" 
                 variant="ghost" 
                 size="icon" 
+                className="h-8 w-8 opacity-70 hover:opacity-100"
                 onClick={() => handleRemoveField(field.id)}
               >
                 <Trash2 className="h-4 w-4" />

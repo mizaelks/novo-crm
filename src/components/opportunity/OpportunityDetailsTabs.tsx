@@ -4,11 +4,13 @@ import { Opportunity } from "@/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, ClipboardList } from "lucide-react";
 import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface OpportunityDetailsTabsProps {
   opportunity: Opportunity;
@@ -26,51 +28,70 @@ const OpportunityDetailsTabs = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="grid grid-cols-3 mb-4">
-        <TabsTrigger value="details">Detalhes</TabsTrigger>
-        <TabsTrigger value="customFields">Campos personalizados</TabsTrigger>
-        <TabsTrigger value="actions">Ações agendadas</TabsTrigger>
+        <TabsTrigger value="details" className="flex items-center gap-1">
+          <ClipboardList className="w-4 h-4" />
+          <span>Detalhes</span>
+        </TabsTrigger>
+        <TabsTrigger value="customFields" className="flex items-center gap-1">
+          <span>Campos personalizados</span> 
+          {currentStage?.requiredFields?.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1">
+              {currentStage.requiredFields.length}
+            </Badge>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="actions" className="flex items-center gap-1">
+          <Calendar className="w-4 h-4" />
+          <span>Ações agendadas</span>
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="details" className="space-y-4">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <div>
-            <p className="text-sm text-muted-foreground">Cliente</p>
-            <p className="font-medium">{opportunity.client}</p>
-          </div>
-          
-          <div>
-            <p className="text-sm text-muted-foreground">Valor</p>
-            <p className="font-medium">{formatCurrency(opportunity.value)}</p>
-          </div>
-          
-          {opportunity.company && (
-            <div>
-              <p className="text-sm text-muted-foreground">Empresa</p>
-              <p className="font-medium">{opportunity.company}</p>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Informações básicas</CardTitle>
+            <CardDescription>Detalhes principais da oportunidade</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="font-medium">{opportunity.client}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Valor</p>
+                <p className="font-medium">{formatCurrency(opportunity.value)}</p>
+              </div>
+              
+              {opportunity.company && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Empresa</p>
+                  <p className="font-medium">{opportunity.company}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Data de criação</p>
+                <p className="font-medium">{formatDateBRT(opportunity.createdAt)}</p>
+              </div>
+              
+              {opportunity.email && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{opportunity.email}</p>
+                </div>
+              )}
+              
+              {opportunity.phone && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Telefone</p>
+                  <p className="font-medium">{opportunity.phone}</p>
+                </div>
+              )}
             </div>
-          )}
-          
-          <div>
-            <p className="text-sm text-muted-foreground">Data de criação</p>
-            <p className="font-medium">{formatDateBRT(opportunity.createdAt)}</p>
-          </div>
-          
-          {opportunity.email && (
-            <div>
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">{opportunity.email}</p>
-            </div>
-          )}
-          
-          {opportunity.phone && (
-            <div>
-              <p className="text-sm text-muted-foreground">Telefone</p>
-              <p className="font-medium">{opportunity.phone}</p>
-            </div>
-          )}
-        </div>
-        
-        <Separator className="my-4" />
+          </CardContent>
+        </Card>
         
         <div className="flex justify-end gap-2">
           <Button 
@@ -92,17 +113,23 @@ const OpportunityDetailsTabs = ({
       </TabsContent>
       
       <TabsContent value="actions">
-        <div className="mb-4">
-          <ScheduleActionForm 
-            opportunityId={opportunity.id}
-            funnelId={opportunity.funnelId}
-            stageId={opportunity.stageId}
-            onActionScheduled={() => {
-              // Refresh the action list when a new action is scheduled
-              setActiveTab("actions");
-            }} 
-          />
-        </div>
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Agendar nova ação</CardTitle>
+            <CardDescription>Programe ações para esta oportunidade</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScheduleActionForm 
+              opportunityId={opportunity.id}
+              funnelId={opportunity.funnelId}
+              stageId={opportunity.stageId}
+              onActionScheduled={() => {
+                // Refresh the action list when a new action is scheduled
+                setActiveTab("actions");
+              }} 
+            />
+          </CardContent>
+        </Card>
         
         <Separator className="my-4" />
         

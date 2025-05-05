@@ -63,6 +63,45 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "date",
     description: "Prazo para entrega do projeto",
     icon: "clock"
+  },
+  {
+    id: "payment_terms",
+    name: "Condições de Pagamento",
+    type: "select",
+    options: ["À vista", "30 dias", "60 dias", "90 dias", "Parcelado", "Personalizado"],
+    description: "Forma de pagamento acordada",
+    icon: "credit-card"
+  },
+  {
+    id: "interest_level",
+    name: "Nível de Interesse",
+    type: "select",
+    options: ["Muito Baixo", "Baixo", "Médio", "Alto", "Muito Alto"],
+    description: "Quão interessado está o cliente",
+    icon: "thermometer"
+  },
+  {
+    id: "product_interest",
+    name: "Produto de Interesse",
+    type: "select",
+    options: ["Produto A", "Produto B", "Produto C", "Serviço X", "Serviço Y", "Personalizado"],
+    description: "Qual produto/serviço interessa ao cliente",
+    icon: "package"
+  },
+  {
+    id: "contact_preference",
+    name: "Preferência de Contato",
+    type: "select",
+    options: ["E-mail", "Telefone", "WhatsApp", "Presencial", "Videoconferência"],
+    description: "Como o cliente prefere ser contatado",
+    icon: "phone"
+  },
+  {
+    id: "meeting_notes",
+    name: "Notas da Reunião",
+    type: "text",
+    description: "Anotações importantes da última reunião",
+    icon: "clipboard"
   }
 ];
 

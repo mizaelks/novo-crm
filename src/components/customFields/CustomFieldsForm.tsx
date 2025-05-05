@@ -3,7 +3,7 @@ import { RequiredField, Opportunity } from "@/types";
 import { useForm } from "react-hook-form";
 import { opportunityAPI } from "@/services/api";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,21 +27,34 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
     }
   });
 
+  // Ensure form updates when opportunity changes
+  useEffect(() => {
+    customFieldsForm.reset({
+      customFields: opportunity.customFields || {}
+    });
+  }, [opportunity, customFieldsForm]);
+
   const handleSubmitCustomFields = async (values: any) => {
     if (!opportunity) return;
     
     try {
       setIsSubmitting(true);
       
+      // Logging para depuração
+      console.log("Enviando atualização para a oportunidade:", opportunity.id);
+      console.log("Dados a serem enviados:", values.customFields);
+      
       const updatedOpportunity = await opportunityAPI.update(opportunity.id, {
         customFields: values.customFields
       });
       
       if (updatedOpportunity) {
+        console.log("Resposta da API:", updatedOpportunity);
         onCustomFieldsUpdated(updatedOpportunity);
         toast.success("Campos personalizados atualizados com sucesso");
       } else {
-        throw new Error("Falha ao atualizar campos personalizados");
+        console.error("Nenhuma resposta da API ou resposta vazia");
+        toast.error("Erro ao atualizar campos personalizados");
       }
     } catch (error) {
       console.error("Error updating custom fields:", error);
@@ -132,7 +145,7 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
             control={customFieldsForm.control}
             name={`customFields.${field.name}`}
             render={({ field: formField }) => (
-              <FormItem key={`item-${field.id}`}>
+              <FormItem>
                 <div className="flex items-center gap-2">
                   <FormLabel>{field.name}</FormLabel>
                   {field.isRequired && (

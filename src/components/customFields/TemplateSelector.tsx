@@ -16,11 +16,13 @@ interface TemplateSelectorProps {
 
 export const TemplateSelector = ({ onSelectTemplate, stageId }: TemplateSelectorProps) => {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   
   const handleSelectTemplate = (template: FieldTemplate) => {
     const requiredField = templateToRequiredField(template, stageId);
     onSelectTemplate(requiredField);
     setOpen(false);
+    setSearchValue("");
   };
 
   return (
@@ -31,11 +33,15 @@ export const TemplateSelector = ({ onSelectTemplate, stageId }: TemplateSelector
           <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Buscar modelos de campos..." />
+          <CommandInput 
+            placeholder="Buscar modelos de campos..." 
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandEmpty>Nenhum modelo encontrado.</CommandEmpty>
-          <CommandList>
+          <CommandList className="max-h-[300px] overflow-y-auto">
             <CommandGroup heading="Modelos disponíveis">
               {FIELD_TEMPLATES.map((template) => {
                 // Dynamically get the icon component
@@ -48,10 +54,12 @@ export const TemplateSelector = ({ onSelectTemplate, stageId }: TemplateSelector
                     key={template.id}
                     value={template.id}
                     onSelect={() => handleSelectTemplate(template)}
-                    className="flex items-center py-2"
+                    className="flex items-center py-3 px-3 cursor-pointer"
                   >
                     <div className="flex items-center flex-1">
-                      <IconComponent className="w-4 h-4 mr-2" />
+                      <span className="mr-2 rounded-full bg-muted p-1.5 flex items-center justify-center">
+                        <IconComponent className="w-4 h-4" />
+                      </span>
                       <div className="flex flex-col">
                         <span className="font-medium">{template.name}</span>
                         <span className="text-xs text-muted-foreground">{template.description}</span>
