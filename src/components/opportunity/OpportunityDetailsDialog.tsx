@@ -1,24 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { Opportunity, ScheduledAction, Stage } from "@/types";
+import { Opportunity } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { opportunityAPI, stageAPI } from "@/services/api";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Edit2, Calendar, Trash2 } from "lucide-react";
-import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
-import ScheduledActionList from "../scheduledAction/ScheduledActionList";
+import { Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import { Badge } from "@/components/ui/badge";
 import EditOpportunityDialog from "./EditOpportunityDialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import OpportunityDetailsTabs from "./OpportunityDetailsTabs";
 
 interface OpportunityDetailsDialogProps {
   open: boolean;
@@ -37,18 +27,9 @@ const OpportunityDetailsDialog = ({
 }: OpportunityDetailsDialogProps) => {
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("details");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [currentStage, setCurrentStage] = useState<Stage | null>(null);
+  const [currentStage, setCurrentStage] = useState<any>(null);
   const { ConfirmDialog, showConfirmation } = useConfirmDialog();
-  const [isSubmittingCustomFields, setIsSubmittingCustomFields] = useState(false);
-  
-  // Form for custom fields
-  const customFieldsForm = useForm({
-    defaultValues: {
-      customFields: {} as Record<string, any>
-    }
-  });
 
   useEffect(() => {
     const loadOpportunityDetails = async () => {
@@ -65,11 +46,6 @@ const OpportunityDetailsDialog = ({
             const stageData = await stageAPI.getById(opportunityData.stageId);
             setCurrentStage(stageData);
           }
-          
-          // Reset form with custom fields
-          customFieldsForm.reset({
-            customFields: opportunityData.customFields || {}
-          });
         }
       } catch (error) {
         console.error("Error loading opportunity details:", error);
@@ -80,7 +56,7 @@ const OpportunityDetailsDialog = ({
     };
 
     loadOpportunityDetails();
-  }, [open, opportunityId, customFieldsForm]);
+  }, [open, opportunityId]);
 
   const handleDelete = async () => {
     if (!opportunity) return;
@@ -110,92 +86,6 @@ const OpportunityDetailsDialog = ({
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
     setOpportunity(updatedOpportunity);
     onOpportunityUpdated(updatedOpportunity);
-  };
-
-  const handleSubmitCustomFields = async (values: any) => {
-    if (!opportunity) return;
-    
-    try {
-      setIsSubmittingCustomFields(true);
-      
-      const updatedOpportunity = await opportunityAPI.update(opportunity.id, {
-        customFields: values.customFields
-      });
-      
-      if (updatedOpportunity) {
-        setOpportunity(updatedOpportunity);
-        onOpportunityUpdated(updatedOpportunity);
-        toast.success("Campos personalizados atualizados com sucesso");
-      } else {
-        throw new Error("Falha ao atualizar campos personalizados");
-      }
-    } catch (error) {
-      console.error("Error updating custom fields:", error);
-      toast.error("Erro ao atualizar campos personalizados");
-    } finally {
-      setIsSubmittingCustomFields(false);
-    }
-  };
-
-  // Renderizar os campos personalizados
-  const renderCustomFieldControl = (field: any, formField: any) => {
-    switch (field.type) {
-      case 'text':
-        return (
-          <Input 
-            {...formField}
-            value={formField.value || ''} 
-            placeholder={`Digite ${field.name}`} 
-          />
-        );
-      case 'number':
-        return (
-          <Input 
-            {...formField}
-            type="number"
-            value={formField.value || ''} 
-            placeholder={`Digite ${field.name}`} 
-          />
-        );
-      case 'date':
-        return (
-          <Input 
-            {...formField}
-            type="date"
-            value={formField.value || ''} 
-          />
-        );
-      case 'checkbox':
-        return (
-          <Checkbox 
-            checked={formField.value || false}
-            onCheckedChange={formField.onChange}
-          />
-        );
-      case 'select':
-        if (field.options) {
-          return (
-            <Select 
-              value={formField.value || ''}
-              onValueChange={formField.onChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={`Selecione ${field.name}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {field.options.map((option: string, index: number) => (
-                  <SelectItem key={index} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          );
-        }
-        return null;
-      default:
-        return null;
-    }
   };
 
   return (
@@ -234,130 +124,11 @@ const OpportunityDetailsDialog = ({
               <div className="h-6 bg-muted animate-pulse rounded-md" />
             </div>
           ) : opportunity ? (
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="details">Detalhes</TabsTrigger>
-                <TabsTrigger value="customFields">Campos personalizados</TabsTrigger>
-                <TabsTrigger value="actions">Ações agendadas</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details" className="space-y-4">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cliente</p>
-                    <p className="font-medium">{opportunity.client}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valor</p>
-                    <p className="font-medium">{formatCurrency(opportunity.value)}</p>
-                  </div>
-                  
-                  {opportunity.company && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Empresa</p>
-                      <p className="font-medium">{opportunity.company}</p>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Data de criação</p>
-                    <p className="font-medium">{formatDateBRT(opportunity.createdAt)}</p>
-                  </div>
-                  
-                  {opportunity.email && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{opportunity.email}</p>
-                    </div>
-                  )}
-                  
-                  {opportunity.phone && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Telefone</p>
-                      <p className="font-medium">{opportunity.phone}</p>
-                    </div>
-                  )}
-                </div>
-                
-                <Separator className="my-4" />
-                
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    onClick={() => setActiveTab("actions")}
-                    className="gap-1"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Gerenciar ações agendadas
-                  </Button>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="customFields">
-                <Form {...customFieldsForm}>
-                  <form onSubmit={customFieldsForm.handleSubmit(handleSubmitCustomFields)} className="space-y-4">
-                    {currentStage?.requiredFields && currentStage.requiredFields.length > 0 ? (
-                      <>
-                        {currentStage.requiredFields.map(field => (
-                          <FormField
-                            key={field.id}
-                            control={customFieldsForm.control}
-                            name={`customFields.${field.name}`}
-                            render={({ field: formField }) => (
-                              <FormItem key={`item-${field.id}`}>
-                                <div className="flex items-center gap-2">
-                                  <FormLabel>{field.name}</FormLabel>
-                                  {field.isRequired && (
-                                    <Badge variant="outline" className="text-xs">Obrigatório</Badge>
-                                  )}
-                                </div>
-                                <FormControl>
-                                  {renderCustomFieldControl(field, formField)}
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                        
-                        <div className="flex justify-end mt-4">
-                          <Button type="submit" disabled={isSubmittingCustomFields}>
-                            {isSubmittingCustomFields ? "Salvando..." : "Salvar campos"}
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <p>Não há campos personalizados configurados para esta etapa.</p>
-                        <p className="mt-2">
-                          Para adicionar campos personalizados, edite a etapa atual no kanban.
-                        </p>
-                      </div>
-                    )}
-                  </form>
-                </Form>
-              </TabsContent>
-              
-              <TabsContent value="actions">
-                <div className="mb-4">
-                  {opportunity && (
-                    <ScheduleActionForm 
-                      opportunityId={opportunity.id}
-                      funnelId={opportunity.funnelId}
-                      stageId={opportunity.stageId}
-                      onActionScheduled={() => {
-                        // Refresh the action list when a new action is scheduled
-                        setActiveTab("actions");
-                      }} 
-                    />
-                  )}
-                </div>
-                
-                <Separator className="my-4" />
-                
-                <ScheduledActionList opportunityId={opportunity.id} />
-              </TabsContent>
-            </Tabs>
+            <OpportunityDetailsTabs 
+              opportunity={opportunity} 
+              currentStage={currentStage}
+              onOpportunityUpdated={handleOpportunityUpdated}
+            />
           ) : (
             <div className="text-center py-6">
               <p>Oportunidade não encontrada</p>
