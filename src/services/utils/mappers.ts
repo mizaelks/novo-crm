@@ -1,5 +1,5 @@
 
-import { Funnel, Stage, Opportunity } from "@/types";
+import { Funnel, Stage, Opportunity, ScheduledAction, Webhook } from "@/types";
 
 // Mapeia um objeto de banco de dados para um objeto Funnel
 export const mapDbFunnelToFunnel = (db: any): Funnel => {
@@ -64,4 +64,54 @@ export const mapDbOpportunityToOpportunity = (db: any): Opportunity => {
     company: db.company,
     customFields: customFields
   };
+};
+
+// Mapeia um objeto de banco de dados para um objeto ScheduledAction
+export const mapDbScheduledActionToScheduledAction = (db: any): ScheduledAction => {
+  // Ensure date is properly parsed
+  const scheduledDateTime = db.scheduled_datetime ? new Date(db.scheduled_datetime) : new Date();
+  
+  // Parse action_config if it's a string
+  let actionConfig = {};
+  if (db.action_config) {
+    try {
+      if (typeof db.action_config === 'object' && db.action_config !== null) {
+        actionConfig = db.action_config;
+      } else {
+        actionConfig = JSON.parse(db.action_config);
+      }
+    } catch (e) {
+      console.error("Error parsing action_config:", e);
+      actionConfig = {};
+    }
+  }
+
+  return {
+    id: db.id,
+    opportunityId: db.opportunity_id,
+    actionType: db.action_type,
+    actionConfig: actionConfig,
+    scheduledDateTime: scheduledDateTime,
+    status: db.status || 'pending'
+  };
+};
+
+// Mapeia um objeto de banco de dados para um objeto Webhook
+export const mapDbWebhookToWebhook = (db: any): Webhook => {
+  return {
+    id: db.id,
+    targetType: db.target_type,
+    targetId: db.target_id,
+    url: db.url,
+    event: db.event,
+    createdAt: db.created_at ? new Date(db.created_at) : new Date()
+  };
+};
+
+// Utility function to format currency values
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
 };
