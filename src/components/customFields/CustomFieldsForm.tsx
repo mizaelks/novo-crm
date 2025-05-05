@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CustomFieldInfo from "./CustomFieldInfo";
 
 interface CustomFieldsFormProps {
   opportunity: Opportunity;
@@ -40,12 +41,19 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
     try {
       setIsSubmitting(true);
       
-      // Logging para depuração
-      console.log("Enviando atualização para a oportunidade:", opportunity.id);
-      console.log("Dados a serem enviados:", values.customFields);
+      // Transforme os nomes dos campos para o formato correto
+      const formattedCustomFields: Record<string, any> = {};
+      Object.entries(values.customFields).forEach(([key, value]) => {
+        // Garante que o nome do campo mantenha o formato original
+        formattedCustomFields[key] = value;
+      });
       
+      console.log("Enviando atualização para a oportunidade:", opportunity.id);
+      console.log("Dados a serem enviados:", formattedCustomFields);
+      
+      // Garante que estamos enviando um objeto de campos personalizados válido
       const updatedOpportunity = await opportunityAPI.update(opportunity.id, {
-        customFields: values.customFields
+        customFields: formattedCustomFields
       });
       
       if (updatedOpportunity) {
@@ -53,7 +61,7 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
         onCustomFieldsUpdated(updatedOpportunity);
         toast.success("Campos personalizados atualizados com sucesso");
       } else {
-        console.error("Nenhuma resposta da API ou resposta vazia");
+        console.error("Erro na resposta da API");
         toast.error("Erro ao atualizar campos personalizados");
       }
     } catch (error) {
@@ -145,7 +153,7 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
             control={customFieldsForm.control}
             name={`customFields.${field.name}`}
             render={({ field: formField }) => (
-              <FormItem>
+              <FormItem key={field.id}>
                 <div className="flex items-center gap-2">
                   <FormLabel>{field.name}</FormLabel>
                   {field.isRequired && (

@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { RequiredField } from "@/types";
-import { CircleDot, CircleAlert, Calendar, CheckSquare, ListChecks } from "lucide-react";
+import { CircleDot, CircleAlert, Calendar, CheckSquare, ListChecks, Tag } from "lucide-react";
 
 interface CustomFieldInfoProps {
   field: RequiredField;
@@ -11,7 +11,7 @@ const CustomFieldInfo = ({ field }: CustomFieldInfoProps) => {
   const getFieldIcon = () => {
     switch (field.type) {
       case 'text':
-        return <CircleDot className="w-3 h-3" />;
+        return <Tag className="w-3 h-3" />;
       case 'number':
         return <CircleAlert className="w-3 h-3" />;
       case 'date':

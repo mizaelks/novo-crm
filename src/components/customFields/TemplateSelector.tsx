@@ -1,78 +1,118 @@
 
-import { useState } from "react";
-import { FieldTemplate, FIELD_TEMPLATES, templateToRequiredField } from "./CustomFieldTemplates";
-import { RequiredField } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Plus } from "lucide-react";
-import * as LucideIcons from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { RequiredField } from "@/types";
+import { FIELD_TEMPLATES, templateToRequiredField } from "./CustomFieldTemplates";
+import CustomFieldInfo from "./CustomFieldInfo";
+import { Info, Plus, Tag } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TemplateSelectorProps {
   onSelectTemplate: (field: RequiredField) => void;
   stageId: string;
 }
 
-export const TemplateSelector = ({ onSelectTemplate, stageId }: TemplateSelectorProps) => {
-  const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  
-  const handleSelectTemplate = (template: FieldTemplate) => {
-    const requiredField = templateToRequiredField(template, stageId);
-    onSelectTemplate(requiredField);
-    setOpen(false);
-    setSearchValue("");
+export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelectorProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Categorias dos templates
+  const categories = [
+    { id: 'leads', name: 'Qualificação de Leads', icon: <Tag className="w-3 h-3" /> },
+    { id: 'sales', name: 'Processo de Venda', icon: <Tag className="w-3 h-3" /> },
+    { id: 'all', name: 'Todos os Templates', icon: <Tag className="w-3 h-3" /> },
+  ];
+
+  // Mapeia templates para categorias
+  const getTemplatesByCategory = () => {
+    if (!selectedCategory || selectedCategory === 'all') {
+      return FIELD_TEMPLATES;
+    }
+
+    // Aqui você pode adicionar lógica para filtrar templates por categoria
+    // Por enquanto vamos retornar todos já que não temos categorias reais
+    return FIELD_TEMPLATES;
   };
 
+  const handleSelectTemplate = (templateId: string) => {
+    const template = FIELD_TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      const field = templateToRequiredField(template, stageId);
+      onSelectTemplate(field);
+    }
+  };
+
+  const filteredTemplates = getTemplatesByCategory();
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="justify-between w-full">
-          <span>Selecionar modelo de campo</span>
-          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[320px] p-0" align="start">
-        <Command>
-          <CommandInput 
-            placeholder="Buscar modelos de campos..." 
-            value={searchValue}
-            onValueChange={setSearchValue}
-          />
-          <CommandEmpty>Nenhum modelo encontrado.</CommandEmpty>
-          <CommandList className="max-h-[300px] overflow-y-auto">
-            <CommandGroup heading="Modelos disponíveis">
-              {FIELD_TEMPLATES.map((template) => {
-                // Dynamically get the icon component
-                const IconComponent = (LucideIcons as Record<string, any>)[
-                  template.icon.charAt(0).toUpperCase() + template.icon.slice(1)
-                ] || LucideIcons.CircleDot;
-                
-                return (
-                  <CommandItem 
-                    key={template.id}
-                    value={template.id}
-                    onSelect={() => handleSelectTemplate(template)}
-                    className="flex items-center py-3 px-3 cursor-pointer"
-                  >
-                    <div className="flex items-center flex-1">
-                      <span className="mr-2 rounded-full bg-muted p-1.5 flex items-center justify-center">
-                        <IconComponent className="w-4 h-4" />
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{template.name}</span>
-                        <span className="text-xs text-muted-foreground">{template.description}</span>
-                      </div>
-                    </div>
-                    <Plus className="w-4 h-4 ml-2" />
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="space-y-3">
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            size="sm"
+            variant={selectedCategory === category.id ? "default" : "outline"}
+            className="flex items-center gap-1 flex-shrink-0"
+            onClick={() => setSelectedCategory(category.id)}
+          >
+            {category.icon}
+            <span>{category.name}</span>
+          </Button>
+        ))}
+      </div>
+
+      <ScrollArea className="h-[240px] rounded-md border p-2">
+        <div className="grid grid-cols-1 gap-2">
+          {filteredTemplates.map((template) => {
+            const tempField: RequiredField = {
+              id: template.id,
+              name: template.name,
+              type: template.type,
+              options: template.options,
+              isRequired: true,
+              stageId: stageId
+            };
+
+            return (
+              <Card 
+                key={template.id}
+                className="hover:bg-accent/10 cursor-pointer"
+                onClick={() => handleSelectTemplate(template.id)}
+              >
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <CustomFieldInfo field={tempField} />
+                    
+                    <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="p-1 h-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTemplate(template.id);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Adicionar este campo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </div>
   );
-};
+}
