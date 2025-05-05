@@ -66,14 +66,35 @@ export const opportunityAPI = {
   },
 
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
+    // First, get the current opportunity to preserve all its data
+    const { data: currentOpportunity, error: fetchError } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError || !currentOpportunity) {
+      console.error("Failed to fetch current opportunity data:", fetchError);
+      return null;
+    }
+    
+    // Now update with the new stage_id while preserving all other data
     const { data: updated, error } = await supabase
       .from('opportunities')
-      .update({ stage_id: newStageId })
+      .update({ 
+        stage_id: newStageId,
+        // Explicitly preserve custom_fields
+        custom_fields: currentOpportunity.custom_fields
+      })
       .eq('id', id)
       .select()
       .single();
     
-    if (error || !updated) return null;
+    if (error || !updated) {
+      console.error("Failed to move opportunity:", error);
+      return null;
+    }
+    
     return mapDbOpportunityToOpportunity(updated);
   },
 
@@ -82,4 +103,3 @@ export const opportunityAPI = {
     return !error;
   }
 };
-
