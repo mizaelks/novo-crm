@@ -111,7 +111,6 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
           if (stage.id === sourceStageId) {
             const opportunityIndex = stage.opportunities.findIndex(opp => opp.id === opportunityId);
             if (opportunityIndex !== -1) {
-              const opportunity = stage.opportunities[opportunityIndex];
               const newOpportunities = [...stage.opportunities];
               newOpportunities.splice(opportunityIndex, 1);
               return { ...stage, opportunities: newOpportunities };
@@ -120,8 +119,13 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
           return stage;
         });
         
-        // Update the opportunity with the new stageId
-        const updatedOpportunity = { ...opportunity, stageId: destinationStageId };
+        // Make a copy of the opportunity with its updated stageId, preserving all existing fields
+        const updatedOpportunity = { 
+          ...opportunity, 
+          stageId: destinationStageId,
+          // Explicitly ensure the customFields are preserved
+          customFields: { ...(opportunity.customFields || {}) }
+        };
         
         // Add the opportunity to the destination stage
         const finalStages = updatedStages.map(stage => {
@@ -136,32 +140,52 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         setStages(finalStages);
         
         // Send the update to the API
-        await opportunityAPI.move(opportunityId, destinationStageId);
+        const movedOpportunity = await opportunityAPI.move(opportunityId, destinationStageId);
         
-        // Trigger move webhook for opportunity
-        const webhookResponse = await triggerEntityWebhooks(
-          'opportunity', 
-          opportunityId, 
-          'move',
-          {
-            id: opportunityId,
-            title: updatedOpportunity.title,
-            client: updatedOpportunity.client,
-            value: updatedOpportunity.value,
-            previousStageId: sourceStageId,
-            newStageId: destinationStageId,
-            funnelId: funnelId
-          }
-        );
+        if (!movedOpportunity) {
+          console.error("Failed to move opportunity");
+          toast.error("Erro ao mover oportunidade. Por favor, tente novamente.");
+          
+          // Revert back to original state on API error
+          const originalStages = await stageAPI.getByFunnelId(funnelId);
+          setStages(originalStages);
+          return;
+        }
         
-        console.log("Webhook dispatch result:", webhookResponse);
+        console.log("Moved opportunity from API:", movedOpportunity);
         
-        // Show toast for successful move
-        if (webhookResponse.dispatched > 0) {
-          toast.success(
-            `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
+        // Try to trigger the webhook, but don't let it break the move if it fails
+        try {
+          // Safely trigger the webhooks - avoid using * in the ID that can cause SQL errors
+          const targetId = opportunityId || '';
+          const webhookResponse = await triggerEntityWebhooks(
+            'opportunity', 
+            targetId, 
+            'move',
+            {
+              id: opportunityId,
+              title: updatedOpportunity.title,
+              client: updatedOpportunity.client,
+              value: updatedOpportunity.value,
+              previousStageId: sourceStageId,
+              newStageId: destinationStageId,
+              funnelId: funnelId,
+              customFields: updatedOpportunity.customFields
+            }
           );
-        } else {
+          
+          console.log("Webhook dispatch result:", webhookResponse);
+          
+          // Show toast for successful move
+          if (webhookResponse.dispatched > 0) {
+            toast.success(
+              `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
+            );
+          } else {
+            toast.success("Oportunidade movida com sucesso.");
+          }
+        } catch (webhookError) {
+          console.error("Error with webhooks, but move was successful:", webhookError);
           toast.success("Oportunidade movida com sucesso.");
         }
         

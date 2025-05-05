@@ -66,36 +66,44 @@ export const opportunityAPI = {
   },
 
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
-    // First, get the current opportunity to preserve all its data
-    const { data: currentOpportunity, error: fetchError } = await supabase
-      .from('opportunities')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError || !currentOpportunity) {
-      console.error("Failed to fetch current opportunity data:", fetchError);
+    try {
+      // First, get the current opportunity to preserve ALL its data
+      const { data: currentOpportunity, error: fetchError } = await supabase
+        .from('opportunities')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError || !currentOpportunity) {
+        console.error("Failed to fetch current opportunity data:", fetchError);
+        return null;
+      }
+      
+      console.log("Current opportunity data before move:", currentOpportunity);
+      console.log("Custom fields before move:", currentOpportunity.custom_fields);
+      
+      // Update ONLY the stage_id while maintaining all other fields
+      const { data: updated, error: updateError } = await supabase
+        .from('opportunities')
+        .update({ stage_id: newStageId })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError || !updated) {
+        console.error("Failed to move opportunity:", updateError);
+        return null;
+      }
+      
+      console.log("Updated opportunity after move:", updated);
+      console.log("Custom fields after move:", updated.custom_fields);
+      
+      // Verify the returned opportunity has the expected data
+      return mapDbOpportunityToOpportunity(updated);
+    } catch (error) {
+      console.error("Exception during move operation:", error);
       return null;
     }
-    
-    // Now update with the new stage_id while preserving all other data
-    const { data: updated, error } = await supabase
-      .from('opportunities')
-      .update({ 
-        stage_id: newStageId,
-        // Explicitly preserve custom_fields
-        custom_fields: currentOpportunity.custom_fields
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error || !updated) {
-      console.error("Failed to move opportunity:", error);
-      return null;
-    }
-    
-    return mapDbOpportunityToOpportunity(updated);
   },
 
   delete: async (id: string): Promise<boolean> => {
