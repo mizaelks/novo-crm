@@ -1,3 +1,4 @@
+
 import { Funnel, Stage, Opportunity, ScheduledAction, WebhookConfig } from "@/types";
 
 // Mapeia um objeto de banco de dados para um objeto Funnel
@@ -95,15 +96,14 @@ export const mapDbScheduledActionToScheduledAction = (db: any): ScheduledAction 
   };
 };
 
-// Mapeia um objeto de banco de dados para um objeto WebhookConfig (renamed from Webhook)
+// Mapeia um objeto de banco de dados para um objeto WebhookConfig
 export const mapDbWebhookToWebhook = (db: any): WebhookConfig => {
   return {
     id: db.id,
     targetType: db.target_type,
     targetId: db.target_id,
     url: db.url,
-    event: db.event,
-    createdAt: db.created_at ? new Date(db.created_at) : new Date()
+    event: db.event
   };
 };
 
