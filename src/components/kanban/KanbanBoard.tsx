@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { DropResult } from "react-beautiful-dnd";
-import { Funnel, Stage, Opportunity } from "@/types";
+import { Funnel, Stage, Opportunity, RequiredField } from "@/types";
 import { funnelAPI, stageAPI } from "@/services/api";
 import { toast } from "sonner";
 import KanbanSkeleton from "./KanbanSkeleton";
@@ -11,6 +11,7 @@ import CreateStageDialog from "../stage/CreateStageDialog";
 import { triggerEntityWebhooks } from "@/services/utils/webhook";
 import { useKanbanDragHandler } from "./KanbanDragHandler";
 import { KanbanDragProvider } from "./KanbanDragContext";
+import RequiredFieldsDialog from "../opportunity/RequiredFieldsDialog";
 
 interface KanbanBoardProps {
   funnelId: string;
@@ -22,11 +23,23 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   const [loading, setLoading] = useState(true);
   const [isCreateStageDialogOpen, setIsCreateStageDialogOpen] = useState(false);
   
+  // State for the required fields dialog
+  const [showRequiredFieldsDialog, setShowRequiredFieldsDialog] = useState(false);
+  const [currentDragOperation, setCurrentDragOperation] = useState<{
+    opportunity: Opportunity;
+    sourceStageId: string;
+    destinationStageId: string;
+    destinationIndex: number;
+    requiredFields: RequiredField[];
+  } | null>(null);
+  
   // Use the extracted drag handler logic
-  const { handleDragEnd } = useKanbanDragHandler({
+  const { handleDragEnd, completeOpportunityMove } = useKanbanDragHandler({
     stages,
     funnelId,
-    setStages
+    setStages,
+    setShowRequiredFieldsDialog,
+    setCurrentDragOperation
   });
 
   useEffect(() => {
@@ -125,6 +138,39 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       }
     );
   };
+  
+  const handleRequiredFieldsComplete = (success: boolean, updatedOpportunity?: Opportunity) => {
+    if (success && currentDragOperation && updatedOpportunity) {
+      // The dialog has successfully updated the opportunity with required fields
+      // We need to update our local state to reflect the changes
+      const { sourceStageId, destinationStageId, destinationIndex } = currentDragOperation;
+      
+      // Optimistically update the UI (similar to what we do in completeOpportunityMove)
+      const updatedStages = stages.map(stage => {
+        // Remove from source stage
+        if (stage.id === sourceStageId) {
+          return {
+            ...stage,
+            opportunities: stage.opportunities.filter(
+              opp => opp.id !== updatedOpportunity.id
+            )
+          };
+        }
+        // Add to destination stage
+        if (stage.id === destinationStageId) {
+          const newOpportunities = [...stage.opportunities];
+          newOpportunities.splice(destinationIndex, 0, updatedOpportunity);
+          return { ...stage, opportunities: newOpportunities };
+        }
+        return stage;
+      });
+      
+      setStages(updatedStages);
+    }
+    
+    // Reset the state
+    setCurrentDragOperation(null);
+  };
 
   if (loading) {
     return <KanbanSkeleton />;
@@ -161,6 +207,18 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         funnelId={funnelId}
         onStageCreated={handleStageCreated}
       />
+      
+      {/* Dialog for required fields */}
+      {currentDragOperation && (
+        <RequiredFieldsDialog
+          open={showRequiredFieldsDialog}
+          onOpenChange={setShowRequiredFieldsDialog}
+          opportunity={currentDragOperation.opportunity}
+          requiredFields={currentDragOperation.requiredFields}
+          onComplete={handleRequiredFieldsComplete}
+          stageId={currentDragOperation.destinationStageId}
+        />
+      )}
     </div>
   );
 };

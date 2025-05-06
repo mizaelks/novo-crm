@@ -4,26 +4,48 @@ import { DropResult } from "react-beautiful-dnd";
 import { toast } from "sonner";
 import { opportunityAPI, stageAPI } from "@/services/api";
 import { triggerEntityWebhooks } from "@/services/utils/webhook";
+import { useState } from "react";
 
 interface UseDragHandlerProps {
   stages: Stage[];
   funnelId: string;
   setStages: (stages: Stage[]) => void;
+  setShowRequiredFieldsDialog: (show: boolean) => void;
+  setCurrentDragOperation: (operation: {
+    opportunity: Opportunity;
+    sourceStageId: string;
+    destinationStageId: string;
+    destinationIndex: number;
+    requiredFields: any[];
+  } | null) => void;
 }
 
-export const useKanbanDragHandler = ({ stages, funnelId, setStages }: UseDragHandlerProps) => {
+export const useKanbanDragHandler = ({ 
+  stages, 
+  funnelId, 
+  setStages,
+  setShowRequiredFieldsDialog,
+  setCurrentDragOperation
+}: UseDragHandlerProps) => {
   // Check if opportunity meets required fields for a stage
-  const checkRequiredFields = (opportunity: Opportunity, stageId: string): { valid: boolean, missingFields: string[] } => {
+  const checkRequiredFields = (opportunity: Opportunity, stageId: string): { valid: boolean, missingFields: string[], requiredFields: any[] } => {
     const stage = stages.find(s => s.id === stageId);
     if (!stage || !stage.requiredFields || stage.requiredFields.length === 0) {
-      return { valid: true, missingFields: [] };
+      return { valid: true, missingFields: [], requiredFields: [] };
     }
     
     const missingFields: string[] = [];
+    const requiredFields = stage.requiredFields.filter(field => field.isRequired);
     
-    for (const field of stage.requiredFields) {
-      if (!field.isRequired) continue;
-      
+    // Check if opportunity was created via webhook/API (we'll mark these cases to bypass validation)
+    const isCreatedFromWebhook = opportunity.customFields?.isFromWebhook === true;
+    
+    // If it's from a webhook, we'll allow it to pass validation
+    if (isCreatedFromWebhook) {
+      return { valid: true, missingFields: [], requiredFields };
+    }
+    
+    for (const field of requiredFields) {
       const fieldValue = opportunity.customFields?.[field.name];
       
       if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
@@ -35,7 +57,8 @@ export const useKanbanDragHandler = ({ stages, funnelId, setStages }: UseDragHan
     
     return { 
       valid: missingFields.length === 0,
-      missingFields
+      missingFields,
+      requiredFields
     };
   };
 
@@ -70,99 +93,28 @@ export const useKanbanDragHandler = ({ stages, funnelId, setStages }: UseDragHan
         if (!opportunity) return;
         
         // Check if the opportunity meets the required fields for the destination stage
-        const { valid, missingFields } = checkRequiredFields(opportunity, destinationStageId);
+        const { valid, missingFields, requiredFields } = checkRequiredFields(opportunity, destinationStageId);
         
         if (!valid) {
-          toast.error(
-            `Não é possível mover esta oportunidade para a etapa selecionada. Campos obrigatórios faltando: ${missingFields.join(', ')}`
-          );
+          // Instead of showing a toast, we'll show the required fields dialog
+          setCurrentDragOperation({
+            opportunity,
+            sourceStageId,
+            destinationStageId,
+            destinationIndex: destination.index,
+            requiredFields
+          });
+          setShowRequiredFieldsDialog(true);
           return;
         }
         
-        // Optimistically update the UI
-        const updatedStages = stages.map(stage => {
-          // If this is the source stage, remove the opportunity
-          if (stage.id === sourceStageId) {
-            const opportunityIndex = stage.opportunities.findIndex(opp => opp.id === opportunityId);
-            if (opportunityIndex !== -1) {
-              const newOpportunities = [...stage.opportunities];
-              newOpportunities.splice(opportunityIndex, 1);
-              return { ...stage, opportunities: newOpportunities };
-            }
-          }
-          return stage;
-        });
-        
-        // Make a copy of the opportunity with its updated stageId, preserving all existing fields
-        const updatedOpportunity = { 
-          ...opportunity, 
-          stageId: destinationStageId,
-          // Explicitly ensure the customFields are preserved
-          customFields: { ...(opportunity.customFields || {}) }
-        };
-        
-        // Add the opportunity to the destination stage
-        const finalStages = updatedStages.map(stage => {
-          if (stage.id === destinationStageId) {
-            const newOpportunities = [...stage.opportunities];
-            newOpportunities.splice(destination.index, 0, updatedOpportunity);
-            return { ...stage, opportunities: newOpportunities };
-          }
-          return stage;
-        });
-        
-        setStages(finalStages);
-        
-        // Send the update to the API
-        const movedOpportunity = await opportunityAPI.move(opportunityId, destinationStageId);
-        
-        if (!movedOpportunity) {
-          console.error("Failed to move opportunity");
-          toast.error("Erro ao mover oportunidade. Por favor, tente novamente.");
-          
-          // Revert back to original state on API error
-          const originalStages = await stageAPI.getByFunnelId(funnelId);
-          setStages(originalStages);
-          return;
-        }
-        
-        console.log("Moved opportunity from API:", movedOpportunity);
-        
-        // Try to trigger the webhook, but don't let it break the move if it fails
-        try {
-          // Fix: Handle wildcard correctly - don't pass it directly to SQL query
-          // Instead, use specific opportunity ID for trigger but fetch general webhooks in the webhook service
-          const webhookResponse = await triggerEntityWebhooks(
-            'opportunity', 
-            opportunityId, // Always use the actual ID, not wildcard
-            'move',
-            {
-              id: opportunityId,
-              title: updatedOpportunity.title,
-              client: updatedOpportunity.client,
-              value: updatedOpportunity.value,
-              previousStageId: sourceStageId,
-              newStageId: destinationStageId,
-              funnelId: funnelId,
-              customFields: updatedOpportunity.customFields
-            }
-          );
-          
-          console.log("Webhook dispatch result:", webhookResponse);
-          
-          // Show toast for successful move
-          if (webhookResponse.dispatched > 0) {
-            toast.success(
-              `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
-            );
-          } else {
-            toast.success("Oportunidade movida com sucesso.");
-          }
-        } catch (webhookError) {
-          console.error("Error with webhooks, but move was successful:", webhookError);
-          toast.success("Oportunidade movida com sucesso.");
-        }
-        
+        // If valid, proceed with the move
+        await completeOpportunityMove(
+          opportunity, 
+          sourceStageId, 
+          destinationStageId, 
+          destination.index
+        );
       } catch (error) {
         console.error("Error moving opportunity:", error);
         toast.error("Erro ao mover oportunidade.");
@@ -180,5 +132,96 @@ export const useKanbanDragHandler = ({ stages, funnelId, setStages }: UseDragHan
     }
   };
 
-  return { handleDragEnd };
+  const completeOpportunityMove = async (
+    opportunity: Opportunity,
+    sourceStageId: string,
+    destinationStageId: string,
+    destinationIndex: number
+  ) => {
+    // Optimistically update the UI
+    const updatedStages = stages.map(stage => {
+      // If this is the source stage, remove the opportunity
+      if (stage.id === sourceStageId) {
+        const opportunityIndex = stage.opportunities.findIndex(opp => opp.id === opportunity.id);
+        if (opportunityIndex !== -1) {
+          const newOpportunities = [...stage.opportunities];
+          newOpportunities.splice(opportunityIndex, 1);
+          return { ...stage, opportunities: newOpportunities };
+        }
+      }
+      return stage;
+    });
+    
+    // Make a copy of the opportunity with its updated stageId, preserving all existing fields
+    const updatedOpportunity = { 
+      ...opportunity, 
+      stageId: destinationStageId,
+      // Explicitly ensure the customFields are preserved
+      customFields: { ...(opportunity.customFields || {}) }
+    };
+    
+    // Add the opportunity to the destination stage
+    const finalStages = updatedStages.map(stage => {
+      if (stage.id === destinationStageId) {
+        const newOpportunities = [...stage.opportunities];
+        newOpportunities.splice(destinationIndex, 0, updatedOpportunity);
+        return { ...stage, opportunities: newOpportunities };
+      }
+      return stage;
+    });
+    
+    setStages(finalStages);
+    
+    // Send the update to the API
+    const movedOpportunity = await opportunityAPI.move(opportunity.id, destinationStageId);
+    
+    if (!movedOpportunity) {
+      console.error("Failed to move opportunity");
+      toast.error("Erro ao mover oportunidade. Por favor, tente novamente.");
+      
+      // Revert back to original state on API error
+      const originalStages = await stageAPI.getByFunnelId(funnelId);
+      setStages(originalStages);
+      return;
+    }
+    
+    console.log("Moved opportunity from API:", movedOpportunity);
+    
+    // Try to trigger the webhook, but don't let it break the move if it fails
+    try {
+      // Fix: Handle wildcard correctly - don't pass it directly to SQL query
+      // Instead, use specific opportunity ID for trigger but fetch general webhooks in the webhook service
+      const webhookResponse = await triggerEntityWebhooks(
+        'opportunity', 
+        opportunity.id, // Always use the actual ID, not wildcard
+        'move',
+        {
+          id: opportunity.id,
+          title: updatedOpportunity.title,
+          client: updatedOpportunity.client,
+          value: updatedOpportunity.value,
+          previousStageId: sourceStageId,
+          newStageId: destinationStageId,
+          funnelId: funnelId,
+          customFields: updatedOpportunity.customFields
+        }
+      );
+      
+      console.log("Webhook dispatch result:", webhookResponse);
+      
+      // Show toast for successful move
+      if (webhookResponse.dispatched > 0) {
+        toast.success(
+          `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
+        );
+      } else {
+        toast.success("Oportunidade movida com sucesso.");
+      }
+    } catch (webhookError) {
+      console.error("Error with webhooks, but move was successful:", webhookError);
+      toast.success("Oportunidade movida com sucesso.");
+    }
+  };
+
+  return { handleDragEnd, completeOpportunityMove };
 };

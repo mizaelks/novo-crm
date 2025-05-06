@@ -95,6 +95,10 @@ export const webhookAPI = {
         return null;
       }
       
+      // Mark this opportunity as created from webhook for UI indicators
+      const customFields = payload.customFields || {};
+      customFields.isFromWebhook = true;
+      
       // Create object with all possible fields from payload
       const opportunityData = {
         title: payload.title,
@@ -106,6 +110,8 @@ export const webhookAPI = {
         phone: payload.phone || null,
         email: payload.email || null,
         company: payload.company || null,
+        // Store custom fields, including the webhook flag
+        custom_fields: customFields
       };
       
       const { data, error } = await supabase.from('opportunities')
