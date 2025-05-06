@@ -1,7 +1,7 @@
 
 import { RequiredField, Opportunity } from "@/types";
 import { useForm } from "react-hook-form";
-import { opportunityAPI } from "@/services/api";
+import { opportunityAPI, stageAPI } from "@/services/api";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -20,6 +20,8 @@ interface CustomFieldsFormProps {
 
 const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }: CustomFieldsFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inheritedFields, setInheritedFields] = useState<RequiredField[]>([]);
+  const [isLoadingInheritedFields, setIsLoadingInheritedFields] = useState(false);
   
   // Form for custom fields
   const customFieldsForm = useForm({
@@ -34,6 +36,46 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
       customFields: opportunity.customFields || {}
     });
   }, [opportunity, customFieldsForm]);
+
+  // Carrega campos personalizados herdados quando não há campos definidos na etapa atual
+  useEffect(() => {
+    const loadInheritedFields = async () => {
+      // Apenas carregar campos herdados se não houver campos requeridos na etapa atual
+      if (!requiredFields || requiredFields.length === 0) {
+        setIsLoadingInheritedFields(true);
+        try {
+          // Busca todas as etapas do funil
+          const stages = await stageAPI.getByFunnelId(opportunity.funnelId);
+          
+          // Ordena as etapas por ordem
+          const orderedStages = stages.sort((a, b) => a.order - b.order);
+          
+          // Encontra a posição da etapa atual
+          const currentStageIndex = orderedStages.findIndex(stage => stage.id === opportunity.stageId);
+          
+          if (currentStageIndex > 0) {
+            // Tenta encontrar campos personalizados de etapas anteriores (da mais recente para a mais antiga)
+            for (let i = currentStageIndex - 1; i >= 0; i--) {
+              const previousStage = orderedStages[i];
+              const previousStageDetails = await stageAPI.getById(previousStage.id);
+              
+              if (previousStageDetails && previousStageDetails.requiredFields && previousStageDetails.requiredFields.length > 0) {
+                console.log("Campos herdados encontrados na etapa:", previousStageDetails.name);
+                setInheritedFields(previousStageDetails.requiredFields);
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao carregar campos herdados:", error);
+        } finally {
+          setIsLoadingInheritedFields(false);
+        }
+      }
+    };
+
+    loadInheritedFields();
+  }, [opportunity.funnelId, opportunity.stageId, requiredFields]);
 
   const handleSubmitCustomFields = async (values: any) => {
     if (!opportunity) return;
@@ -133,7 +175,21 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
     }
   };
 
-  if (!requiredFields || requiredFields.length === 0) {
+  // Determina quais campos exibir (campos da etapa atual ou campos herdados)
+  const fieldsToDisplay = requiredFields && requiredFields.length > 0 ? requiredFields : inheritedFields;
+  const isInherited = requiredFields.length === 0 && inheritedFields.length > 0;
+
+  if (isLoadingInheritedFields) {
+    return (
+      <div className="py-6 space-y-4">
+        <div className="h-4 bg-muted animate-pulse rounded-md w-3/4 mx-auto"></div>
+        <div className="h-10 bg-muted animate-pulse rounded-md w-full"></div>
+        <div className="h-10 bg-muted animate-pulse rounded-md w-full"></div>
+      </div>
+    );
+  }
+
+  if (!fieldsToDisplay || fieldsToDisplay.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
         <p>Não há campos personalizados configurados para esta etapa.</p>
@@ -146,8 +202,17 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
 
   return (
     <Form {...customFieldsForm}>
+      {isInherited && (
+        <div className="mb-4 p-3 bg-muted rounded-md">
+          <p className="text-sm">
+            Exibindo campos personalizados herdados de estágios anteriores.
+            Os valores preenchidos serão preservados ao mover a oportunidade.
+          </p>
+        </div>
+      )}
+      
       <form onSubmit={customFieldsForm.handleSubmit(handleSubmitCustomFields)} className="space-y-4">
-        {requiredFields.map(field => (
+        {fieldsToDisplay.map(field => (
           <FormField
             key={field.id}
             control={customFieldsForm.control}
@@ -158,6 +223,9 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
                   <FormLabel>{field.name}</FormLabel>
                   {field.isRequired && (
                     <Badge variant="outline" className="text-xs">Obrigatório</Badge>
+                  )}
+                  {isInherited && (
+                    <Badge variant="secondary" className="text-xs">Herdado</Badge>
                   )}
                 </div>
                 <FormControl>
