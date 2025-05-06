@@ -17,18 +17,32 @@ export const webhookAPI = {
   },
 
   getByTarget: async (targetType: 'funnel' | 'stage' | 'opportunity', targetId: string): Promise<WebhookConfig[]> => {
-    // Busca webhooks específicos para este alvo ou webhooks com wildcard (targetId = '*')
-    const { data, error } = await supabase.from('webhooks')
+    // Fix: Use two separate queries and combine results instead of using OR with a wildcard
+    // First query: Get webhooks for this specific target ID
+    const { data: specificWebhooks, error: specificError } = await supabase.from('webhooks')
       .select('*')
       .eq('target_type', targetType)
-      .or(`target_id.eq.${targetId},target_id.eq.*`);
+      .eq('target_id', targetId);
     
-    if (error) {
-      console.error("Error fetching webhooks for target:", error);
-      throw error;
+    if (specificError) {
+      console.error("Error fetching specific webhooks:", specificError);
+      throw specificError;
     }
     
-    return (data || []).map(mapDbWebhookToWebhook);
+    // Second query: Get wildcard webhooks (target_id = '*')
+    const { data: wildcardWebhooks, error: wildcardError } = await supabase.from('webhooks')
+      .select('*')
+      .eq('target_type', targetType)
+      .eq('target_id', '*');
+    
+    if (wildcardError) {
+      console.error("Error fetching wildcard webhooks:", wildcardError);
+      throw wildcardError;
+    }
+    
+    // Combine both results
+    const combinedWebhooks = [...(specificWebhooks || []), ...(wildcardWebhooks || [])];
+    return combinedWebhooks.map(mapDbWebhookToWebhook);
   },
 
   create: async (data: WebhookFormData): Promise<WebhookConfig> => {

@@ -1,81 +1,76 @@
 
-import { WebhookPayload } from '@/types';
-import { supabase } from "@/integrations/supabase/client";
+import { webhookAPI } from "@/services/webhookAPI";
 
-// Real webhook dispatch function that sends HTTP requests to the specified URL
-export const dispatchWebhook = async (payload: WebhookPayload, url: string) => {
-  console.log(`Dispatching webhook to ${url}`, payload);
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-    
-    const responseData = await response.text();
-    console.log(`Webhook response from ${url}:`, responseData);
-    return { 
-      success: response.ok, 
-      url,
-      status: response.status,
-      statusText: response.statusText
-    };
-  } catch (error) {
-    console.error(`Error dispatching webhook to ${url}:`, error);
-    return { 
-      success: false, 
-      url,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
+/**
+ * Triggers all webhooks associated with a specific entity
+ * @param entityType The type of entity (funnel, stage, opportunity)
+ * @param entityId The ID of the entity
+ * @param eventType The event type (create, update, move)
+ * @param payload The data payload to send
+ */
 export const triggerEntityWebhooks = async (
   entityType: 'funnel' | 'stage' | 'opportunity',
   entityId: string,
   eventType: 'create' | 'update' | 'move',
-  data: any
+  payload: any
 ) => {
-  console.log(`Triggering ${eventType} webhooks for ${entityType} ${entityId}`, data);
-
   try {
-    // Buscar webhooks específicos para esta entidade e também os webhooks genéricos (target_id = '*')
-    const { data: webhooks, error } = await supabase
-      .from('webhooks')
-      .select('*')
-      .eq('target_type', entityType)
-      .eq('event', eventType)
-      .or(`target_id.eq.${entityId},target_id.eq.*`);
-
-    if (error) {
-      console.error("Failed to fetch webhooks:", error);
-      return { dispatched: 0, success: 0, failed: 0 };
-    }
-
-    console.log(`Found ${webhooks?.length || 0} webhooks to dispatch`);
-
-    const eventName = `${entityType}.${eventType}`;
-    const payload: WebhookPayload = {
-      event: eventName,
-      data,
-    };
-
-    const promises = (webhooks ?? []).map(webhook => dispatchWebhook(payload, webhook.url));
-    const results = await Promise.all(promises);
+    console.log(`Triggering ${eventType} webhooks for ${entityType} ${entityId}`, payload);
     
-    const successful = results.filter(r => r.success).length;
-    const failed = results.length - successful;
+    // Get all webhooks for this entity type, entity ID, and event type
+    // Note: This needs to be modified in the webhookAPI to handle wildcards properly
+    const webhooks = await webhookAPI.getByTarget(entityType, entityId);
+
+    // Filter webhooks by event type
+    const matchingWebhooks = webhooks.filter(webhook => webhook.event === eventType);
     
-    return { 
-      dispatched: promises.length,
-      success: successful,
-      failed,
-      results
+    let successCount = 0;
+    let failCount = 0;
+    
+    // Execute all matching webhooks
+    const promises = matchingWebhooks.map(async webhook => {
+      try {
+        const response = await fetch(webhook.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Event': `${entityType}.${eventType}`,
+            'X-Webhook-ID': webhook.id,
+          },
+          body: JSON.stringify({
+            event: `${entityType}.${eventType}`,
+            data: payload
+          }),
+        });
+        
+        if (response.ok) {
+          successCount++;
+          return { success: true, webhook };
+        } else {
+          failCount++;
+          console.error(`Webhook to ${webhook.url} failed with status ${response.status}`);
+          return { success: false, webhook, error: `Status code ${response.status}` };
+        }
+      } catch (error) {
+        failCount++;
+        console.error(`Webhook to ${webhook.url} failed with error:`, error);
+        return { success: false, webhook, error };
+      }
+    });
+    
+    await Promise.allSettled(promises);
+    
+    return {
+      dispatched: matchingWebhooks.length,
+      success: successCount,
+      failed: failCount
     };
-  } catch (e) {
-    console.error("Error in triggerEntityWebhooks:", e);
-    return { dispatched: 0, success: 0, failed: 0 };
+  } catch (error) {
+    console.error("Failed to fetch webhooks:", error);
+    return {
+      dispatched: 0,
+      success: 0,
+      failed: 0
+    };
   }
 };

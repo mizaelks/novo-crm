@@ -130,11 +130,11 @@ export const useKanbanDragHandler = ({ stages, funnelId, setStages }: UseDragHan
         
         // Try to trigger the webhook, but don't let it break the move if it fails
         try {
-          // Safely trigger the webhooks - avoid using * in the ID that can cause SQL errors
-          const targetId = opportunityId || '';
+          // Fix: Handle wildcard correctly - don't pass it directly to SQL query
+          // Instead, use specific opportunity ID for trigger but fetch general webhooks in the webhook service
           const webhookResponse = await triggerEntityWebhooks(
             'opportunity', 
-            targetId, 
+            opportunityId, // Always use the actual ID, not wildcard
             'move',
             {
               id: opportunityId,
