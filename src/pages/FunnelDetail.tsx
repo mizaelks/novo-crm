@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 
 const FunnelDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,7 +50,7 @@ const FunnelDetail = () => {
   }, [id, navigate]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-6">
       {loading ? (
         <div className="flex flex-col gap-2">
           <Skeleton className="h-8 w-64" />
@@ -66,6 +67,10 @@ const FunnelDetail = () => {
               <ChevronLeft className="h-4 w-4" />
               Voltar para funis
             </Button>
+            
+            <h1 className="text-xl font-semibold hidden md:block">
+              {funnel?.name}
+            </h1>
           </div>
           
           {showInfo && (
@@ -88,7 +93,11 @@ const FunnelDetail = () => {
             </Alert>
           )}
           
-          <KanbanBoard funnelId={id!} />
+          <Card>
+            <CardContent className="p-0">
+              <KanbanBoard funnelId={id!} />
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

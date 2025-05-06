@@ -34,7 +34,7 @@ const StageRequiredFields = ({
   };
 
   return (
-    <div>
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-medium">Campos obrigatórios</h3>
         <div className="space-x-2">
@@ -63,7 +63,7 @@ const StageRequiredFields = ({
       
       {addingField && (
         <Card className="mb-4 border-dashed">
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 pb-4">
             <FieldCreationForm
               onAddField={handleAddRequiredField}
               onCancel={() => setAddingField(false)}

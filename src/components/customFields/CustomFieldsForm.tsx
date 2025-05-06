@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CustomFieldInfo from "./CustomFieldInfo";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CustomFieldsFormProps {
   opportunity: Opportunity;
@@ -156,7 +157,7 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
               value={formField.value || ''}
               onValueChange={formField.onChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={`Selecione ${field.name}`} />
               </SelectTrigger>
               <SelectContent>
@@ -201,49 +202,53 @@ const CustomFieldsForm = ({ opportunity, requiredFields, onCustomFieldsUpdated }
   }
 
   return (
-    <Form {...customFieldsForm}>
-      {isInherited && (
-        <div className="mb-4 p-3 bg-muted rounded-md">
-          <p className="text-sm">
-            Exibindo campos personalizados herdados de estágios anteriores.
-            Os valores preenchidos serão preservados ao mover a oportunidade.
-          </p>
-        </div>
-      )}
-      
-      <form onSubmit={customFieldsForm.handleSubmit(handleSubmitCustomFields)} className="space-y-4">
-        {fieldsToDisplay.map(field => (
-          <FormField
-            key={field.id}
-            control={customFieldsForm.control}
-            name={`customFields.${field.name}`}
-            render={({ field: formField }) => (
-              <FormItem key={field.id}>
-                <div className="flex items-center gap-2">
-                  <FormLabel>{field.name}</FormLabel>
-                  {field.isRequired && (
-                    <Badge variant="outline" className="text-xs">Obrigatório</Badge>
-                  )}
-                  {isInherited && (
-                    <Badge variant="secondary" className="text-xs">Herdado</Badge>
-                  )}
-                </div>
-                <FormControl>
-                  {renderCustomFieldControl(field, formField)}
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
+    <ScrollArea className="max-h-[400px] pr-4">
+      <Form {...customFieldsForm}>
+        {isInherited && (
+          <div className="mb-4 p-3 bg-muted rounded-md">
+            <p className="text-sm">
+              Exibindo campos personalizados herdados de estágios anteriores.
+              Os valores preenchidos serão preservados ao mover a oportunidade.
+            </p>
+          </div>
+        )}
         
-        <div className="flex justify-end mt-4">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Salvando..." : "Salvar campos"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+        <form onSubmit={customFieldsForm.handleSubmit(handleSubmitCustomFields)} className="space-y-4">
+          {fieldsToDisplay.map(field => (
+            <FormField
+              key={field.id}
+              control={customFieldsForm.control}
+              name={`customFields.${field.name}`}
+              render={({ field: formField }) => (
+                <FormItem key={field.id} className="bg-white rounded-md p-3 border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FormLabel className="text-base font-medium">{field.name}</FormLabel>
+                    <div className="flex gap-1">
+                      {field.isRequired && (
+                        <Badge variant="outline" className="text-xs">Obrigatório</Badge>
+                      )}
+                      {isInherited && (
+                        <Badge variant="secondary" className="text-xs">Herdado</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <FormControl>
+                    {renderCustomFieldControl(field, formField)}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
+          
+          <div className="flex justify-end mt-6">
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? "Salvando..." : "Salvar campos"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </ScrollArea>
   );
 };
 

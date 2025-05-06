@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { RequiredField } from "@/types";
 import { TemplateSelector } from "../customFields/TemplateSelector";
 import { toast } from "sonner";
+import { Tag } from "lucide-react";
 
 interface FieldTemplateSelectorProps {
   requiredFields: RequiredField[];
@@ -29,10 +30,18 @@ export const FieldTemplateSelector = ({
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Tag className="h-4 w-4 text-primary" />
+        <p className="text-sm font-medium">Modelos de campos pré-definidos</p>
+      </div>
+      
       <p className="text-sm text-muted-foreground mb-3">
         Selecione um modelo pré-definido ou crie um campo personalizado:
       </p>
-      <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
+      
+      <div className="rounded-md border p-4 bg-background">
+        <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
+      </div>
     </div>
   );
 };
