@@ -67,7 +67,7 @@ export const opportunityAPI = {
 
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
     try {
-      // First, get the current opportunity to preserve ALL its data
+      // First, get the current opportunity with ALL its data
       const { data: currentOpportunity, error: fetchError } = await supabase
         .from('opportunities')
         .select('*')
@@ -82,10 +82,13 @@ export const opportunityAPI = {
       console.log("Current opportunity data before move:", currentOpportunity);
       console.log("Custom fields before move:", currentOpportunity.custom_fields);
       
-      // Update ONLY the stage_id while maintaining all other fields
+      // Explicitly preserve the custom_fields when updating
       const { data: updated, error: updateError } = await supabase
         .from('opportunities')
-        .update({ stage_id: newStageId })
+        .update({ 
+          stage_id: newStageId,
+          custom_fields: currentOpportunity.custom_fields // Explicitly keep the custom fields
+        })
         .eq('id', id)
         .select()
         .single();
