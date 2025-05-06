@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { WebhookConfig } from "@/types";
-import { webhookAPI } from "@/services/api";
+import { webhookAPI } from "@/services/webhookAPI";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";

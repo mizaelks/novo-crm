@@ -1,5 +1,43 @@
 
 import { webhookAPI } from "@/services/webhookAPI";
+import { WebhookConfig } from "@/types";
+
+/**
+ * Dispatches a webhook to the specified URL
+ * @param payload The data payload to send
+ * @param url The URL to send the webhook to
+ * @returns Object containing success status and response information
+ */
+export const dispatchWebhook = async (
+  payload: any,
+  url: string
+): Promise<{ success: boolean; status?: number; error?: string }> => {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Event': payload.event,
+        'X-Webhook-Test': 'true',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    if (response.ok) {
+      console.log(`Test webhook to ${url} succeeded with status ${response.status}`);
+      return { success: true, status: response.status };
+    } else {
+      console.error(`Test webhook to ${url} failed with status ${response.status}`);
+      return { success: false, status: response.status };
+    }
+  } catch (error) {
+    console.error(`Test webhook to ${url} failed with error:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
 
 /**
  * Triggers all webhooks associated with a specific entity
