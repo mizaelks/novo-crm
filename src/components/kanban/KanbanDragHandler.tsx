@@ -2,7 +2,7 @@
 import { Opportunity, Stage } from "@/types";
 import { DropResult } from "react-beautiful-dnd";
 import { toast } from "sonner";
-import { opportunityAPI } from "@/services/api";
+import { opportunityAPI, stageAPI } from "@/services/api";
 import { triggerEntityWebhooks } from "@/services/utils/webhook";
 
 interface UseDragHandlerProps {
