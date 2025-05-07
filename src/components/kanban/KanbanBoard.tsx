@@ -48,8 +48,12 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       try {
         const funnelData = await funnelAPI.getById(funnelId);
         const stagesData = await stageAPI.getByFunnelId(funnelId);
+        
+        // Sort stages by order property to ensure consistent order
+        const sortedStages = [...stagesData].sort((a, b) => a.order - b.order);
+        
         setFunnel(funnelData);
-        setStages(stagesData);
+        setStages(sortedStages);
       } catch (error) {
         console.error("Error loading kanban data:", error);
         toast.error("Erro ao carregar dados do kanban.");

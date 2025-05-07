@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Stage, StageFormData, RequiredField } from "@/types";
 import { mapDbStageToStage } from "./utils/mappers";
@@ -101,13 +102,31 @@ export const stageAPI = {
   create: async (data: StageFormData): Promise<Stage> => {
     console.log("Criando etapa com os dados:", data);
     
+    // Get current max order for this funnel
+    let nextOrder = 0;
+    try {
+      const { data: stagesData, error: stagesError } = await supabase
+        .from('stages')
+        .select('order')
+        .eq('funnel_id', data.funnelId)
+        .order('order', { ascending: false })
+        .limit(1);
+        
+      if (!stagesError && stagesData && stagesData.length > 0) {
+        nextOrder = (stagesData[0].order || 0) + 1;
+      }
+    } catch (e) {
+      console.error("Error determining next order:", e);
+    }
+    
     const { data: created, error } = await supabase.from('stages').insert([{ 
       name: data.name, 
       description: data.description, 
       funnel_id: data.funnelId,
       color: data.color || '#CCCCCC',
       is_win_stage: data.isWinStage || false,
-      is_loss_stage: data.isLossStage || false
+      is_loss_stage: data.isLossStage || false,
+      order: nextOrder
     }]).select().single();
     
     if (error || !created) {
@@ -153,6 +172,7 @@ export const stageAPI = {
     if (data.color !== undefined) dbData.color = data.color;
     if (data.isWinStage !== undefined) dbData.is_win_stage = data.isWinStage;
     if (data.isLossStage !== undefined) dbData.is_loss_stage = data.isLossStage;
+    if (data.order !== undefined) dbData.order = data.order;
     
     if (data.funnelId !== undefined) {
       dbData.funnel_id = data.funnelId;

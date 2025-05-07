@@ -1,76 +1,37 @@
 
-import { Opportunity, Stage } from "@/types";
-import { DropResult } from "react-beautiful-dnd";
-import { toast } from "sonner";
-import { opportunityAPI, stageAPI } from "@/services/api";
-import { triggerEntityWebhooks } from "@/services/utils/webhook";
 import { useState } from "react";
+import { DropResult } from "react-beautiful-dnd";
+import { Stage, Opportunity, RequiredField } from "@/types";
+import { opportunityAPI, stageAPI } from "@/services/api";
+import { toast } from "sonner";
 
-interface UseDragHandlerProps {
+interface UseKanbanDragHandlerProps {
   stages: Stage[];
   funnelId: string;
   setStages: (stages: Stage[]) => void;
   setShowRequiredFieldsDialog: (show: boolean) => void;
-  setCurrentDragOperation: (operation: {
-    opportunity: Opportunity;
-    sourceStageId: string;
-    destinationStageId: string;
-    destinationIndex: number;
-    requiredFields: any[];
-  } | null) => void;
+  setCurrentDragOperation: (operation: any) => void;
 }
 
-export const useKanbanDragHandler = ({ 
-  stages, 
-  funnelId, 
+export const useKanbanDragHandler = ({
+  stages,
+  funnelId,
   setStages,
   setShowRequiredFieldsDialog,
   setCurrentDragOperation
-}: UseDragHandlerProps) => {
-  // Check if opportunity meets required fields for a stage
-  const checkRequiredFields = (opportunity: Opportunity, stageId: string): { valid: boolean, missingFields: string[], requiredFields: any[] } => {
-    const stage = stages.find(s => s.id === stageId);
-    if (!stage || !stage.requiredFields || stage.requiredFields.length === 0) {
-      return { valid: true, missingFields: [], requiredFields: [] };
-    }
-    
-    const missingFields: string[] = [];
-    const requiredFields = stage.requiredFields.filter(field => field.isRequired);
-    
-    // Check if opportunity was created via webhook/API (we'll mark these cases to bypass validation)
-    const isCreatedFromWebhook = opportunity.customFields?.isFromWebhook === true;
-    
-    // If it's from a webhook, we'll allow it to pass validation
-    if (isCreatedFromWebhook) {
-      return { valid: true, missingFields: [], requiredFields };
-    }
-    
-    for (const field of requiredFields) {
-      const fieldValue = opportunity.customFields?.[field.name];
-      
-      if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
-        missingFields.push(field.name);
-      } else if (field.type === 'checkbox' && fieldValue !== true) {
-        missingFields.push(field.name);
-      }
-    }
-    
-    return { 
-      valid: missingFields.length === 0,
-      missingFields,
-      requiredFields
-    };
-  };
+}: UseKanbanDragHandlerProps) => {
+  const [isDragging, setIsDragging] = useState(false);
 
+  // Handle all drag end events
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
-    // Dropped outside the list
+    // Check if we have a valid destination
     if (!destination) {
       return;
     }
 
-    // Dropped in the same position
+    // Check if location didn't change
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
@@ -78,58 +39,110 @@ export const useKanbanDragHandler = ({
       return;
     }
 
+    console.log(`Drag completed: ${type} from ${source.droppableId} to ${destination.droppableId}`);
+
+    // Handle opportunity drag
     if (type === "opportunity") {
-      // Handle opportunity movement
-      const opportunityId = draggableId;
-      const sourceStageId = source.droppableId;
-      const destinationStageId = destination.droppableId;
+      handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
+    }
+    
+    // Handle stage drag (reordering of stage columns)
+    if (type === "stage") {
+      handleStageDrag(draggableId, source.index, destination.index);
+    }
+  };
+
+  // Handle stage drag (reorder stages)
+  const handleStageDrag = async (stageId: string, sourceIndex: number, destinationIndex: number) => {
+    if (sourceIndex === destinationIndex) return;
+    
+    console.log(`Reordering stage ${stageId} from position ${sourceIndex} to ${destinationIndex}`);
+    
+    // Find the dragged stage
+    const draggedStage = stages.find(stage => stage.id === stageId);
+    if (!draggedStage) return;
+    
+    try {
+      // Create a new array with the stages in the correct order
+      const updatedStages = Array.from(stages);
       
-      try {
-        // Find the opportunity
-        const sourceStage = stages.find(stage => stage.id === sourceStageId);
-        if (!sourceStage) return;
+      // Remove the dragged stage
+      const [removedStage] = updatedStages.splice(sourceIndex, 1);
+      
+      // Insert it at the new position
+      updatedStages.splice(destinationIndex, 0, removedStage);
+      
+      // Update the order property for each stage
+      const reorderedStages = updatedStages.map((stage, index) => ({
+        ...stage,
+        order: index
+      }));
+      
+      // Optimistically update UI
+      setStages(reorderedStages);
+      
+      // Update the order in the database for each affected stage
+      for (const stage of reorderedStages) {
+        await stageAPI.update(stage.id, { order: stage.order });
+      }
+      
+      toast.success("Etapas reordenadas com sucesso");
+    } catch (error) {
+      console.error("Error reordering stages:", error);
+      toast.error("Erro ao reordenar etapas");
+      // Refresh the stages from the server to ensure consistent state
+      const refreshedStages = await stageAPI.getByFunnelId(funnelId);
+      setStages(refreshedStages);
+    }
+  };
+
+  // Handle opportunity drag
+  const handleOpportunityDrag = (opportunityId: string, sourceStageId: string, destinationStageId: string, destinationIndex: number) => {
+    // Find the dragged opportunity
+    const sourceStage = stages.find(s => s.id === sourceStageId);
+    if (!sourceStage) return;
+    
+    const opportunity = sourceStage.opportunities.find(o => o.id === opportunityId);
+    if (!opportunity) return;
+    
+    // Check for required fields if moving to a different stage
+    if (sourceStageId !== destinationStageId) {
+      const destinationStage = stages.find(s => s.id === destinationStageId);
+      if (!destinationStage) return;
+      
+      // Check if the destination stage has required fields
+      if (destinationStage.requiredFields && destinationStage.requiredFields.length > 0) {
+        // Check if all required fields are filled
+        const requiredFieldsMissing = destinationStage.requiredFields.filter(field => {
+          // For checkbox type, we consider it filled if it exists in customFields and is true
+          if (field.type === "checkbox") {
+            return opportunity.customFields?.[field.name] !== true;
+          }
+          
+          // For other types, we check if the field exists and is not empty
+          return !opportunity.customFields?.[field.name];
+        });
         
-        const opportunity = sourceStage.opportunities.find(opp => opp.id === opportunityId);
-        if (!opportunity) return;
-        
-        // Check if the opportunity meets the required fields for the destination stage
-        const { valid, missingFields, requiredFields } = checkRequiredFields(opportunity, destinationStageId);
-        
-        if (!valid) {
-          // Instead of showing a toast, we'll show the required fields dialog
+        if (requiredFieldsMissing.length > 0) {
+          console.log("Required fields missing:", requiredFieldsMissing);
+          
+          // Store the current drag operation and show the required fields dialog
           setCurrentDragOperation({
             opportunity,
             sourceStageId,
             destinationStageId,
-            destinationIndex: destination.index,
-            requiredFields
+            destinationIndex,
+            requiredFields: requiredFieldsMissing
           });
+          
           setShowRequiredFieldsDialog(true);
           return;
         }
-        
-        // If valid, proceed with the move
-        await completeOpportunityMove(
-          opportunity, 
-          sourceStageId, 
-          destinationStageId, 
-          destination.index
-        );
-      } catch (error) {
-        console.error("Error moving opportunity:", error);
-        toast.error("Erro ao mover oportunidade.");
-        
-        // Revert back to original state on error
-        const originalStages = await stageAPI.getByFunnelId(funnelId);
-        setStages(originalStages);
       }
     }
-
-    // Handle stage reordering if needed
-    if (type === "stage") {
-      console.log("Stage reordering not implemented yet");
-      // You could implement stage reordering here if needed
-    }
+    
+    // Continue with the move if all required fields are filled or there are none
+    completeOpportunityMove(opportunity, sourceStageId, destinationStageId, destinationIndex);
   };
 
   const completeOpportunityMove = async (
@@ -138,90 +151,51 @@ export const useKanbanDragHandler = ({
     destinationStageId: string,
     destinationIndex: number
   ) => {
-    // Optimistically update the UI
-    const updatedStages = stages.map(stage => {
-      // If this is the source stage, remove the opportunity
-      if (stage.id === sourceStageId) {
-        const opportunityIndex = stage.opportunities.findIndex(opp => opp.id === opportunity.id);
-        if (opportunityIndex !== -1) {
+    try {
+      console.log(`Moving opportunity ${opportunity.id} from stage ${sourceStageId} to stage ${destinationStageId} at index ${destinationIndex}`);
+      
+      // Optimistically update UI
+      const updatedStages = stages.map(stage => {
+        // Remove from source stage
+        if (stage.id === sourceStageId) {
+          return {
+            ...stage,
+            opportunities: stage.opportunities.filter(
+              opp => opp.id !== opportunity.id
+            )
+          };
+        }
+        
+        // Add to destination stage
+        if (stage.id === destinationStageId) {
           const newOpportunities = [...stage.opportunities];
-          newOpportunities.splice(opportunityIndex, 1);
+          const updatedOpportunity = { ...opportunity, stageId: destinationStageId };
+          newOpportunities.splice(destinationIndex, 0, updatedOpportunity);
           return { ...stage, opportunities: newOpportunities };
         }
-      }
-      return stage;
-    });
-    
-    // Make a copy of the opportunity with its updated stageId, preserving all existing fields
-    const updatedOpportunity = { 
-      ...opportunity, 
-      stageId: destinationStageId,
-      // Explicitly ensure the customFields are preserved
-      customFields: { ...(opportunity.customFields || {}) }
-    };
-    
-    // Add the opportunity to the destination stage
-    const finalStages = updatedStages.map(stage => {
-      if (stage.id === destinationStageId) {
-        const newOpportunities = [...stage.opportunities];
-        newOpportunities.splice(destinationIndex, 0, updatedOpportunity);
-        return { ...stage, opportunities: newOpportunities };
-      }
-      return stage;
-    });
-    
-    setStages(finalStages);
-    
-    // Send the update to the API
-    const movedOpportunity = await opportunityAPI.move(opportunity.id, destinationStageId);
-    
-    if (!movedOpportunity) {
-      console.error("Failed to move opportunity");
-      toast.error("Erro ao mover oportunidade. Por favor, tente novamente.");
+        
+        return stage;
+      });
       
-      // Revert back to original state on API error
-      const originalStages = await stageAPI.getByFunnelId(funnelId);
-      setStages(originalStages);
-      return;
-    }
-    
-    console.log("Moved opportunity from API:", movedOpportunity);
-    
-    // Try to trigger the webhook, but don't let it break the move if it fails
-    try {
-      // Fix: Handle wildcard correctly - don't pass it directly to SQL query
-      // Instead, use specific opportunity ID for trigger but fetch general webhooks in the webhook service
-      const webhookResponse = await triggerEntityWebhooks(
-        'opportunity', 
-        opportunity.id, // Always use the actual ID, not wildcard
-        'move',
-        {
-          id: opportunity.id,
-          title: updatedOpportunity.title,
-          client: updatedOpportunity.client,
-          value: updatedOpportunity.value,
-          previousStageId: sourceStageId,
-          newStageId: destinationStageId,
-          funnelId: funnelId,
-          customFields: updatedOpportunity.customFields
-        }
-      );
+      setStages(updatedStages);
       
-      console.log("Webhook dispatch result:", webhookResponse);
+      // Save the change to the database
+      await opportunityAPI.update(opportunity.id, { stageId: destinationStageId });
       
-      // Show toast for successful move
-      if (webhookResponse.dispatched > 0) {
-        toast.success(
-          `Oportunidade movida com sucesso. ${webhookResponse.success}/${webhookResponse.dispatched} webhooks notificados.`
-        );
-      } else {
-        toast.success("Oportunidade movida com sucesso.");
-      }
-    } catch (webhookError) {
-      console.error("Error with webhooks, but move was successful:", webhookError);
-      toast.success("Oportunidade movida com sucesso.");
+      toast.success("Oportunidade movida com sucesso");
+    } catch (error) {
+      console.error("Error moving opportunity:", error);
+      toast.error("Erro ao mover oportunidade");
+      
+      // Refresh the stages from the server to ensure consistent state
+      const refreshedStages = await stageAPI.getByFunnelId(funnelId);
+      setStages(refreshedStages);
     }
   };
 
-  return { handleDragEnd, completeOpportunityMove };
+  return {
+    handleDragEnd,
+    completeOpportunityMove,
+    isDragging
+  };
 };
