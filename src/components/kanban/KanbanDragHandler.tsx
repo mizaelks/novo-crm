@@ -59,8 +59,11 @@ export const useKanbanDragHandler = ({
     console.log(`Reordering stage ${stageId} from position ${sourceIndex} to ${destinationIndex}`);
     
     // Find the dragged stage
-    const draggedStage = stages.find(stage => stage.id === stageId);
-    if (!draggedStage) return;
+    const draggedStage = stages.find(stage => stage.id === stageId.replace("stage-", ""));
+    if (!draggedStage) {
+      console.error("Could not find dragged stage:", stageId);
+      return;
+    }
     
     try {
       // Create a new array with the stages in the correct order

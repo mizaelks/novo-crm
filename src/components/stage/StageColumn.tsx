@@ -19,7 +19,7 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   return (
-    <Draggable draggableId={`stage-${stage.id}`} index={index}>
+    <Draggable draggableId={stage.id} index={index}>
       {(provided) => {
         return (
           <div 
