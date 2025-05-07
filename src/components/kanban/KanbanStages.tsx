@@ -14,6 +14,10 @@ interface KanbanStagesProps {
 }
 
 const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated, onStageUpdated }: KanbanStagesProps) => {
+  // Garantir que as etapas sejam renderizadas na ordem correta
+  // Ordenamos as etapas com base no campo 'order'
+  const sortedStages = [...stages].sort((a, b) => a.order - b.order);
+  
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="relative w-full">
@@ -26,7 +30,7 @@ const KanbanStages = ({ stages, funnelId, onDragEnd, onOpportunityCreated, onSta
                   {...provided.droppableProps}
                   className="flex space-x-4 min-w-full pb-2"
                 >
-                  {stages.map((stage, index) => (
+                  {sortedStages.map((stage, index) => (
                     <StageColumn 
                       key={stage.id}
                       stage={stage} 

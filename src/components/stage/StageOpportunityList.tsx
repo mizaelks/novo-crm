@@ -14,9 +14,10 @@ interface StageOpportunityListProps {
 }
 
 const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOpportunityListProps) => {
+  // Garantir que opportunities seja sempre um array válido
+  const validOpportunities = Array.isArray(opportunities) ? opportunities : [];
+  
   // Handler functions for opportunity updates and deletions
-  // Estamos apenas criando place-holders, já que a lógica real está
-  // no componente pai através do contexto
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
     console.log("Opportunity updated:", updatedOpportunity.id);
     // A atualização real é gerenciada pelo contexto do Kanban
@@ -39,7 +40,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
                 snapshot.isDraggingOver ? "bg-accent/70" : ""
               }`}
             >
-              {opportunities.map((opportunity, index) => (
+              {validOpportunities.map((opportunity, index) => (
                 <OpportunityCard
                   key={opportunity.id}
                   opportunity={opportunity}
