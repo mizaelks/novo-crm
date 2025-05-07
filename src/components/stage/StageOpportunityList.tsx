@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { Opportunity } from "@/types";
 import OpportunityCard from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useContext } from "react";
 
 interface StageOpportunityListProps {
   stageId: string;
@@ -14,14 +15,16 @@ interface StageOpportunityListProps {
 
 const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOpportunityListProps) => {
   // Handler functions for opportunity updates and deletions
+  // Estamos apenas criando place-holders, já que a lógica real está
+  // no componente pai através do contexto
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
-    // This will be handled by the parent component through context
-    // Just a placeholder to satisfy the prop requirements
+    console.log("Opportunity updated:", updatedOpportunity.id);
+    // A atualização real é gerenciada pelo contexto do Kanban
   };
   
   const handleOpportunityDeleted = (opportunityId: string) => {
-    // This will be handled by the parent component through context
-    // Just a placeholder to satisfy the prop requirements
+    console.log("Opportunity deleted:", opportunityId);
+    // A exclusão real é gerenciada pelo contexto do Kanban
   };
   
   return (

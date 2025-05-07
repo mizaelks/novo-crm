@@ -48,6 +48,26 @@ const OpportunityCard = ({
   // Only show the alert for webhook-generated opportunities that are missing required fields
   const showRequiredFieldsAlert = isFromWebhook && hasMissingRequiredFields && requiredFields.length > 0;
   
+  // Get custom fields to display in the card
+  const getDisplayableCustomFields = () => {
+    if (!opportunity.customFields) return [];
+    
+    // Exclude system fields like isFromWebhook
+    const systemFields = ['isFromWebhook'];
+    
+    return Object.entries(opportunity.customFields)
+      .filter(([key, value]) => 
+        !systemFields.includes(key) && 
+        value !== undefined && 
+        value !== null && 
+        value !== ''
+      )
+      .slice(0, 2); // Limit to 2 fields for display in card
+  };
+  
+  const displayableCustomFields = getDisplayableCustomFields();
+  const hasCustomFields = displayableCustomFields.length > 0;
+  
   return (
     <>
       <Draggable draggableId={opportunity.id} index={index}>
@@ -79,6 +99,24 @@ const OpportunityCard = ({
                     {opportunity.client}
                     {opportunity.company && ` · ${opportunity.company}`}
                   </p>
+                  
+                  {/* Display custom fields */}
+                  {hasCustomFields && (
+                    <div className="mt-1 space-y-1">
+                      {displayableCustomFields.map(([key, value]) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-xs font-normal px-1 py-0 h-5">
+                            {key}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {typeof value === 'boolean' 
+                              ? (value ? 'Sim' : 'Não')
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-between mt-1">
                     <Badge variant="outline" className="text-xs font-normal">

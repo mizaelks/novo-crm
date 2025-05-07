@@ -46,6 +46,7 @@ export const mapDbOpportunityToOpportunity = (db: any): Opportunity => {
       }
     } catch (e) {
       console.error("Erro ao analisar campos personalizados:", e);
+      console.error("Valor recebido:", db.custom_fields);
       customFields = {};
     }
   }
@@ -59,9 +60,9 @@ export const mapDbOpportunityToOpportunity = (db: any): Opportunity => {
     stageId: db.stage_id,
     funnelId: db.funnel_id,
     scheduledActions: [],
-    phone: db.phone,
-    email: db.email,
-    company: db.company,
+    phone: db.phone || '',
+    email: db.email || '',
+    company: db.company || '',
     customFields: customFields
   };
 };

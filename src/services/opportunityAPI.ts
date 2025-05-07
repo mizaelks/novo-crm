@@ -82,7 +82,7 @@ export const opportunityAPI = {
       console.log("Current opportunity data before move:", currentOpportunity);
       console.log("Custom fields before move:", currentOpportunity.custom_fields);
       
-      // Explicitly preserve the custom_fields when updating
+      // Preserve all fields, especially custom_fields, when updating
       const { data: updated, error: updateError } = await supabase
         .from('opportunities')
         .update({ 
@@ -90,7 +90,7 @@ export const opportunityAPI = {
           custom_fields: currentOpportunity.custom_fields // Explicitly keep the custom fields
         })
         .eq('id', id)
-        .select()
+        .select('*')
         .single();
       
       if (updateError || !updated) {
