@@ -12,7 +12,7 @@ interface FieldListProps {
 export const FieldList = ({ fields, onRemoveField }: FieldListProps) => {
   if (fields.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground bg-muted/20 rounded-md">
+      <div className="text-center py-6 text-muted-foreground bg-muted/10 rounded-md border border-dashed">
         Nenhum campo obrigatório configurado
       </div>
     );
@@ -31,6 +31,11 @@ export const FieldList = ({ fields, onRemoveField }: FieldListProps) => {
               {field.type === "checkbox" && "Checkbox"}
               {field.type === "select" && "Seleção"}
             </Badge>
+            {field.isRequired && (
+              <Badge variant="secondary" className="text-xs">
+                Obrigatório
+              </Badge>
+            )}
           </div>
           <Button 
             type="button" 

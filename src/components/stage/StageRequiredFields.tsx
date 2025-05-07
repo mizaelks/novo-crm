@@ -52,7 +52,7 @@ const StageRequiredFields = ({
       </div>
       
       <Card className="mb-4">
-        <CardContent className="pt-4">
+        <CardContent className="pt-4 pb-4">
           <FieldTemplateSelector
             requiredFields={requiredFields}
             setRequiredFields={setRequiredFields}

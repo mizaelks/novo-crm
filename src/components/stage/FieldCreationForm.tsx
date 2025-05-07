@@ -55,9 +55,9 @@ export const FieldCreationForm = ({
       <h3 className="text-sm font-medium">Novo campo personalizado</h3>
       <Separator className="my-2" />
       
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <FormLabel>Nome do campo</FormLabel>
+          <FormLabel className="mb-1 block">Nome do campo</FormLabel>
           <Input 
             value={newFieldName} 
             onChange={e => setNewFieldName(e.target.value)} 
@@ -65,7 +65,7 @@ export const FieldCreationForm = ({
           />
         </div>
         <div>
-          <FormLabel>Tipo do campo</FormLabel>
+          <FormLabel className="mb-1 block">Tipo do campo</FormLabel>
           <Select 
             value={newFieldType} 
             onValueChange={(value: any) => setNewFieldType(value)}
@@ -86,7 +86,7 @@ export const FieldCreationForm = ({
       
       {newFieldType === "select" && (
         <div>
-          <FormLabel>Opções (separadas por vírgula)</FormLabel>
+          <FormLabel className="mb-1 block">Opções (separadas por vírgula)</FormLabel>
           <Input 
             value={newFieldOptions} 
             onChange={e => setNewFieldOptions(e.target.value)} 
@@ -95,17 +95,19 @@ export const FieldCreationForm = ({
         </div>
       )}
       
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button 
           type="button" 
           variant="ghost" 
           onClick={onCancel}
+          size="sm"
         >
           Cancelar
         </Button>
         <Button 
           type="button" 
           onClick={handleAddField}
+          size="sm"
         >
           Adicionar
         </Button>

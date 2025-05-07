@@ -16,7 +16,7 @@ interface TemplateSelectorProps {
 }
 
 export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelectorProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
 
   // Categorias dos templates
   const categories = [
@@ -63,8 +63,8 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
         ))}
       </div>
 
-      <ScrollArea className="h-[240px] rounded-md border p-2">
-        <div className="grid grid-cols-1 gap-2">
+      <ScrollArea className="max-h-[240px] overflow-y-auto rounded-md border p-2">
+        <div className="grid grid-cols-1 gap-2 pb-1">
           {filteredTemplates.map((template) => {
             const tempField: RequiredField = {
               id: template.id,
