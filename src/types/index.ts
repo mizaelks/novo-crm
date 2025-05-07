@@ -1,4 +1,3 @@
-
 // Domain models
 export interface Funnel {
   id: string;
@@ -116,6 +115,7 @@ export interface StageFormData {
   isWinStage?: boolean;
   isLossStage?: boolean;
   requiredFields?: RequiredField[];
+  order?: number; // Add order property to fix the TypeScript errors
 }
 
 export interface RequiredFieldFormData {
