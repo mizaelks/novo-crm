@@ -2,7 +2,7 @@
 import { Draggable } from "react-beautiful-dnd";
 import { Opportunity, RequiredField } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/utils/constants";
+import { formatCurrency } from "@/services/utils/dateUtils";
 import { useState } from "react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +70,7 @@ const OpportunityCard = ({
                     </h4>
                     {showRequiredFieldsAlert && (
                       <div className="shrink-0">
-                        <AlertCircle className="h-4 w-4 text-amber-500" title="Campos obrigatórios pendentes" />
+                        <AlertCircle className="h-4 w-4 text-amber-500" aria-label="Campos obrigatórios pendentes" />
                       </div>
                     )}
                   </div>

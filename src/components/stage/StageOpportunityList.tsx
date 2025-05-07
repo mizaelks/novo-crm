@@ -13,6 +13,17 @@ interface StageOpportunityListProps {
 }
 
 const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOpportunityListProps) => {
+  // Handler functions for opportunity updates and deletions
+  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    // This will be handled by the parent component through context
+    // Just a placeholder to satisfy the prop requirements
+  };
+  
+  const handleOpportunityDeleted = (opportunityId: string) => {
+    // This will be handled by the parent component through context
+    // Just a placeholder to satisfy the prop requirements
+  };
+  
   return (
     <Droppable droppableId={stageId} type="opportunity">
       {(provided, snapshot) => (
@@ -30,7 +41,8 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
                   key={opportunity.id}
                   opportunity={opportunity}
                   index={index}
-                  stageId={stageId}
+                  onOpportunityUpdated={handleOpportunityUpdated}
+                  onOpportunityDeleted={handleOpportunityDeleted}
                 />
               ))}
               {provided.placeholder}
