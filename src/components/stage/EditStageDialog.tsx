@@ -159,7 +159,7 @@ const EditStageDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Editar etapa</DialogTitle>
           <DialogDescription></DialogDescription>

@@ -13,7 +13,7 @@ interface FieldListProps {
 export const FieldList = ({ fields, onRemoveField }: FieldListProps) => {
   if (fields.length === 0) {
     return (
-      <div className="text-center py-6 text-muted-foreground bg-muted/10 rounded-md border border-dashed">
+      <div className="text-center py-5 text-muted-foreground bg-muted/10 rounded-md border border-dashed">
         Nenhum campo obrigatório configurado
       </div>
     );
@@ -22,8 +22,8 @@ export const FieldList = ({ fields, onRemoveField }: FieldListProps) => {
   return (
     <div>
       <div className="text-sm font-medium mb-2">Campos configurados</div>
-      <ScrollArea className={`${fields.length > 5 ? 'max-h-[250px]' : ''}`}>
-        <div className="space-y-1">
+      <ScrollArea className={`${fields.length > 5 ? 'max-h-[250px]' : ''} rounded-md`}>
+        <div className="space-y-1 p-1">
           {fields.map(field => (
             <div key={field.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-accent/5">
               <div className="flex items-center gap-2 text-sm">

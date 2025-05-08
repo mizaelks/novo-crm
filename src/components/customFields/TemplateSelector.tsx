@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RequiredField } from "@/types";
-import { FIELD_TEMPLATES, templateToRequiredField } from "./CustomFieldTemplates";
+import { FIELD_TEMPLATES, FieldTemplate, templateToRequiredField } from "./CustomFieldTemplates";
 import CustomFieldInfo from "./CustomFieldInfo";
 import { Eye, Info, Plus, Tag } from "lucide-react";
 import { useState } from "react";
@@ -26,15 +26,23 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
     { id: 'all', name: 'Todos os Templates', icon: <Tag className="w-3 h-3" /> },
   ];
 
-  // Mapeia templates para categorias
+  // Mapeia templates para categorias - agora com categorias reais
+  const templateCategories: Record<string, string[]> = {
+    // Templates de qualificação de leads
+    leads: ['origin', 'interest_level', 'contact_preference', 'meeting_notes'],
+    // Templates do processo de vendas
+    sales: ['budget', 'priority', 'decision_maker', 'next_followup', 'approved', 'deadline', 'payment_terms', 'product_interest']
+  };
+
+  // Filtrar templates por categoria selecionada
   const getTemplatesByCategory = () => {
     if (!selectedCategory || selectedCategory === 'all') {
       return FIELD_TEMPLATES;
     }
 
-    // Aqui você pode adicionar lógica para filtrar templates por categoria
-    // Por enquanto vamos retornar todos já que não temos categorias reais
-    return FIELD_TEMPLATES;
+    // Filtra os templates pela categoria selecionada
+    const templateIds = templateCategories[selectedCategory] || [];
+    return FIELD_TEMPLATES.filter(template => templateIds.includes(template.id));
   };
 
   // Selecionar um template para visualização
@@ -59,7 +67,7 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 pb-2 overflow-x-auto">
         {categories.map((category) => (
           <Button
             key={category.id}
@@ -78,25 +86,31 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Lista de Templates */}
         <div className="lg:col-span-1">
-          <ScrollArea className="h-64 lg:h-80 overflow-y-auto rounded-md border">
+          <ScrollArea className="h-64 rounded-md border">
             <div className="grid grid-cols-1 gap-1 p-2">
-              {filteredTemplates.map((template) => (
-                <Button 
-                  key={template.id}
-                  variant={previewTemplate === template.id ? "default" : "ghost"}
-                  className="justify-start h-auto py-2 px-3 w-full"
-                  onClick={() => handleSelectPreview(template.id)}
-                  type="button" // Explicitly set button type to prevent form submission
-                >
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-sm font-medium">{template.name}</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-full">
-                      {template.description.substring(0, 30)}
-                      {template.description.length > 30 ? '...' : ''}
-                    </span>
-                  </div>
-                </Button>
-              ))}
+              {filteredTemplates.length > 0 ? (
+                filteredTemplates.map((template) => (
+                  <Button 
+                    key={template.id}
+                    variant={previewTemplate === template.id ? "default" : "ghost"}
+                    className="justify-start h-auto py-2 px-3 w-full"
+                    onClick={() => handleSelectPreview(template.id)}
+                    type="button" // Explicitly set button type to prevent form submission
+                  >
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm font-medium">{template.name}</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-full">
+                        {template.description.substring(0, 30)}
+                        {template.description.length > 30 ? '...' : ''}
+                      </span>
+                    </div>
+                  </Button>
+                ))
+              ) : (
+                <div className="text-center p-4 text-sm text-muted-foreground">
+                  Nenhum template encontrado nesta categoria
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>

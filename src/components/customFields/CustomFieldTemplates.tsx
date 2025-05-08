@@ -8,6 +8,7 @@ export interface FieldTemplate {
   options?: string[];
   description: string;
   icon: string; // Lucide icon name
+  category?: string; // Nova propriedade para categorização
 }
 
 // Templates pré-definidos para campos personalizados
@@ -18,7 +19,8 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["Site", "Indicação", "Google", "Redes Sociais", "Email", "Evento", "Outro"],
     description: "De onde veio este lead",
-    icon: "users"
+    icon: "users",
+    category: "leads"
   },
   {
     id: "budget",
@@ -26,7 +28,8 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["Até R$ 1.000", "R$ 1.000 - R$ 5.000", "R$ 5.000 - R$ 10.000", "R$ 10.000 - R$ 50.000", "Acima de R$ 50.000", "A definir"],
     description: "Orçamento do cliente para o projeto",
-    icon: "wallet"
+    icon: "wallet",
+    category: "sales"
   },
   {
     id: "priority",
@@ -34,35 +37,40 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["Baixa", "Média", "Alta", "Urgente"],
     description: "Prioridade deste negócio",
-    icon: "alert-circle"
+    icon: "alert-circle",
+    category: "sales"
   },
   {
     id: "decision_maker",
     name: "Tomador de Decisão",
     type: "text",
     description: "Nome da pessoa que toma decisões",
-    icon: "user-check"
+    icon: "user-check",
+    category: "sales"
   },
   {
     id: "next_followup",
     name: "Próximo Contato",
     type: "date",
     description: "Data para o próximo contato",
-    icon: "calendar"
+    icon: "calendar",
+    category: "sales"
   },
   {
     id: "approved",
     name: "Proposta Aprovada",
     type: "checkbox",
     description: "Cliente aprovou a proposta",
-    icon: "check-circle"
+    icon: "check-circle",
+    category: "sales"
   },
   {
     id: "deadline",
     name: "Prazo de Entrega",
     type: "date",
     description: "Prazo para entrega do projeto",
-    icon: "clock"
+    icon: "clock",
+    category: "sales"
   },
   {
     id: "payment_terms",
@@ -70,7 +78,8 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["À vista", "30 dias", "60 dias", "90 dias", "Parcelado", "Personalizado"],
     description: "Forma de pagamento acordada",
-    icon: "credit-card"
+    icon: "credit-card",
+    category: "sales"
   },
   {
     id: "interest_level",
@@ -78,7 +87,8 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["Muito Baixo", "Baixo", "Médio", "Alto", "Muito Alto"],
     description: "Quão interessado está o cliente",
-    icon: "thermometer"
+    icon: "thermometer",
+    category: "leads"
   },
   {
     id: "product_interest",
@@ -86,7 +96,8 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["Produto A", "Produto B", "Produto C", "Serviço X", "Serviço Y", "Personalizado"],
     description: "Qual produto/serviço interessa ao cliente",
-    icon: "package"
+    icon: "package",
+    category: "sales"
   },
   {
     id: "contact_preference",
@@ -94,14 +105,16 @@ export const FIELD_TEMPLATES: FieldTemplate[] = [
     type: "select",
     options: ["E-mail", "Telefone", "WhatsApp", "Presencial", "Videoconferência"],
     description: "Como o cliente prefere ser contatado",
-    icon: "phone"
+    icon: "phone",
+    category: "leads"
   },
   {
     id: "meeting_notes",
     name: "Notas da Reunião",
     type: "text",
     description: "Anotações importantes da última reunião",
-    icon: "clipboard"
+    icon: "clipboard",
+    category: "leads"
   }
 ];
 
