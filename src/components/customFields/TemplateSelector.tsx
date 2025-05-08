@@ -67,6 +67,7 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
             variant={selectedCategory === category.id ? "default" : "outline"}
             className="flex items-center gap-1 flex-shrink-0"
             onClick={() => setSelectedCategory(category.id)}
+            type="button" // Explicitly set button type to prevent form submission
           >
             {category.icon}
             <span>{category.name}</span>
@@ -85,6 +86,7 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
                   variant={previewTemplate === template.id ? "default" : "ghost"}
                   className="justify-start h-auto py-2 px-3 w-full"
                   onClick={() => handleSelectPreview(template.id)}
+                  type="button" // Explicitly set button type to prevent form submission
                 >
                   <div className="flex flex-col items-start text-left">
                     <span className="text-sm font-medium">{template.name}</span>
@@ -118,6 +120,7 @@ export function TemplateSelector({ onSelectTemplate, stageId }: TemplateSelector
                   <Button 
                     size="sm" 
                     onClick={() => handleConfirmTemplate(selectedTemplateDetails.id)}
+                    type="button" // Explicitly set button type to prevent form submission
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
