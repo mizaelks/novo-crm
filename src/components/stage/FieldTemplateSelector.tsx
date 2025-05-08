@@ -39,9 +39,7 @@ export const FieldTemplateSelector = ({
         Selecione um modelo pré-definido ou crie um campo personalizado:
       </p>
       
-      <div className="bg-background rounded-md border p-4">
-        <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
-      </div>
+      <TemplateSelector onSelectTemplate={handleAddTemplateField} stageId={stageId} />
     </div>
   );
 };
