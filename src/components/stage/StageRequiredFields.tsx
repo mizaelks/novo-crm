@@ -1,10 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { RequiredField } from "@/types";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Settings } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
 import { FieldTemplateSelector } from "./FieldTemplateSelector";
 import { FieldCreationForm } from "./FieldCreationForm";
 import { FieldList } from "./FieldList";
@@ -25,52 +24,52 @@ const StageRequiredFields = ({
   const handleAddRequiredField = (newField: RequiredField) => {
     setRequiredFields([...requiredFields, newField]);
     setAddingField(false);
-    toast.success("Campo adicionado");
+    toast.success("Campo adicionado com sucesso");
   };
 
   const handleRemoveField = (fieldId: string) => {
     setRequiredFields(requiredFields.filter(field => field.id !== fieldId));
-    toast.success("Campo removido");
+    toast.success("Campo removido com sucesso");
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Campos obrigatórios</h3>
-        <div className="space-x-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm"
-            onClick={() => setAddingField(true)}
-            className="gap-1"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Campo personalizado
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Settings className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Campos obrigatórios</h3>
+            <p className="text-xs text-muted-foreground">
+              Configure campos que devem ser preenchidos nesta etapa
+            </p>
+          </div>
         </div>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => setAddingField(true)}
+          className="gap-1 flex-shrink-0"
+        >
+          <PlusCircle className="h-4 w-4" />
+          Campo personalizado
+        </Button>
       </div>
       
-      <Card className="mb-4">
-        <CardContent className="pt-4 pb-4">
-          <FieldTemplateSelector
-            requiredFields={requiredFields}
-            setRequiredFields={setRequiredFields}
-            stageId={stageId}
-          />
-        </CardContent>
-      </Card>
+      <FieldTemplateSelector
+        requiredFields={requiredFields}
+        setRequiredFields={setRequiredFields}
+        stageId={stageId}
+      />
       
       {addingField && (
-        <Card className="mb-4 border-dashed">
-          <CardContent className="pt-4 pb-4">
-            <FieldCreationForm
-              onAddField={handleAddRequiredField}
-              onCancel={() => setAddingField(false)}
-              stageId={stageId}
-            />
-          </CardContent>
-        </Card>
+        <FieldCreationForm
+          onAddField={handleAddRequiredField}
+          onCancel={() => setAddingField(false)}
+          stageId={stageId}
+        />
       )}
       
       <FieldList 

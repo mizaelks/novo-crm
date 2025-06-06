@@ -1,12 +1,12 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Opportunity, RequiredField } from "@/types";
 import { useState } from "react";
 import { opportunityAPI } from "@/services/api";
 import { toast } from "sonner";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 
 interface RequiredFieldsDialogProps {
   open: boolean;
@@ -27,14 +27,12 @@ const RequiredFieldsDialog = ({
 }: RequiredFieldsDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Filter to only show the required fields
   const missingRequiredFields = requiredFields.filter(field => field.isRequired);
   
   const handleCustomFieldsUpdated = async (updatedOpportunity: Opportunity) => {
     try {
       setIsSubmitting(true);
       
-      // Check if all required fields are filled now
       const stillMissing: string[] = [];
       
       for (const field of missingRequiredFields) {
@@ -53,7 +51,6 @@ const RequiredFieldsDialog = ({
         return;
       }
       
-      // Update opportunity with new stage ID
       const finalOpportunity = await opportunityAPI.update(updatedOpportunity.id, {
         stageId: stageId
       });
@@ -74,28 +71,53 @@ const RequiredFieldsDialog = ({
       setIsSubmitting(false);
     }
   };
+
+  const handleCancel = () => {
+    if (!isSubmitting) {
+      onComplete(false);
+      onOpenChange(false);
+    }
+  };
   
   if (!opportunity) return null;
   
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen && !isSubmitting) {
-        onComplete(false);
-      }
-      onOpenChange(isOpen);
-    }}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-primary" />
-            Campos obrigatórios para esta etapa
-          </DialogTitle>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-semibold text-foreground">
+                  Campos obrigatórios
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Preencha os campos necessários para continuar
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
         
-        <div className="py-4">
-          <p className="text-sm text-muted-foreground mb-6">
-            Esta etapa possui campos obrigatórios que precisam ser preenchidos antes de mover a oportunidade.
-          </p>
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="bg-accent/20 border border-accent/40 rounded-lg p-4 mb-6">
+            <p className="text-sm text-foreground">
+              Esta etapa possui <strong>{missingRequiredFields.length}</strong> campo(s) obrigatório(s) 
+              que precisam ser preenchidos antes de mover a oportunidade.
+            </p>
+          </div>
           
           <CustomFieldsForm
             opportunity={opportunity}
@@ -104,19 +126,18 @@ const RequiredFieldsDialog = ({
           />
         </div>
         
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              onComplete(false);
-              onOpenChange(false);
-            }}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button disabled={true} className="opacity-0">Placeholder</Button>
-        </DialogFooter>
+        <div className="flex-shrink-0 p-6 pt-4 border-t bg-muted/20">
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
