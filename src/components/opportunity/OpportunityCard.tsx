@@ -70,9 +70,9 @@ const OpportunityCard = ({
   const hasCustomFields = displayableCustomFields.length > 0;
   
   const handleOpportunityMoved = () => {
-    // This will trigger a refresh in the parent component
-    // The actual state update is handled by the KanbanBoard context
-    window.location.reload();
+    // Let the Kanban context handle the state updates naturally
+    // No need to force a page reload - the drag context will update the UI
+    console.log("Opportunity moved via quick navigation");
   };
   
   return (
