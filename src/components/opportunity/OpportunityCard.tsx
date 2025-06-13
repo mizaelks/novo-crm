@@ -8,6 +8,7 @@ import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Badge } from "@/components/ui/badge";
 import { useKanbanDrag } from "../kanban/KanbanDragContext";
 import { AlertCircle } from "lucide-react";
+import { OpportunityQuickNavigation } from "./OpportunityQuickNavigation";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -68,6 +69,12 @@ const OpportunityCard = ({
   const displayableCustomFields = getDisplayableCustomFields();
   const hasCustomFields = displayableCustomFields.length > 0;
   
+  const handleOpportunityMoved = () => {
+    // This will trigger a refresh in the parent component
+    // The actual state update is handled by the KanbanBoard context
+    window.location.reload();
+  };
+  
   return (
     <>
       <Draggable draggableId={opportunity.id} index={index}>
@@ -79,20 +86,25 @@ const OpportunityCard = ({
             className="mb-2"
           >
             <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="cursor-pointer hover:shadow-md transition-shadow group"
               onClick={() => setIsDialogOpen(true)}
             >
               <CardContent className="p-3">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-medium line-clamp-2">
+                    <h4 className="text-sm font-medium line-clamp-2 flex-1">
                       {opportunity.title}
                     </h4>
-                    {showRequiredFieldsAlert && (
-                      <div className="shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <OpportunityQuickNavigation
+                        opportunityId={opportunity.id}
+                        currentStageId={opportunity.stageId}
+                        onOpportunityMoved={handleOpportunityMoved}
+                      />
+                      {showRequiredFieldsAlert && (
                         <AlertCircle className="h-4 w-4 text-amber-500" aria-label="Campos obrigatórios pendentes" />
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                   
                   <p className="text-xs text-muted-foreground line-clamp-1">

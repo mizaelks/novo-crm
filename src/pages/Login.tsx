@@ -60,11 +60,12 @@ const Login = () => {
     try {
       setIsCreatingUser(true);
       
+      // Get the anon key instead of session for authorization
       const response = await fetch("https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/create-default-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabase.auth.getSession()}`
+          "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmeWtneG5taWpvb255dXRjaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDYxODcsImV4cCI6MjA2MDM4MjE4N30.tO2-3eJN1DlM_WubpMaIEpounF-9qzqOunRshUuMo8w`
         }
       });
       
@@ -74,10 +75,11 @@ const Login = () => {
         throw new Error(data.error || "Erro ao criar usuário padrão");
       }
       
-      toast.success("Usuário padrão criado com sucesso! Faça login com mizaellimadesigner@gmail.com e a senha padrão");
+      toast.success("Usuário padrão criado com sucesso! Faça login com mizaellimadesigner@gmail.com e a senha @Pequenino");
       
       // Auto-fill the form with the default user email
       form.setValue("email", "mizaellimadesigner@gmail.com");
+      form.setValue("password", "@Pequenino");
     } catch (error: any) {
       toast.error(error.message || "Falha ao criar usuário padrão");
     } finally {
