@@ -30,11 +30,37 @@ export const OpportunityQuickNavigation = ({
     
     if (!targetStage) return;
     
+    // Find the current stage and opportunity
+    const currentStage = stages[currentStageIndex];
+    const opportunity = currentStage?.opportunities.find(opp => opp.id === opportunityId);
+    
+    if (!opportunity) return;
+    
     try {
-      await opportunityAPI.move(opportunityId, targetStage.id);
+      // Simulate a drag operation to use the same logic
+      const result = {
+        destination: {
+          droppableId: targetStage.id,
+          index: targetStage.opportunities.length // Add to end of target stage
+        },
+        source: {
+          droppableId: currentStageId,
+          index: currentStage.opportunities.findIndex(opp => opp.id === opportunityId)
+        },
+        draggableId: opportunityId,
+        type: "opportunity"
+      };
+      
+      // Use the same drag handler logic from the context
+      const { handleDragEnd } = useKanbanDrag();
+      
+      // This will handle the optimistic UI update and API call
+      await handleDragEnd(result);
+      
       onOpportunityMoved?.();
       toast.success(`Oportunidade movida para ${targetStage.name}`);
     } catch (error) {
+      console.error("Error moving opportunity:", error);
       toast.error("Erro ao mover oportunidade");
     }
   };
