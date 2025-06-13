@@ -17,7 +17,7 @@ export const OpportunityQuickNavigation = ({
   currentStageId, 
   onOpportunityMoved 
 }: OpportunityQuickNavigationProps) => {
-  const { stages } = useKanbanDrag();
+  const { stages, handleDragEnd } = useKanbanDrag();
   
   // Find current stage index
   const currentStageIndex = stages.findIndex(stage => stage.id === currentStageId);
@@ -51,9 +51,6 @@ export const OpportunityQuickNavigation = ({
         type: "opportunity",
         reason: "DROP" as const
       };
-      
-      // Use the same drag handler logic from the context
-      const { handleDragEnd } = useKanbanDrag();
       
       // This will handle the optimistic UI update and API call
       await handleDragEnd(result);
