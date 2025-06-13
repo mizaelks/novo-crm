@@ -48,7 +48,8 @@ export const OpportunityQuickNavigation = ({
           index: currentStage.opportunities.findIndex(opp => opp.id === opportunityId)
         },
         draggableId: opportunityId,
-        type: "opportunity"
+        type: "opportunity",
+        reason: "DROP" as const
       };
       
       // Use the same drag handler logic from the context
