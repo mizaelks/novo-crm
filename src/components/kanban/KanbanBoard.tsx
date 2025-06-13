@@ -12,6 +12,7 @@ import { triggerEntityWebhooks } from "@/services/utils/webhook";
 import { useKanbanDragHandler } from "./KanbanDragHandler";
 import { KanbanDragProvider } from "./KanbanDragContext";
 import RequiredFieldsDialog from "../opportunity/RequiredFieldsDialog";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface KanbanBoardProps {
   funnelId: string;
@@ -22,6 +23,7 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateStageDialogOpen, setIsCreateStageDialogOpen] = useState(false);
+  const { fireWinConfetti } = useConfetti();
   
   // State for the required fields dialog
   const [showRequiredFieldsDialog, setShowRequiredFieldsDialog] = useState(false);
@@ -34,13 +36,31 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   } | null>(null);
   
   // Use the extracted drag handler logic
-  const { handleDragEnd, completeOpportunityMove } = useKanbanDragHandler({
+  const { handleDragEnd: originalHandleDragEnd, completeOpportunityMove } = useKanbanDragHandler({
     stages,
     funnelId,
     setStages,
     setShowRequiredFieldsDialog,
     setCurrentDragOperation
   });
+
+  // Wrap the original drag handler to add confetti for win stages
+  const handleDragEnd = (result: DropResult) => {
+    // Check if moving to a win stage
+    if (result.destination) {
+      const destinationStage = stages.find(stage => stage.id === result.destination!.droppableId);
+      if (destinationStage?.isWinStage) {
+        // Fire confetti when moving to win stage
+        setTimeout(() => {
+          fireWinConfetti();
+          toast.success("🎉 Parabéns! Oportunidade fechada com sucesso!");
+        }, 300); // Small delay to let the visual update happen first
+      }
+    }
+    
+    // Call the original handler
+    return originalHandleDragEnd(result);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -148,6 +168,15 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       // The dialog has successfully updated the opportunity with required fields
       // We need to update our local state to reflect the changes
       const { sourceStageId, destinationStageId, destinationIndex } = currentDragOperation;
+      
+      // Check if moving to a win stage and fire confetti
+      const destinationStage = stages.find(stage => stage.id === destinationStageId);
+      if (destinationStage?.isWinStage) {
+        setTimeout(() => {
+          fireWinConfetti();
+          toast.success("🎉 Parabéns! Oportunidade fechada com sucesso!");
+        }, 300);
+      }
       
       // Optimistically update the UI (similar to what we do in completeOpportunityMove)
       const updatedStages = stages.map(stage => {

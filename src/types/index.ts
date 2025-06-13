@@ -1,3 +1,4 @@
+
 // Domain models
 export interface Funnel {
   id: string;
@@ -18,6 +19,13 @@ export interface Stage {
   isWinStage?: boolean; // Whether this is a "win" stage
   isLossStage?: boolean; // Whether this is a "loss" stage
   requiredFields?: RequiredField[]; // Required fields for opportunities in this stage
+  alertConfig?: StageAlertConfig; // Alert configuration for this stage
+}
+
+export interface StageAlertConfig {
+  enabled: boolean;
+  maxDaysInStage: number;
+  alertMessage?: string;
 }
 
 export interface RequiredField {
@@ -42,6 +50,7 @@ export interface Opportunity {
   email?: string;
   company?: string;
   customFields?: Record<string, any>; // For storing custom field values
+  lastStageChangeAt?: Date; // Track when opportunity was moved to current stage
 }
 
 export interface WebhookConfig {
@@ -101,6 +110,28 @@ export interface WebhookPayload {
   data: any;
 }
 
+// Notification system types for future implementation
+export interface Notification {
+  id: string;
+  userId?: string;
+  type: 'opportunity_alert' | 'stage_deadline' | 'system' | 'webhook_failed';
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  read: boolean;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+export interface NotificationConfig {
+  id: string;
+  userId?: string;
+  type: 'opportunity_alert' | 'stage_deadline';
+  enabled: boolean;
+  channels: ('in_app' | 'email' | 'webhook')[];
+  settings: Record<string, any>;
+}
+
 // Form types
 export interface FunnelFormData {
   name: string;
@@ -116,6 +147,7 @@ export interface StageFormData {
   isLossStage?: boolean;
   requiredFields?: RequiredField[];
   order?: number; // Add order property to fix the TypeScript errors
+  alertConfig?: StageAlertConfig;
 }
 
 export interface RequiredFieldFormData {

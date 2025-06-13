@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, StageFormData, RequiredField } from "@/types";
+import { Stage, StageFormData, RequiredField, StageAlertConfig } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import StageRequiredFields from "./StageRequiredFields";
+import { StageAlertConfigComponent } from "./StageAlertConfig";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -59,6 +60,7 @@ const EditStageDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [requiredFields, setRequiredFields] = useState<RequiredField[]>([]);
+  const [alertConfig, setAlertConfig] = useState<StageAlertConfig | undefined>();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,6 +86,7 @@ const EditStageDialog = ({
           if (stageData) {
             setStage(stageData);
             setRequiredFields(stageData.requiredFields || []);
+            setAlertConfig(stageData.alertConfig);
             form.reset({
               name: stageData.name,
               description: stageData.description || "",
@@ -120,7 +123,8 @@ const EditStageDialog = ({
         color: values.color,
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage,
-        requiredFields: requiredFields
+        requiredFields: requiredFields,
+        alertConfig: alertConfig
       });
       
       setIsSubmitting(true);
@@ -132,7 +136,8 @@ const EditStageDialog = ({
         color: values.color,
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage,
-        requiredFields: requiredFields
+        requiredFields: requiredFields,
+        alertConfig: alertConfig
       });
       
       console.log("Resposta da API:", updatedStage);
@@ -270,6 +275,13 @@ const EditStageDialog = ({
                   )}
                 />
               </div>
+              
+              <Separator className="my-4" />
+              
+              <StageAlertConfigComponent
+                alertConfig={alertConfig}
+                onAlertConfigChange={setAlertConfig}
+              />
               
               <Separator className="my-4" />
               

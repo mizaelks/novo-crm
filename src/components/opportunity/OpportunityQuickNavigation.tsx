@@ -5,6 +5,7 @@ import { Stage } from "@/types";
 import { useKanbanDrag } from "../kanban/KanbanDragContext";
 import { opportunityAPI } from "@/services/opportunityAPI";
 import { toast } from "sonner";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface OpportunityQuickNavigationProps {
   opportunityId: string;
@@ -18,6 +19,7 @@ export const OpportunityQuickNavigation = ({
   onOpportunityMoved 
 }: OpportunityQuickNavigationProps) => {
   const { stages, handleDragEnd } = useKanbanDrag();
+  const { fireWinConfetti } = useConfetti();
   
   // Find current stage index
   const currentStageIndex = stages.findIndex(stage => stage.id === currentStageId);
@@ -37,6 +39,14 @@ export const OpportunityQuickNavigation = ({
     if (!opportunity) return;
     
     try {
+      // Check if moving to a win stage
+      if (targetStage.isWinStage) {
+        setTimeout(() => {
+          fireWinConfetti();
+          toast.success("🎉 Parabéns! Oportunidade fechada com sucesso!");
+        }, 300);
+      }
+      
       // Simulate a drag operation to use the same logic
       const result = {
         destination: {

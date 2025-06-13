@@ -7,8 +7,9 @@ import { useState } from "react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Badge } from "@/components/ui/badge";
 import { useKanbanDrag } from "../kanban/KanbanDragContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import { OpportunityQuickNavigation } from "./OpportunityQuickNavigation";
+import { shouldShowAlert, getAlertMessage } from "@/utils/stageAlerts";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -48,6 +49,10 @@ const OpportunityCard = ({
   
   // Only show the alert for webhook-generated opportunities that are missing required fields
   const showRequiredFieldsAlert = isFromWebhook && hasMissingRequiredFields && requiredFields.length > 0;
+  
+  // Check for stage time alerts
+  const showStageAlert = currentStage ? shouldShowAlert(opportunity, currentStage) : false;
+  const stageAlertMessage = currentStage ? getAlertMessage(opportunity, currentStage) : '';
   
   // Get custom fields to display in the card
   const getDisplayableCustomFields = () => {
@@ -104,6 +109,9 @@ const OpportunityCard = ({
                       {showRequiredFieldsAlert && (
                         <AlertCircle className="h-4 w-4 text-amber-500" aria-label="Campos obrigatórios pendentes" />
                       )}
+                      {showStageAlert && (
+                        <Clock className="h-4 w-4 text-red-500" aria-label="Alerta de tempo na etapa" />
+                      )}
                     </div>
                   </div>
                   
@@ -135,11 +143,18 @@ const OpportunityCard = ({
                       {formatCurrency(opportunity.value)}
                     </Badge>
                     
-                    {showRequiredFieldsAlert && (
-                      <Badge variant="outline" className="text-xs font-normal bg-amber-50 border-amber-200 text-amber-600">
-                        Campos pendentes
-                      </Badge>
-                    )}
+                    <div className="flex gap-1">
+                      {showRequiredFieldsAlert && (
+                        <Badge variant="outline" className="text-xs font-normal bg-amber-50 border-amber-200 text-amber-600">
+                          Campos pendentes
+                        </Badge>
+                      )}
+                      {showStageAlert && (
+                        <Badge variant="outline" className="text-xs font-normal bg-red-50 border-red-200 text-red-600">
+                          {stageAlertMessage}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
