@@ -2,30 +2,20 @@
 import { Droppable } from "react-beautiful-dnd";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Opportunity } from "@/types";
+import { Opportunity, Stage } from "@/types";
 import OpportunityCard from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StageOpportunityListProps {
   stageId: string;
   opportunities: Opportunity[];
+  stage: Stage;
   onAddClick: () => void;
 }
 
-const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOpportunityListProps) => {
+const StageOpportunityList = ({ stageId, opportunities, stage, onAddClick }: StageOpportunityListProps) => {
   // Garantir que opportunities seja sempre um array válido
   const validOpportunities = Array.isArray(opportunities) ? opportunities : [];
-  
-  // Handler functions for opportunity updates and deletions
-  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
-    console.log("Opportunity updated:", updatedOpportunity.id);
-    // A atualização real é gerenciada pelo contexto do Kanban
-  };
-  
-  const handleOpportunityDeleted = (opportunityId: string) => {
-    console.log("Opportunity deleted:", opportunityId);
-    // A exclusão real é gerenciada pelo contexto do Kanban
-  };
   
   return (
     <Droppable droppableId={stageId} type="OPPORTUNITY">
@@ -44,8 +34,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
                   key={opportunity.id}
                   opportunity={opportunity}
                   index={index}
-                  onOpportunityUpdated={handleOpportunityUpdated}
-                  onOpportunityDeleted={handleOpportunityDeleted}
+                  stage={stage}
                 />
               ))}
               {provided.placeholder}

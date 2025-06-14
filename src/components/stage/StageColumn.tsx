@@ -40,6 +40,7 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
                 <StageOpportunityList
                   stageId={stage.id}
                   opportunities={stage.opportunities}
+                  stage={stage}
                   onAddClick={() => setIsDialogOpen(true)}
                 />
               </CardContent>

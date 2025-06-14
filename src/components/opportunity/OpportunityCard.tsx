@@ -4,7 +4,7 @@ import { Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Opportunity, Stage } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/services/utils/dateUtils";
 import { OpportunityAlerts } from "./OpportunityAlerts";
 
 interface OpportunityCardProps {
@@ -16,7 +16,7 @@ interface OpportunityCardProps {
 
 const OpportunityCard = ({ opportunity, index, stage, onClick }: OpportunityCardProps) => {
   return (
-    <Draggable draggableId={opportunity.id} index={index} type="OPPORTUNITY">
+    <Draggable draggableId={opportunity.id} index={index}>
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
