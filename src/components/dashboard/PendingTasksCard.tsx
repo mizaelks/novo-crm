@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, Calendar } from "lucide-react";
+import { CheckCircle, Clock, Calendar, Check } from "lucide-react";
 import { scheduledActionAPI } from "@/services/scheduledActionAPI";
 import { ScheduledAction } from "@/types";
 import { formatCurrency } from "@/services/utils/dateUtils";
@@ -101,7 +101,9 @@ const PendingTasksCard = ({ className }: PendingTasksCardProps) => {
                     size="sm"
                     variant="outline"
                     onClick={() => handleCompleteTask(task.id)}
+                    className="flex items-center gap-1"
                   >
+                    <Check className="h-3 w-3" />
                     Concluir
                   </Button>
                 </div>
