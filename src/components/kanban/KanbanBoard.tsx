@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { DropResult } from "react-beautiful-dnd";
 import { RequiredField } from "@/types";
 import { toast } from "sonner";
 import KanbanSkeleton from "./KanbanSkeleton";
@@ -8,6 +9,7 @@ import KanbanStages from "./KanbanStages";
 import CreateStageDialog from "../stage/CreateStageDialog";
 import { triggerEntityWebhooks } from "@/services/utils/webhook";
 import { useKanbanDragHandler } from "../../hooks/useKanbanDragHandler";
+import { KanbanDragProvider } from "./KanbanDragContext";
 import RequiredFieldsDialog from "../opportunity/RequiredFieldsDialog";
 import { useConfetti } from "@/hooks/useConfetti";
 import { useKanbanState } from "../../hooks/useKanbanState";
@@ -52,8 +54,6 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
 
   // Wrap the original drag handler to add confetti for win stages
   const handleDragEnd = (result: DropResult) => {
-    console.log("Drag end event:", result);
-    
     // Check if moving to a win stage
     if (result.destination) {
       const destinationStage = stages.find(stage => stage.id === result.destination!.droppableId);
@@ -188,14 +188,15 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
         onNewStage={() => setIsCreateStageDialogOpen(true)}
       />
       
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <KanbanDragProvider handleDragEnd={handleDragEnd} stages={stages}>
         <KanbanStages 
           stages={stages}
           funnelId={funnelId}
+          onDragEnd={handleDragEnd}
           onOpportunityCreated={onOpportunityCreated}
           onStageUpdated={onStageUpdated}
         />
-      </DragDropContext>
+      </KanbanDragProvider>
       
       <CreateStageDialog 
         open={isCreateStageDialogOpen}

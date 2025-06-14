@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { Opportunity } from "@/types";
 import OpportunityCard from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useContext } from "react";
 
 interface StageOpportunityListProps {
   stageId: string;
@@ -38,7 +39,6 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
               className={`min-h-[50px] p-1 rounded-sm ${
                 snapshot.isDraggingOver ? "bg-accent/70" : ""
               }`}
-              style={{ userSelect: 'none' }}
             >
               {validOpportunities.map((opportunity, index) => (
                 <OpportunityCard

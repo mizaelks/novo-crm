@@ -19,19 +19,15 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   return (
-    <Draggable draggableId={`stage-${stage.id}`} index={index}>
-      {(provided, snapshot) => {
+    <Draggable draggableId={stage.id} index={index}>
+      {(provided) => {
         return (
           <div 
             ref={provided.innerRef}
             {...provided.draggableProps}
             className="w-80 flex-shrink-0"
-            style={{
-              ...provided.draggableProps.style,
-              userSelect: 'none'
-            }}
           >
-            <Card className={`h-full flex flex-col ${snapshot.isDragging ? 'shadow-lg' : ''}`}>
+            <Card className="h-full flex flex-col">
               <StageHeader 
                 stage={stage}
                 dragHandleProps={provided.dragHandleProps}
