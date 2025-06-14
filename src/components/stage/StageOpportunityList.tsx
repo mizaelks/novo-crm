@@ -38,6 +38,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
               className={`min-h-[50px] p-1 rounded-sm ${
                 snapshot.isDraggingOver ? "bg-accent/70" : ""
               }`}
+              style={{ userSelect: 'none' }}
             >
               {validOpportunities.map((opportunity, index) => (
                 <OpportunityCard

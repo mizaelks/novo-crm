@@ -69,25 +69,37 @@ const OpportunityCard = ({
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             className="mb-2"
+            style={{
+              ...provided.draggableProps.style,
+              userSelect: 'none'
+            }}
           >
             <Card 
               className={`cursor-pointer hover:shadow-md transition-shadow group ${
                 snapshot.isDragging ? "rotate-2 shadow-lg" : ""
               }`}
-              onClick={() => setIsDialogOpen(true)}
+              onClick={(e) => {
+                // Prevent click when dragging
+                if (!snapshot.isDragging) {
+                  setIsDialogOpen(true);
+                }
+              }}
+              style={{ userSelect: 'none' }}
             >
-              <CardContent className="p-3">
+              <CardContent className="p-3" style={{ userSelect: 'none' }}>
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-medium line-clamp-2 flex-1">
+                    <h4 className="text-sm font-medium line-clamp-2 flex-1" style={{ userSelect: 'none' }}>
                       {opportunity.title}
                     </h4>
                     <div className="flex items-center gap-1 shrink-0">
-                      <OpportunityQuickNavigation
-                        opportunityId={opportunity.id}
-                        currentStageId={opportunity.stageId}
-                        onOpportunityMoved={handleOpportunityMoved}
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <OpportunityQuickNavigation
+                          opportunityId={opportunity.id}
+                          currentStageId={opportunity.stageId}
+                          onOpportunityMoved={handleOpportunityMoved}
+                        />
+                      </div>
                       {showRequiredFieldsAlert && (
                         <AlertCircle className="h-4 w-4 text-amber-500" aria-label="Campos obrigatórios pendentes" />
                       )}
@@ -97,7 +109,7 @@ const OpportunityCard = ({
                     </div>
                   </div>
                   
-                  <p className="text-xs text-muted-foreground line-clamp-1">
+                  <p className="text-xs text-muted-foreground line-clamp-1" style={{ userSelect: 'none' }}>
                     {opportunity.client}
                     {opportunity.company && ` · ${opportunity.company}`}
                   </p>
@@ -110,7 +122,7 @@ const OpportunityCard = ({
                           <Badge variant="outline" className="text-xs font-normal px-1 py-0 h-5">
                             {key}
                           </Badge>
-                          <span className="text-xs text-muted-foreground truncate">
+                          <span className="text-xs text-muted-foreground truncate" style={{ userSelect: 'none' }}>
                             {typeof value === 'boolean' 
                               ? (value ? 'Sim' : 'Não')
                               : String(value)}
