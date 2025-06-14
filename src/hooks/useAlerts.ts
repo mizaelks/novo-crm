@@ -32,14 +32,25 @@ export const useAlerts = () => {
   useEffect(() => {
     if (!funnels) return;
 
+    console.log('Generating alerts for funnels:', funnels);
     const generatedAlerts: Alert[] = [];
 
     funnels.forEach(funnel => {
+      console.log(`Processing funnel: ${funnel.name} (ID: ${funnel.id})`);
+      
       funnel.stages.forEach(stage => {
+        console.log(`Processing stage: ${stage.name} (ID: ${stage.id}) in funnel ${funnel.id}`);
+        
         if (stage.alertConfig?.enabled) {
+          console.log(`Alert config enabled for stage ${stage.name}`);
+          
           stage.opportunities.forEach(opportunity => {
+            console.log(`Checking opportunity: ${opportunity.title} (ID: ${opportunity.id})`);
+            
             if (shouldShowAlert(opportunity, stage)) {
               const daysInStage = calculateDaysInStage(opportunity);
+              console.log(`Creating alert for opportunity ${opportunity.title} in funnel ${funnel.id}`);
+              
               const alert: Alert = {
                 id: `alert-${opportunity.id}-${stage.id}`,
                 type: 'opportunity_stuck',
@@ -50,8 +61,10 @@ export const useAlerts = () => {
                 funnelId: funnel.id,
                 createdAt: new Date(),
                 isRead: false,
-                route: `/funnels/${funnel.id}`
+                route: `/funnels/${funnel.id}` // Usar o ID correto do funil
               };
+              
+              console.log(`Alert created with route: ${alert.route}`);
               generatedAlerts.push(alert);
             }
           });
@@ -59,10 +72,12 @@ export const useAlerts = () => {
       });
     });
 
+    console.log('Generated alerts:', generatedAlerts);
     setAlerts(generatedAlerts);
   }, [funnels]);
 
   const markAsRead = (alertId: string) => {
+    console.log(`Marking alert as read: ${alertId}`);
     setAlerts(prev => 
       prev.map(alert => 
         alert.id === alertId ? { ...alert, isRead: true } : alert
