@@ -28,7 +28,7 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
   };
   
   return (
-    <Droppable droppableId={stageId} type="opportunity">
+    <Droppable droppableId={stageId} type="OPPORTUNITY">
       {(provided, snapshot) => (
         <div className="flex flex-col h-full">
           <ScrollArea className="flex-1 h-[calc(100vh-280px)]">
@@ -38,7 +38,6 @@ const StageOpportunityList = ({ stageId, opportunities, onAddClick }: StageOppor
               className={`min-h-[50px] p-1 rounded-sm ${
                 snapshot.isDraggingOver ? "bg-accent/70" : ""
               }`}
-              style={{ userSelect: 'none' }}
             >
               {validOpportunities.map((opportunity, index) => (
                 <OpportunityCard

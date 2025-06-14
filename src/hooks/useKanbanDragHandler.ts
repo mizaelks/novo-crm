@@ -35,8 +35,11 @@ export const useKanbanDragHandler = ({
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
+    console.log("Drag result:", { destination, source, draggableId, type });
+
     // Check if we have a valid destination
     if (!destination) {
+      console.log("No destination, drag cancelled");
       return;
     }
 
@@ -45,19 +48,22 @@ export const useKanbanDragHandler = ({
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
+      console.log("Same position, no change needed");
       return;
     }
 
-    console.log(`Drag completed: ${type} from ${source.droppableId} to ${destination.droppableId}`);
+    console.log(`Drag completed: ${type} from ${source.droppableId}[${source.index}] to ${destination.droppableId}[${destination.index}]`);
 
-    // Handle opportunity drag
-    if (type === "opportunity") {
-      handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
+    // Handle opportunity drag between stages
+    if (type === "OPPORTUNITY") {
+      console.log("Handling opportunity drag");
+      await handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
     }
     
-    // Handle stage drag (reordering of stage columns)
-    if (type === "stage") {
-      handleStageDrag(draggableId, source.index, destination.index);
+    // Handle stage reordering
+    if (type === "STAGE") {
+      console.log("Handling stage reordering");
+      await handleStageDrag(draggableId, source.index, destination.index);
     }
   };
 

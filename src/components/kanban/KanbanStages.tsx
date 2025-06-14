@@ -21,7 +21,7 @@ const KanbanStages = ({ stages, funnelId, onOpportunityCreated, onStageUpdated }
     <div className="relative w-full">
       <ScrollArea className="w-full">
         <div className="w-full overflow-visible pb-6 pt-2">
-          <Droppable droppableId="all-stages" direction="horizontal" type="stage">
+          <Droppable droppableId="stages-container" direction="horizontal" type="STAGE">
             {(provided) => (
               <div 
                 ref={provided.innerRef}
