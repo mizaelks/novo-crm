@@ -67,6 +67,14 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
     }
   };
 
+  const handleActionUpdate = (updatedAction: ScheduledAction) => {
+    setActions(prevActions => 
+      prevActions.map(action => 
+        action.id === updatedAction.id ? updatedAction : action
+      )
+    );
+  };
+
   if (loading) {
     return <ActionListSkeleton />;
   }
@@ -97,7 +105,8 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
           <ActionCard 
             key={action.id} 
             action={action} 
-            onDelete={handleDeleteAction} 
+            onDelete={handleDeleteAction}
+            onActionUpdate={handleActionUpdate}
           />
         ))
       )}
@@ -108,9 +117,10 @@ const ScheduledActionList = ({ opportunityId }: ScheduledActionListProps) => {
 };
 
 // ActionCard component for displaying individual scheduled actions
-const ActionCard = ({ action, onDelete }: { 
+const ActionCard = ({ action, onDelete, onActionUpdate }: { 
   action: ScheduledAction; 
   onDelete: (id: string) => void;
+  onActionUpdate: (action: ScheduledAction) => void;
 }) => {
   return (
     <Card key={action.id} className="mb-4">
@@ -119,7 +129,10 @@ const ActionCard = ({ action, onDelete }: {
         onDelete={() => onDelete(action.id)} 
       />
       <CardContent className="pt-0">
-        <ActionContent action={action} />
+        <ActionContent 
+          action={action} 
+          onActionUpdate={onActionUpdate}
+        />
       </CardContent>
     </Card>
   );
@@ -132,7 +145,6 @@ const EmptyState = () => (
   </div>
 );
 
-// Loading skeleton
 const ActionListSkeleton = () => (
   <div className="flex items-center justify-center p-4">
     <Loader2 className="h-6 w-6 animate-spin mr-2" />

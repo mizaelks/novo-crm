@@ -1,14 +1,37 @@
-
 import React from 'react';
 import { ScheduledAction } from '@/types';
 import { format } from 'date-fns';
-import { ArrowRight, AlertTriangle } from 'lucide-react';
+import { ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { scheduledActionAPI } from '@/services/scheduledActionAPI';
+import { toast } from 'sonner';
 
 interface ActionContentProps {
   action: ScheduledAction;
+  onActionUpdate?: (updatedAction: ScheduledAction) => void;
 }
 
-export const ActionContent: React.FC<ActionContentProps> = ({ action }) => {
+export const ActionContent: React.FC<ActionContentProps> = ({ action, onActionUpdate }) => {
+  const handleCompleteTask = async () => {
+    try {
+      // Update the action status to completed
+      const updatedAction = await scheduledActionAPI.update(action.id, {
+        ...action,
+        status: 'completed'
+      });
+      
+      if (updatedAction) {
+        toast.success('Tarefa concluída com sucesso!');
+        if (onActionUpdate) {
+          onActionUpdate(updatedAction);
+        }
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast.error('Erro ao concluir tarefa');
+    }
+  };
+
   const renderContent = () => {
     switch (action.actionType) {
       case 'webhook':
@@ -79,7 +102,7 @@ export const ActionContent: React.FC<ActionContentProps> = ({ action }) => {
     const config = action.actionConfig;
     
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="text-sm font-medium">
           {config.title || "Tarefa"}
         </div>
@@ -100,6 +123,20 @@ export const ActionContent: React.FC<ActionContentProps> = ({ action }) => {
           <div className="flex items-center gap-2 text-sm text-amber-600 mt-2">
             <ArrowRight className="h-4 w-4" />
             <span>Movimentar para próxima etapa após conclusão</span>
+          </div>
+        )}
+
+        {/* Add Complete button for pending tasks */}
+        {action.status === 'pending' && (
+          <div className="pt-2">
+            <Button 
+              onClick={handleCompleteTask}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Concluir
+            </Button>
           </div>
         )}
       </div>
