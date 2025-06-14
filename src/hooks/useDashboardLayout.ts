@@ -26,11 +26,10 @@ export const useDashboardLayout = () => {
   const [isCustomizing, setIsCustomizing] = useState(false);
 
   const updateWidget = (id: string, updates: Partial<DashboardWidget>) => {
-    setWidgets((prev: DashboardWidget[]) => 
-      prev.map(widget => 
-        widget.id === id ? { ...widget, ...updates } : widget
-      )
+    const updatedWidgets = widgets.map(widget => 
+      widget.id === id ? { ...widget, ...updates } : widget
     );
+    setWidgets(updatedWidgets);
   };
 
   const reorderWidgets = (draggedId: string, targetId: string) => {
