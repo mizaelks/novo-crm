@@ -170,7 +170,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="pr-10">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -180,6 +180,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
                 <Button
                   onClick={() => setCreateUserOpen(true)}
                   className="flex items-center gap-2"
+                  size="sm"
                 >
                   <UserPlus className="h-4 w-4" />
                   Criar Usuário
