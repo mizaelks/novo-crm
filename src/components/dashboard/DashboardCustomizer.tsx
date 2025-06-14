@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings, GripVertical, RotateCcw } from "lucide-react";
 import { useDashboardLayout, DashboardWidget } from "@/hooks/useDashboardLayout";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
@@ -60,55 +61,57 @@ const DashboardCustomizer = () => {
             </Button>
           </div>
 
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="widgets">
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="space-y-2"
-                >
-                  {widgets.map((widget, index) => (
-                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`p-3 border rounded-lg bg-background ${
-                            snapshot.isDragging ? 'shadow-md' : ''
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="cursor-grab hover:cursor-grabbing"
-                              >
-                                <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <ScrollArea className="h-[calc(100vh-200px)]">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="widgets">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-2 pr-4"
+                  >
+                    {widgets.map((widget, index) => (
+                      <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`p-3 border rounded-lg bg-background ${
+                              snapshot.isDragging ? 'shadow-md' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="cursor-grab hover:cursor-grabbing"
+                                >
+                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">{widget.title}</p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {getSizeLabel(widget.size)}
+                                  </Badge>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">{widget.title}</p>
-                                <Badge variant="outline" className="text-xs">
-                                  {getSizeLabel(widget.size)}
-                                </Badge>
-                              </div>
+                              <Switch
+                                checked={widget.enabled}
+                                onCheckedChange={(enabled) =>
+                                  updateWidget(widget.id, { enabled })
+                                }
+                              />
                             </div>
-                            <Switch
-                              checked={widget.enabled}
-                              onCheckedChange={(enabled) =>
-                                updateWidget(widget.id, { enabled })
-                              }
-                            />
                           </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </ScrollArea>
         </div>
       </SheetContent>
     </Sheet>

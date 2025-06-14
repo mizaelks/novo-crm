@@ -26,7 +26,7 @@ export const useDashboardLayout = () => {
   const [isCustomizing, setIsCustomizing] = useState(false);
 
   const updateWidget = (id: string, updates: Partial<DashboardWidget>) => {
-    setWidgets(prev => 
+    setWidgets((prev: DashboardWidget[]) => 
       prev.map(widget => 
         widget.id === id ? { ...widget, ...updates } : widget
       )
