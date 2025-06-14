@@ -3,9 +3,9 @@ import { Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Opportunity } from "@/types";
+import { Opportunity, Stage } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, Edit, Calendar, AlertTriangle } from "lucide-react";
+import { Eye, Edit, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { OpportunityAlertIndicator } from "./OpportunityAlertIndicator";
 import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
@@ -13,30 +13,24 @@ import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
 interface OpportunityCardProps {
   opportunity: Opportunity;
   index: number;
-  onEdit: (opportunity: Opportunity) => void;
-  onView: (opportunity: Opportunity) => void;
-  stageColor?: string;
-  isWinStage?: boolean;
-  isLossStage?: boolean;
-  maxDaysInStage?: number;
+  stage: Stage;
+  onClick?: (opportunity: Opportunity) => void;
 }
 
 const OpportunityCard = ({ 
   opportunity, 
   index, 
-  onEdit, 
-  onView,
-  stageColor,
-  isWinStage,
-  isLossStage,
-  maxDaysInStage
+  stage,
+  onClick
 }: OpportunityCardProps) => {
   const handleCardClick = (e: React.MouseEvent) => {
     // Prevent opening details when clicking on buttons
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
-    onView(opportunity);
+    if (onClick) {
+      onClick(opportunity);
+    }
   };
 
   return (
@@ -61,7 +55,7 @@ const OpportunityCard = ({
                   <p className="text-xs text-gray-500 mt-1">{opportunity.client}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 ml-2">
-                  <Badge variant="outline" className="text-xs px-2 py-0" style={{ borderColor: stageColor }}>
+                  <Badge variant="outline" className="text-xs px-2 py-0" style={{ borderColor: stage.color }}>
                     {formatCurrency(opportunity.value)}
                   </Badge>
                   <OpportunityMigrationIndicator opportunity={opportunity} />
@@ -76,33 +70,8 @@ const OpportunityCard = ({
                   <span>{format(opportunity.createdAt, "dd/MM")}</span>
                   <OpportunityAlertIndicator 
                     opportunity={opportunity}
-                    maxDaysInStage={maxDaysInStage}
+                    stage={stage}
                   />
-                </div>
-                
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onView(opportunity);
-                    }}
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(opportunity);
-                    }}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
                 </div>
               </div>
               
