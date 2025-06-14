@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
+import AlertsDropdown from "@/components/alerts/AlertsDropdown";
 
 const AppHeader = () => {
   const location = useLocation();
@@ -48,6 +49,7 @@ const AppHeader = () => {
         <div className="ml-auto flex items-center space-x-4">
           {user && (
             <div className="flex items-center space-x-4">
+              <AlertsDropdown />
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
