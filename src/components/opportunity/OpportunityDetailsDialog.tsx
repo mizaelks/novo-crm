@@ -92,12 +92,12 @@ const OpportunityDetailsDialog = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>
+          <DialogHeader className="pr-12">
+            <div className="flex items-center justify-between pr-8">
+              <DialogTitle className="flex-1">
                 {loading ? "Carregando..." : opportunity?.title}
-              </span>
-              <div className="flex gap-2">
+              </DialogTitle>
+              <div className="flex gap-2 ml-4">
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -113,7 +113,7 @@ const OpportunityDetailsDialog = ({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-            </DialogTitle>
+            </div>
           </DialogHeader>
           
           {loading ? (

@@ -80,7 +80,7 @@ const CreateOpportunityDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle>Criar nova oportunidade</DialogTitle>
         </DialogHeader>
         

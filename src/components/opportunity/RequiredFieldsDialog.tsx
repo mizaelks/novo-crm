@@ -84,8 +84,8 @@ const RequiredFieldsDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
-          <div className="flex items-start justify-between">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b pr-12">
+          <div className="flex items-start justify-between pr-8">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-primary" />
@@ -99,15 +99,6 @@ const RequiredFieldsDialog = ({
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
         
