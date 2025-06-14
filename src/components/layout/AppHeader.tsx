@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import AlertsDropdown from "@/components/alerts/AlertsDropdown";
+import SettingsDropdown from "@/components/settings/SettingsDropdown";
 
 const AppHeader = () => {
   const location = useLocation();
@@ -50,6 +51,7 @@ const AppHeader = () => {
           {user && (
             <div className="flex items-center space-x-4">
               <AlertsDropdown />
+              <SettingsDropdown />
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
