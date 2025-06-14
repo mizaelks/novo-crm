@@ -1,106 +1,21 @@
 
-import { useState } from "react";
-import { DropResult } from "react-beautiful-dnd";
-import { Stage, Opportunity, RequiredField } from "@/types";
 import { opportunityAPI, stageAPI } from "@/services/api";
+import { Stage, Opportunity } from "@/types";
 import { toast } from "sonner";
 
-interface UseKanbanDragHandlerProps {
-  stages: Stage[];
-  funnelId: string;
-  setStages: (stages: Stage[]) => void;
-  setShowRequiredFieldsDialog: (show: boolean) => void;
-  setCurrentDragOperation: (operation: any) => void;
-}
-
-export const useKanbanDragHandler = ({
-  stages,
-  funnelId,
-  setStages,
-  setShowRequiredFieldsDialog,
-  setCurrentDragOperation
-}: UseKanbanDragHandlerProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Handle all drag end events
-  const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId, type } = result;
-
-    // Check if we have a valid destination
-    if (!destination) {
-      return;
-    }
-
-    // Check if location didn't change
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    console.log(`Drag completed: ${type} from ${source.droppableId} to ${destination.droppableId}`);
-
-    // Handle opportunity drag
-    if (type === "opportunity") {
-      handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
-    }
-    
-    // Handle stage drag (reordering of stage columns)
-    if (type === "stage") {
-      handleStageDrag(draggableId, source.index, destination.index);
-    }
-  };
-
-  // Handle stage drag (reorder stages)
-  const handleStageDrag = async (stageId: string, sourceIndex: number, destinationIndex: number) => {
-    if (sourceIndex === destinationIndex) return;
-    
-    console.log(`Reordering stage ${stageId} from position ${sourceIndex} to ${destinationIndex}`);
-    
-    // Find the dragged stage
-    const draggedStage = stages.find(stage => stage.id === stageId.replace("stage-", ""));
-    if (!draggedStage) {
-      console.error("Could not find dragged stage:", stageId);
-      return;
-    }
-    
-    try {
-      // Create a new array with the stages in the correct order
-      const updatedStages = Array.from(stages);
-      
-      // Remove the dragged stage
-      const [removedStage] = updatedStages.splice(sourceIndex, 1);
-      
-      // Insert it at the new position
-      updatedStages.splice(destinationIndex, 0, removedStage);
-      
-      // Update the order property for each stage
-      const reorderedStages = updatedStages.map((stage, index) => ({
-        ...stage,
-        order: index
-      }));
-      
-      // Optimistically update UI
-      setStages(reorderedStages);
-      
-      // Update the order in the database for each affected stage
-      for (const stage of reorderedStages) {
-        await stageAPI.update(stage.id, { order: stage.order });
-      }
-      
-      toast.success("Etapas reordenadas com sucesso");
-    } catch (error) {
-      console.error("Error reordering stages:", error);
-      toast.error("Erro ao reordenar etapas");
-      // Refresh the stages from the server to ensure consistent state
-      const refreshedStages = await stageAPI.getByFunnelId(funnelId);
-      setStages(refreshedStages);
-    }
-  };
-
-  // Handle opportunity drag
-  const handleOpportunityDrag = (opportunityId: string, sourceStageId: string, destinationStageId: string, destinationIndex: number) => {
+export const useOpportunityDrag = (
+  stages: Stage[],
+  funnelId: string,
+  setStages: (stages: Stage[]) => void,
+  setShowRequiredFieldsDialog: (show: boolean) => void,
+  setCurrentDragOperation: (operation: any) => void
+) => {
+  const handleOpportunityDrag = (
+    opportunityId: string, 
+    sourceStageId: string, 
+    destinationStageId: string, 
+    destinationIndex: number
+  ) => {
     // Find the dragged opportunity
     const sourceStage = stages.find(s => s.id === sourceStageId);
     if (!sourceStage) return;
@@ -196,9 +111,5 @@ export const useKanbanDragHandler = ({
     }
   };
 
-  return {
-    handleDragEnd,
-    completeOpportunityMove,
-    isDragging
-  };
+  return { handleOpportunityDrag, completeOpportunityMove };
 };

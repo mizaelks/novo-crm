@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, StageFormData, RequiredField, StageAlertConfig } from "@/types";
+import { Stage, RequiredField, StageAlertConfig } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -13,21 +13,14 @@ import {
   DialogFooter,
   DialogDescription
 } from "@/components/ui/dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import StageRequiredFields from "./StageRequiredFields";
 import { StageAlertConfigComponent } from "./StageAlertConfig";
+import { StageBasicForm } from "./StageBasicForm";
+import { StageTypeToggles } from "./StageTypeToggles";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -179,102 +172,9 @@ const EditStageDialog = ({
         ) : (
           <Form {...form}>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome da etapa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Qualificação" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <StageBasicForm form={form} />
               
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição (opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Etapa de qualificação de leads" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cor da etapa</FormLabel>
-                    <div className="flex items-center gap-4">
-                      <FormControl>
-                        <Input type="color" {...field} className="w-14 h-10 p-1" />
-                      </FormControl>
-                      <Input 
-                        placeholder="#CCCCCC" 
-                        value={field.value} 
-                        onChange={e => field.onChange(e.target.value)}
-                        className="font-mono"
-                        maxLength={7}
-                      />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="isWinStage"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Etapa de Vitória</FormLabel>
-                        <div className="text-xs text-muted-foreground">
-                          Oportunidades nesta etapa são consideradas ganhas
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="isLossStage"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Etapa de Perda</FormLabel>
-                        <div className="text-xs text-muted-foreground">
-                          Oportunidades nesta etapa são consideradas perdidas
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <StageTypeToggles form={form} />
               
               <Separator className="my-4" />
               

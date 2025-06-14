@@ -1,34 +1,42 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DropResult } from "react-beautiful-dnd";
-import { Funnel, Stage, Opportunity, RequiredField } from "@/types";
-import { funnelAPI, stageAPI } from "@/services/api";
+import { RequiredField } from "@/types";
 import { toast } from "sonner";
 import KanbanSkeleton from "./KanbanSkeleton";
 import KanbanHeader from "./KanbanHeader";
 import KanbanStages from "./KanbanStages";
 import CreateStageDialog from "../stage/CreateStageDialog";
 import { triggerEntityWebhooks } from "@/services/utils/webhook";
-import { useKanbanDragHandler } from "./KanbanDragHandler";
+import { useKanbanDragHandler } from "../../hooks/useKanbanDragHandler";
 import { KanbanDragProvider } from "./KanbanDragContext";
 import RequiredFieldsDialog from "../opportunity/RequiredFieldsDialog";
 import { useConfetti } from "@/hooks/useConfetti";
+import { useKanbanState } from "../../hooks/useKanbanState";
 
 interface KanbanBoardProps {
   funnelId: string;
 }
 
 const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
-  const [funnel, setFunnel] = useState<Funnel | null>(null);
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isCreateStageDialogOpen, setIsCreateStageDialogOpen] = useState(false);
   const { fireWinConfetti } = useConfetti();
+  
+  // Use the new kanban state hook
+  const {
+    funnel,
+    stages,
+    loading,
+    setStages,
+    handleStageCreated: onStageCreated,
+    handleOpportunityCreated,
+    handleStageUpdated
+  } = useKanbanState(funnelId);
   
   // State for the required fields dialog
   const [showRequiredFieldsDialog, setShowRequiredFieldsDialog] = useState(false);
   const [currentDragOperation, setCurrentDragOperation] = useState<{
-    opportunity: Opportunity;
+    opportunity: any;
     sourceStageId: string;
     destinationStageId: string;
     destinationIndex: number;
@@ -62,39 +70,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     return originalHandleDragEnd(result);
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const funnelData = await funnelAPI.getById(funnelId);
-        const stagesData = await stageAPI.getByFunnelId(funnelId);
-        
-        // Sort stages by order property to ensure consistent order
-        const sortedStages = [...stagesData].sort((a, b) => a.order - b.order);
-        
-        setFunnel(funnelData);
-        setStages(sortedStages);
-      } catch (error) {
-        console.error("Error loading kanban data:", error);
-        toast.error("Erro ao carregar dados do kanban.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [funnelId]);
-
-  const handleStageCreated = (newStage: Stage) => {
-    console.log("Stage created:", newStage);
-    
-    // Ensure the stage has all required properties
-    if (!newStage.opportunities) {
-      newStage.opportunities = [];
-    }
-    
-    // Add the new stage to the existing stages
-    setStages(prevStages => [...prevStages, newStage]);
+  const handleStageCreated = (newStage: any) => {
+    onStageCreated(newStage);
     setIsCreateStageDialogOpen(false);
     
     // Trigger webhook for stage creation
@@ -111,18 +88,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     );
   };
 
-  const handleOpportunityCreated = (newOpportunity: Opportunity) => {
-    const updatedStages = stages.map(stage => {
-      if (stage.id === newOpportunity.stageId) {
-        return {
-          ...stage,
-          opportunities: [...stage.opportunities, newOpportunity]
-        };
-      }
-      return stage;
-    });
-    
-    setStages(updatedStages);
+  const onOpportunityCreated = (newOpportunity: any) => {
+    handleOpportunityCreated(newOpportunity);
     
     // Trigger webhook for opportunity creation
     triggerEntityWebhooks(
@@ -140,11 +107,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     );
   };
 
-  const handleStageUpdated = (updatedStage: Stage) => {
-    const updatedStages = stages.map(stage => 
-      stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
-    );
-    setStages(updatedStages);
+  const onStageUpdated = (updatedStage: any) => {
+    handleStageUpdated(updatedStage);
     
     // Trigger webhook for stage update
     triggerEntityWebhooks(
@@ -163,7 +127,7 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     );
   };
   
-  const handleRequiredFieldsComplete = (success: boolean, updatedOpportunity?: Opportunity) => {
+  const handleRequiredFieldsComplete = (success: boolean, updatedOpportunity?: any) => {
     if (success && currentDragOperation && updatedOpportunity) {
       // The dialog has successfully updated the opportunity with required fields
       // We need to update our local state to reflect the changes
@@ -229,8 +193,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
           stages={stages}
           funnelId={funnelId}
           onDragEnd={handleDragEnd}
-          onOpportunityCreated={handleOpportunityCreated}
-          onStageUpdated={handleStageUpdated}
+          onOpportunityCreated={onOpportunityCreated}
+          onStageUpdated={onStageUpdated}
         />
       </KanbanDragProvider>
       
