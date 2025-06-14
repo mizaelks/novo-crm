@@ -126,7 +126,12 @@ export const stageAPI = {
       color: data.color || '#CCCCCC',
       is_win_stage: data.isWinStage || false,
       is_loss_stage: data.isLossStage || false,
-      order: nextOrder
+      order: nextOrder,
+      alert_config: data.alertConfig ? {
+        enabled: data.alertConfig.enabled,
+        maxDaysInStage: data.alertConfig.maxDaysInStage,
+        alertMessage: data.alertConfig.alertMessage
+      } : null
     }]).select().single();
     
     if (error || !created) {
@@ -176,6 +181,15 @@ export const stageAPI = {
     
     if (data.funnelId !== undefined) {
       dbData.funnel_id = data.funnelId;
+    }
+    
+    // Handle alert config
+    if (data.alertConfig !== undefined) {
+      dbData.alert_config = data.alertConfig ? {
+        enabled: data.alertConfig.enabled,
+        maxDaysInStage: data.alertConfig.maxDaysInStage,
+        alertMessage: data.alertConfig.alertMessage
+      } : null;
     }
     
     const { data: updated, error } = await supabase.from('stages').update(dbData).eq('id', id).select().single();

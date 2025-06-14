@@ -83,11 +83,13 @@ export const opportunityAPI = {
       console.log("Custom fields before move:", currentOpportunity.custom_fields);
       
       // Preserve all fields, especially custom_fields, when updating
+      // Also update lastStageChangeAt to track when the opportunity moved to this stage
       const { data: updated, error: updateError } = await supabase
         .from('opportunities')
         .update({ 
           stage_id: newStageId,
-          custom_fields: currentOpportunity.custom_fields // Explicitly keep the custom fields
+          custom_fields: currentOpportunity.custom_fields, // Explicitly keep the custom fields
+          last_stage_change_at: new Date().toISOString() // Track when moved to this stage
         })
         .eq('id', id)
         .select('*')

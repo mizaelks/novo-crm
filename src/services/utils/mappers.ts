@@ -1,117 +1,45 @@
+import { Funnel, Opportunity, Stage } from "@/types";
 
-import { Funnel, Stage, Opportunity, ScheduledAction, WebhookConfig } from "@/types";
-
-// Mapeia um objeto de banco de dados para um objeto Funnel
-export const mapDbFunnelToFunnel = (db: any): Funnel => {
+export const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, 'stages'> => {
   return {
-    id: db.id,
-    name: db.name,
-    description: db.description || '',
-    order: db.order || 0,
-    stages: []
+    id: dbFunnel.id,
+    name: dbFunnel.name,
+    description: dbFunnel.description || '',
+    order: dbFunnel.order || 0
   };
 };
 
-// Mapeia um objeto de banco de dados para um objeto Stage
-export const mapDbStageToStage = (db: any): Stage => {
+export const mapDbStageToStage = (dbStage: any): Omit<Stage, 'opportunities' | 'requiredFields'> => {
   return {
-    id: db.id,
-    name: db.name,
-    description: db.description || '',
-    order: db.order || 0,
-    funnelId: db.funnel_id,
-    opportunities: [],
-    color: db.color || '#CCCCCC',
-    isWinStage: db.is_win_stage || false,
-    isLossStage: db.is_loss_stage || false,
-    requiredFields: []
+    id: dbStage.id,
+    name: dbStage.name,
+    description: dbStage.description || '',
+    order: dbStage.order || 0,
+    funnelId: dbStage.funnel_id,
+    color: dbStage.color || '#CCCCCC',
+    isWinStage: dbStage.is_win_stage || false,
+    isLossStage: dbStage.is_loss_stage || false,
+    alertConfig: dbStage.alert_config ? {
+      enabled: dbStage.alert_config.enabled || false,
+      maxDaysInStage: dbStage.alert_config.maxDaysInStage || 3,
+      alertMessage: dbStage.alert_config.alertMessage
+    } : undefined
   };
 };
 
-// Mapeia um objeto de banco de dados para um objeto Opportunity
-export const mapDbOpportunityToOpportunity = (db: any): Opportunity => {
-  // Ensure date is properly parsed
-  const createdAt = db.created_at ? new Date(db.created_at) : new Date();
-  
-  // Ensure custom_fields is properly parsed from JSON
-  let customFields = {};
-  if (db.custom_fields) {
-    try {
-      // Se já for um objeto, use-o diretamente
-      if (typeof db.custom_fields === 'object' && db.custom_fields !== null) {
-        customFields = db.custom_fields;
-      } else {
-        // Se for uma string JSON, analise-a
-        customFields = JSON.parse(db.custom_fields);
-      }
-    } catch (e) {
-      console.error("Erro ao analisar campos personalizados:", e);
-      console.error("Valor recebido:", db.custom_fields);
-      customFields = {};
-    }
-  }
-  
+export const mapDbOpportunityToOpportunity = (dbOpportunity: any): Opportunity => {
   return {
-    id: db.id,
-    title: db.title,
-    value: parseFloat(db.value || 0),
-    client: db.client || '',
-    createdAt: createdAt,
-    stageId: db.stage_id,
-    funnelId: db.funnel_id,
-    scheduledActions: [],
-    phone: db.phone || '',
-    email: db.email || '',
-    company: db.company || '',
-    customFields: customFields
+    id: dbOpportunity.id,
+    title: dbOpportunity.title,
+    value: dbOpportunity.value || 0,
+    client: dbOpportunity.client,
+    createdAt: new Date(dbOpportunity.created_at),
+    stageId: dbOpportunity.stage_id,
+    funnelId: dbOpportunity.funnel_id,
+    phone: dbOpportunity.phone,
+    email: dbOpportunity.email,
+    company: dbOpportunity.company,
+    customFields: dbOpportunity.custom_fields || {},
+    lastStageChangeAt: dbOpportunity.last_stage_change_at ? new Date(dbOpportunity.last_stage_change_at) : undefined
   };
-};
-
-// Mapeia um objeto de banco de dados para um objeto ScheduledAction
-export const mapDbScheduledActionToScheduledAction = (db: any): ScheduledAction => {
-  // Ensure date is properly parsed
-  const scheduledDateTime = db.scheduled_datetime ? new Date(db.scheduled_datetime) : new Date();
-  
-  // Parse action_config if it's a string
-  let actionConfig = {};
-  if (db.action_config) {
-    try {
-      if (typeof db.action_config === 'object' && db.action_config !== null) {
-        actionConfig = db.action_config;
-      } else {
-        actionConfig = JSON.parse(db.action_config);
-      }
-    } catch (e) {
-      console.error("Error parsing action_config:", e);
-      actionConfig = {};
-    }
-  }
-
-  return {
-    id: db.id,
-    opportunityId: db.opportunity_id,
-    actionType: db.action_type,
-    actionConfig: actionConfig,
-    scheduledDateTime: scheduledDateTime,
-    status: db.status || 'pending'
-  };
-};
-
-// Mapeia um objeto de banco de dados para um objeto WebhookConfig
-export const mapDbWebhookToWebhook = (db: any): WebhookConfig => {
-  return {
-    id: db.id,
-    targetType: db.target_type,
-    targetId: db.target_id,
-    url: db.url,
-    event: db.event
-  };
-};
-
-// Utility function to format currency values
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
 };
