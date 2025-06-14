@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, RequiredField, StageAlertConfig } from "@/types";
+import { Stage, RequiredField, StageAlertConfig, StageMigrateConfig } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import StageRequiredFields from "./StageRequiredFields";
 import { StageAlertConfigComponent } from "./StageAlertConfig";
+import { StageMigrateConfigComponent } from "./StageMigrateConfig";
 import { StageBasicForm } from "./StageBasicForm";
 import { StageTypeToggles } from "./StageTypeToggles";
 
@@ -52,6 +53,11 @@ const EditStageDialog = ({
   const [loading, setLoading] = useState(true);
   const [requiredFields, setRequiredFields] = useState<RequiredField[]>([]);
   const [alertConfig, setAlertConfig] = useState<StageAlertConfig>({ enabled: false, maxDaysInStage: 3 });
+  const [migrateConfig, setMigrateConfig] = useState<StageMigrateConfig>({ 
+    enabled: false, 
+    targetFunnelId: '', 
+    targetStageId: '' 
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,8 +85,16 @@ const EditStageDialog = ({
             setRequiredFields(stageData.requiredFields || []);
             
             // Handle alert config properly
-            const config = stageData.alertConfig || { enabled: false, maxDaysInStage: 3 };
-            setAlertConfig(config);
+            const alertConf = stageData.alertConfig || { enabled: false, maxDaysInStage: 3 };
+            setAlertConfig(alertConf);
+            
+            // Handle migrate config properly
+            const migrateConf = stageData.migrateConfig || { 
+              enabled: false, 
+              targetFunnelId: '', 
+              targetStageId: '' 
+            };
+            setMigrateConfig(migrateConf);
             
             form.reset({
               name: stageData.name,
@@ -113,6 +127,7 @@ const EditStageDialog = ({
       console.log("Enviando atualização para a etapa:", stageId);
       console.log("Form values:", values);
       console.log("Alert config:", alertConfig);
+      console.log("Migrate config:", migrateConfig);
       console.log("Required fields:", requiredFields);
       
       setIsSubmitting(true);
@@ -125,7 +140,8 @@ const EditStageDialog = ({
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage,
         requiredFields: requiredFields,
-        alertConfig: alertConfig.enabled ? alertConfig : undefined
+        alertConfig: alertConfig.enabled ? alertConfig : undefined,
+        migrateConfig: migrateConfig.enabled ? migrateConfig : undefined
       };
       
       console.log("Dados para atualização:", updateData);
@@ -181,6 +197,14 @@ const EditStageDialog = ({
                 <StageAlertConfigComponent
                   alertConfig={alertConfig}
                   onAlertConfigChange={setAlertConfig}
+                />
+                
+                <Separator className="my-4" />
+                
+                <StageMigrateConfigComponent
+                  migrateConfig={migrateConfig}
+                  onMigrateConfigChange={setMigrateConfig}
+                  currentFunnelId={stage?.funnelId || ''}
                 />
                 
                 <Separator className="my-4" />

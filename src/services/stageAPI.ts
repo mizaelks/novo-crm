@@ -124,6 +124,11 @@ export const stageAPI = {
         enabled: data.alertConfig.enabled,
         maxDaysInStage: data.alertConfig.maxDaysInStage,
         alertMessage: data.alertConfig.alertMessage
+      } : null,
+      migrate_config: data.migrateConfig ? {
+        enabled: data.migrateConfig.enabled,
+        target_funnel_id: data.migrateConfig.targetFunnelId,
+        target_stage_id: data.migrateConfig.targetStageId
       } : null
     }]).select().single();
     
@@ -183,6 +188,19 @@ export const stageAPI = {
         };
       } else {
         dbData.alert_config = null;
+      }
+    }
+    
+    // Handle migrate config correctly
+    if (data.migrateConfig !== undefined) {
+      if (data.migrateConfig && data.migrateConfig.enabled) {
+        dbData.migrate_config = {
+          enabled: data.migrateConfig.enabled,
+          target_funnel_id: data.migrateConfig.targetFunnelId,
+          target_stage_id: data.migrateConfig.targetStageId
+        };
+      } else {
+        dbData.migrate_config = null;
       }
     }
     

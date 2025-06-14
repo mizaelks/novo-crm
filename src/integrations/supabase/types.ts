@@ -103,6 +103,7 @@ export type Database = {
           id: string
           last_stage_change_at: string | null
           phone: string | null
+          source_opportunity_id: string | null
           stage_id: string | null
           title: string
           value: number | null
@@ -117,6 +118,7 @@ export type Database = {
           id?: string
           last_stage_change_at?: string | null
           phone?: string | null
+          source_opportunity_id?: string | null
           stage_id?: string | null
           title: string
           value?: number | null
@@ -131,6 +133,7 @@ export type Database = {
           id?: string
           last_stage_change_at?: string | null
           phone?: string | null
+          source_opportunity_id?: string | null
           stage_id?: string | null
           title?: string
           value?: number | null
@@ -141,6 +144,13 @@ export type Database = {
             columns: ["funnel_id"]
             isOneToOne: false
             referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_source_opportunity_id_fkey"
+            columns: ["source_opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
             referencedColumns: ["id"]
           },
           {
@@ -281,6 +291,7 @@ export type Database = {
           id: string
           is_loss_stage: boolean | null
           is_win_stage: boolean | null
+          migrate_config: Json | null
           name: string
           order: number | null
         }
@@ -293,6 +304,7 @@ export type Database = {
           id?: string
           is_loss_stage?: boolean | null
           is_win_stage?: boolean | null
+          migrate_config?: Json | null
           name: string
           order?: number | null
         }
@@ -305,6 +317,7 @@ export type Database = {
           id?: string
           is_loss_stage?: boolean | null
           is_win_stage?: boolean | null
+          migrate_config?: Json | null
           name?: string
           order?: number | null
         }

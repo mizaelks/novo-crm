@@ -1,4 +1,3 @@
-
 // Domain models
 export interface Funnel {
   id: string;
@@ -20,12 +19,19 @@ export interface Stage {
   isLossStage?: boolean; // Whether this is a "loss" stage
   requiredFields?: RequiredField[]; // Required fields for opportunities in this stage
   alertConfig?: StageAlertConfig; // Alert configuration for this stage
+  migrateConfig?: StageMigrateConfig; // Migration configuration for this stage
 }
 
 export interface StageAlertConfig {
   enabled: boolean;
   maxDaysInStage: number;
   alertMessage?: string;
+}
+
+export interface StageMigrateConfig {
+  enabled: boolean;
+  targetFunnelId: string;
+  targetStageId: string;
 }
 
 export interface RequiredField {
@@ -51,6 +57,7 @@ export interface Opportunity {
   company?: string;
   customFields?: Record<string, any>; // For storing custom field values
   lastStageChangeAt?: Date; // Track when opportunity was moved to current stage
+  sourceOpportunityId?: string; // ID of the original opportunity when this was created by migration
 }
 
 export interface WebhookConfig {
@@ -148,6 +155,7 @@ export interface StageFormData {
   requiredFields?: RequiredField[];
   order?: number; // Add order property to fix the TypeScript errors
   alertConfig?: StageAlertConfig;
+  migrateConfig?: StageMigrateConfig;
 }
 
 export interface RequiredFieldFormData {

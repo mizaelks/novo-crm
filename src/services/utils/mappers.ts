@@ -1,4 +1,3 @@
-
 import { Funnel, Opportunity, Stage, ScheduledAction, WebhookConfig } from "@/types";
 
 export const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, 'stages'> => {
@@ -24,6 +23,11 @@ export const mapDbStageToStage = (dbStage: any): Omit<Stage, 'opportunities' | '
       enabled: dbStage.alert_config.enabled || false,
       maxDaysInStage: dbStage.alert_config.maxDaysInStage || 3,
       alertMessage: dbStage.alert_config.alertMessage
+    } : undefined,
+    migrateConfig: dbStage.migrate_config ? {
+      enabled: dbStage.migrate_config.enabled || false,
+      targetFunnelId: dbStage.migrate_config.target_funnel_id || '',
+      targetStageId: dbStage.migrate_config.target_stage_id || ''
     } : undefined
   };
 };
@@ -41,7 +45,8 @@ export const mapDbOpportunityToOpportunity = (dbOpportunity: any): Opportunity =
     email: dbOpportunity.email,
     company: dbOpportunity.company,
     customFields: dbOpportunity.custom_fields || {},
-    lastStageChangeAt: dbOpportunity.last_stage_change_at ? new Date(dbOpportunity.last_stage_change_at) : undefined
+    lastStageChangeAt: dbOpportunity.last_stage_change_at ? new Date(dbOpportunity.last_stage_change_at) : undefined,
+    sourceOpportunityId: dbOpportunity.source_opportunity_id
   };
 };
 

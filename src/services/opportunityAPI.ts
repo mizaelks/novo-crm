@@ -1,8 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, OpportunityFormData } from "@/types";
 import { mapDbOpportunityToOpportunity } from "./utils/mappers";
 import { triggerEntityWebhooks } from "./utils/webhook";
+import { checkAndMigrateOpportunity } from "./utils/opportunityMigration";
+import { stageAPI } from "./stageAPI";
 
 export const opportunityAPI = {
   getAll: async (): Promise<Opportunity[]> => {
@@ -23,7 +24,7 @@ export const opportunityAPI = {
     return mapDbOpportunityToOpportunity(data);
   },
 
-  create: async (data: OpportunityFormData): Promise<Opportunity> => {
+  create: async (data: OpportunityFormData & { sourceOpportunityId?: string }): Promise<Opportunity> => {
     console.log("Creating opportunity with data:", data);
     
     const currentTime = new Date().toISOString();
@@ -37,7 +38,8 @@ export const opportunityAPI = {
       email: data.email,
       company: data.company,
       custom_fields: data.customFields || {},
-      last_stage_change_at: currentTime
+      last_stage_change_at: currentTime,
+      source_opportunity_id: data.sourceOpportunityId
     }]).select().single();
     
     if (error || !created) {
@@ -50,7 +52,7 @@ export const opportunityAPI = {
     return mapDbOpportunityToOpportunity(created);
   },
 
-  update: async (id: string, data: Partial<OpportunityFormData>): Promise<Opportunity | null> => {
+  update: async (id: string, data: Partial<OpportunityFormData> & { sourceOpportunityId?: string }): Promise<Opportunity | null> => {
     console.log("Updating opportunity:", id, "with data:", data);
     
     const dbData: any = {};
@@ -62,6 +64,7 @@ export const opportunityAPI = {
     if (data.email !== undefined) dbData.email = data.email;
     if (data.company !== undefined) dbData.company = data.company;
     if (data.customFields !== undefined) dbData.custom_fields = data.customFields;
+    if (data.sourceOpportunityId !== undefined) dbData.source_opportunity_id = data.sourceOpportunityId;
     if (data.stageId !== undefined) {
       dbData.stage_id = data.stageId;
       dbData.last_stage_change_at = new Date().toISOString();
@@ -108,13 +111,26 @@ export const opportunityAPI = {
       throw new Error("Failed to move opportunity");
     }
     
+    const opportunity = mapDbOpportunityToOpportunity(updated);
+    
+    // Check if the destination stage has migration configured
+    try {
+      const destinationStage = await stageAPI.getById(newStageId);
+      if (destinationStage) {
+        await checkAndMigrateOpportunity(opportunity, destinationStage);
+      }
+    } catch (migrationError) {
+      console.error("Error in migration check:", migrationError);
+      // Don't fail the move operation if migration fails
+    }
+    
     await triggerEntityWebhooks('opportunity', id, 'move', {
       ...updated,
       previousStageId: undefined, // We don't track the previous stage in this simple implementation
       newStageId: newStageId
     });
     
-    return mapDbOpportunityToOpportunity(updated);
+    return opportunity;
   },
 
   delete: async (id: string): Promise<boolean> => {
