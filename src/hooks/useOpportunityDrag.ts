@@ -21,7 +21,8 @@ export const useOpportunityDrag = (
   ) => {
     console.log(`Moving opportunity ${draggableId} from ${sourceDroppableId} to ${destinationDroppableId}`);
     
-    const opportunityId = draggableId.replace("opportunity-", "");
+    // draggableId is just the opportunity ID, no prefix
+    const opportunityId = draggableId;
     
     // Find source and destination stages
     const sourceStage = stages.find(stage => stage.id === sourceDroppableId);

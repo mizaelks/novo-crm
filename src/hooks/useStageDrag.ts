@@ -17,8 +17,8 @@ export const useStageDrag = (
     
     console.log(`Reordering stage ${stageId} from position ${sourceIndex} to ${destinationIndex}`);
     
-    // Find the dragged stage
-    const draggedStage = stages.find(stage => stage.id === stageId.replace("stage-", ""));
+    // Find the dragged stage (stageId is just the ID, no prefix)
+    const draggedStage = stages.find(stage => stage.id === stageId);
     if (!draggedStage) {
       console.error("Could not find dragged stage:", stageId);
       return;

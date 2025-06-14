@@ -62,7 +62,7 @@ const OpportunityCard = ({
   
   return (
     <>
-      <Draggable draggableId={`opportunity-${opportunity.id}`} index={index}>
+      <Draggable draggableId={opportunity.id} index={index}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -71,7 +71,6 @@ const OpportunityCard = ({
             className="mb-2"
             style={{
               ...provided.draggableProps.style,
-              userSelect: 'none'
             }}
           >
             <Card 
@@ -84,12 +83,11 @@ const OpportunityCard = ({
                   setIsDialogOpen(true);
                 }
               }}
-              style={{ userSelect: 'none' }}
             >
-              <CardContent className="p-3" style={{ userSelect: 'none' }}>
+              <CardContent className="p-3">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-medium line-clamp-2 flex-1" style={{ userSelect: 'none' }}>
+                    <h4 className="text-sm font-medium line-clamp-2 flex-1">
                       {opportunity.title}
                     </h4>
                     <div className="flex items-center gap-1 shrink-0">
@@ -109,7 +107,7 @@ const OpportunityCard = ({
                     </div>
                   </div>
                   
-                  <p className="text-xs text-muted-foreground line-clamp-1" style={{ userSelect: 'none' }}>
+                  <p className="text-xs text-muted-foreground line-clamp-1">
                     {opportunity.client}
                     {opportunity.company && ` · ${opportunity.company}`}
                   </p>
@@ -122,7 +120,7 @@ const OpportunityCard = ({
                           <Badge variant="outline" className="text-xs font-normal px-1 py-0 h-5">
                             {key}
                           </Badge>
-                          <span className="text-xs text-muted-foreground truncate" style={{ userSelect: 'none' }}>
+                          <span className="text-xs text-muted-foreground truncate">
                             {typeof value === 'boolean' 
                               ? (value ? 'Sim' : 'Não')
                               : String(value)}
