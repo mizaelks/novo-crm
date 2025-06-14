@@ -3,6 +3,9 @@ import { useState, useMemo } from "react";
 import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { DateRange } from "react-day-picker";
 
+// Re-export DateRange for use in other components
+export { DateRange };
+
 // Enum para os filtros de data
 export enum DateFilterType {
   ALL = "all",

@@ -4,7 +4,7 @@ import { Funnel } from "@/types";
 import { funnelAPI } from "@/services/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FunnelList from "@/components/funnel/FunnelList";
-import { useDateFilter, DateFilterType } from "@/hooks/useDateFilter";
+import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
 import { formatCurrency } from "@/services/utils/dateUtils";
 import { CalendarDays, TrendingUp, DollarSign, Target, Building2 } from "lucide-react";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
@@ -13,7 +13,6 @@ import PendingTasksCard from "@/components/dashboard/PendingTasksCard";
 import SalesValueCard from "@/components/dashboard/SalesValueCard";
 import DashboardCustomizer from "@/components/dashboard/DashboardCustomizer";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
-import { DateRange } from "react-day-picker";
 
 const Dashboard = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
@@ -104,7 +103,7 @@ const Dashboard = () => {
             className={className}
             title="Total de Oportunidades"
             value={loading ? 0 : totalOpportunities}
-            subtitle={getFilterLabel()}
+            subtitle={getFilterLabel}
             icon={Target}
           />
         );
@@ -115,7 +114,7 @@ const Dashboard = () => {
             className={className}
             title="Valor Total de Oportunidades"
             value={loading ? "R$ 0,00" : formatCurrency(totalOpportunityValue)}
-            subtitle={getFilterLabel()}
+            subtitle={getFilterLabel}
             icon={DollarSign}
             valueClassName="text-3xl font-bold text-primary"
           />
@@ -127,7 +126,7 @@ const Dashboard = () => {
             className={className}
             title="Vendas Realizadas"
             value={loading ? 0 : totalSales}
-            subtitle={getFilterLabel()}
+            subtitle={getFilterLabel}
             icon={TrendingUp}
             valueClassName="text-3xl font-bold text-green-600"
           />
@@ -157,7 +156,7 @@ const Dashboard = () => {
             className={className}
             salesValue={salesValue}
             totalSales={totalSales}
-            filterLabel={getFilterLabel()}
+            filterLabel={getFilterLabel}
             loading={loading}
           />
         );
@@ -173,7 +172,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         
