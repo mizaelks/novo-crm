@@ -9,10 +9,21 @@ export const calculateDaysInStage = (opportunity: Opportunity): number => {
 };
 
 export const shouldShowAlert = (opportunity: Opportunity, stage: Stage): boolean => {
-  if (!stage.alertConfig?.enabled) return false;
+  console.log(`shouldShowAlert - Stage: ${stage.name}`);
+  console.log(`shouldShowAlert - Alert config:`, stage.alertConfig);
+  console.log(`shouldShowAlert - Alert enabled:`, stage.alertConfig?.enabled);
+  
+  if (!stage.alertConfig?.enabled) {
+    console.log(`shouldShowAlert - Alert not enabled for stage ${stage.name}`);
+    return false;
+  }
   
   const daysInStage = calculateDaysInStage(opportunity);
-  return daysInStage >= stage.alertConfig.maxDaysInStage;
+  const shouldAlert = daysInStage >= stage.alertConfig.maxDaysInStage;
+  
+  console.log(`shouldShowAlert - Days in stage: ${daysInStage}, Max days: ${stage.alertConfig.maxDaysInStage}, Should alert: ${shouldAlert}`);
+  
+  return shouldAlert;
 };
 
 export const getAlertMessage = (opportunity: Opportunity, stage: Stage): string => {

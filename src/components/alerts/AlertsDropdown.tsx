@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,6 +22,19 @@ const AlertsDropdown = () => {
   const handleAlertClick = (alert: any) => {
     markAsRead(alert.id);
     navigate(alert.route);
+  };
+
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'scheduled_task':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'opportunity_stuck':
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'stage_deadline':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -47,7 +60,9 @@ const AlertsDropdown = () => {
         
         {alerts.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground">
-            Nenhum alerta ativo
+            <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+            <p>Nenhum alerta ativo</p>
+            <p className="text-xs">Tudo está em ordem! 🎉</p>
           </div>
         ) : (
           <ScrollArea className="h-[300px]">
@@ -59,19 +74,24 @@ const AlertsDropdown = () => {
                 }`}
                 onClick={() => handleAlertClick(alert)}
               >
-                <div className="flex flex-col space-y-1 w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">{alert.title}</span>
-                    {!alert.isRead && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    )}
+                <div className="flex items-start space-x-3 w-full">
+                  <div className="flex-shrink-0 mt-1">
+                    {getAlertIcon(alert.type)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {alert.description}
-                  </p>
-                  <span className="text-xs text-muted-foreground">
-                    {alert.createdAt.toLocaleTimeString()}
-                  </span>
+                  <div className="flex flex-col space-y-1 w-full">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{alert.title}</span>
+                      {!alert.isRead && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {alert.description}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {alert.createdAt.toLocaleTimeString()}
+                    </span>
+                  </div>
                 </div>
               </DropdownMenuItem>
             ))}
