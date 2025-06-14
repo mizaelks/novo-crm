@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, OpportunityFormData } from "@/types";
 import { mapDbOpportunityToOpportunity } from "./utils/mappers";
@@ -67,29 +66,14 @@ export const opportunityAPI = {
 
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
     try {
-      // First, get the current opportunity with ALL its data
-      const { data: currentOpportunity, error: fetchError } = await supabase
-        .from('opportunities')
-        .select('*')
-        .eq('id', id)
-        .single();
+      console.log(`Moving opportunity ${id} to stage ${newStageId}`);
       
-      if (fetchError || !currentOpportunity) {
-        console.error("Failed to fetch current opportunity data:", fetchError);
-        return null;
-      }
-      
-      console.log("Current opportunity data before move:", currentOpportunity);
-      console.log("Custom fields before move:", currentOpportunity.custom_fields);
-      
-      // Preserve all fields, especially custom_fields, when updating
-      // Also update lastStageChangeAt to track when the opportunity moved to this stage
+      // Update the opportunity with new stage and timestamp in a single operation
       const { data: updated, error: updateError } = await supabase
         .from('opportunities')
         .update({ 
           stage_id: newStageId,
-          custom_fields: currentOpportunity.custom_fields, // Explicitly keep the custom fields
-          last_stage_change_at: new Date().toISOString() // Track when moved to this stage
+          last_stage_change_at: new Date().toISOString()
         })
         .eq('id', id)
         .select('*')
@@ -100,10 +84,7 @@ export const opportunityAPI = {
         return null;
       }
       
-      console.log("Updated opportunity after move:", updated);
-      console.log("Custom fields after move:", updated.custom_fields);
-      
-      // Verify the returned opportunity has the expected data
+      console.log("Successfully moved opportunity:", updated);
       return mapDbOpportunityToOpportunity(updated);
     } catch (error) {
       console.error("Exception during move operation:", error);
