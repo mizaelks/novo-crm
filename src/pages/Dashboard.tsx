@@ -12,6 +12,8 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import PendingTasksCard from "@/components/dashboard/PendingTasksCard";
 import SalesValueCard from "@/components/dashboard/SalesValueCard";
 import DashboardCustomizer from "@/components/dashboard/DashboardCustomizer";
+import DateRangePicker from "@/components/dashboard/DateRangePicker";
+import { DateRange } from "react-day-picker";
 
 const Dashboard = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
@@ -20,8 +22,9 @@ const Dashboard = () => {
   const [totalOpportunityValue, setTotalOpportunityValue] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [salesValue, setSalesValue] = useState(0);
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   
-  const { filter, setFilterType, filterByDate } = useDateFilter();
+  const { filter, setFilterType, setDateRange, filterByDate, getFilterLabel } = useDateFilter();
   const { enabledWidgets } = useDashboardLayout();
 
   useEffect(() => {
@@ -74,17 +77,9 @@ const Dashboard = () => {
     loadDashboardData();
   }, [filter, filterByDate]);
 
-  const getFilterLabel = () => {
-    switch (filter.type) {
-      case DateFilterType.TODAY:
-        return "Hoje";
-      case DateFilterType.THIS_WEEK:
-        return "Esta semana";
-      case DateFilterType.THIS_MONTH:
-        return "Este mês";
-      case DateFilterType.ALL:
-      default:
-        return "Vitalício";
+  const handleCustomDateApply = () => {
+    if (customDateRange) {
+      setDateRange(customDateRange);
     }
   };
 
@@ -191,13 +186,22 @@ const Dashboard = () => {
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Filtrar por período" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background">
                 <SelectItem value={DateFilterType.ALL}>Vitalício</SelectItem>
                 <SelectItem value={DateFilterType.TODAY}>Hoje</SelectItem>
                 <SelectItem value={DateFilterType.THIS_WEEK}>Esta semana</SelectItem>
                 <SelectItem value={DateFilterType.THIS_MONTH}>Este mês</SelectItem>
+                <SelectItem value={DateFilterType.CUSTOM}>Personalizado</SelectItem>
               </SelectContent>
             </Select>
+            
+            {filter.type === DateFilterType.CUSTOM && (
+              <DateRangePicker
+                date={customDateRange}
+                setDate={setCustomDateRange}
+                onApply={handleCustomDateApply}
+              />
+            )}
           </div>
         </div>
       </div>

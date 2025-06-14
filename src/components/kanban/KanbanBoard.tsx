@@ -175,18 +175,20 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
 
   if (!funnel) {
     return (
-      <div className="p-4 text-center">
+      <div className="p-6 text-center">
         <p>Funil não encontrado</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <KanbanHeader 
-        funnel={funnel}
-        onNewStage={() => setIsCreateStageDialogOpen(true)}
-      />
+    <div className="p-6">
+      <div className="mb-6">
+        <KanbanHeader 
+          funnel={funnel}
+          onNewStage={() => setIsCreateStageDialogOpen(true)}
+        />
+      </div>
       
       <DragDropContext onDragEnd={handleDragEnd}>
         <KanbanStages 

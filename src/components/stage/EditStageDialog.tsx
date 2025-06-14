@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -157,55 +156,57 @@ const EditStageDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-6">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pr-8">
           <DialogTitle>Editar etapa</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
         
         {loading ? (
-          <div className="space-y-2">
+          <div className="space-y-2 px-6">
             <div className="h-10 bg-muted animate-pulse rounded-md" />
             <div className="h-10 bg-muted animate-pulse rounded-md" />
             <div className="h-10 bg-muted animate-pulse rounded-md" />
           </div>
         ) : (
-          <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <StageBasicForm form={form} />
-              
-              <StageTypeToggles form={form} />
-              
-              <Separator className="my-4" />
-              
-              <StageAlertConfigComponent
-                alertConfig={alertConfig}
-                onAlertConfigChange={setAlertConfig}
-              />
-              
-              <Separator className="my-4" />
-              
-              <StageRequiredFields 
-                requiredFields={requiredFields}
-                setRequiredFields={setRequiredFields}
-                stageId={stageId}
-              />
-              
-              <DialogFooter className="pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Salvando..." : "Salvar alterações"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <div className="px-6">
+            <Form {...form}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <StageBasicForm form={form} />
+                
+                <StageTypeToggles form={form} />
+                
+                <Separator className="my-4" />
+                
+                <StageAlertConfigComponent
+                  alertConfig={alertConfig}
+                  onAlertConfigChange={setAlertConfig}
+                />
+                
+                <Separator className="my-4" />
+                
+                <StageRequiredFields 
+                  requiredFields={requiredFields}
+                  setRequiredFields={setRequiredFields}
+                  stageId={stageId}
+                />
+                
+                <DialogFooter className="pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => onOpenChange(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Salvando..." : "Salvar alterações"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </div>
         )}
       </DialogContent>
     </Dialog>

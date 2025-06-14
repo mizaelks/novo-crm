@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 // Enum para os filtros de data
 export enum DateFilterType {
@@ -13,21 +14,16 @@ export enum DateFilterType {
   CUSTOM = "custom",
 }
 
-export interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
-}
-
 export interface DateFilterState {
   type: DateFilterType;
-  dateRange: DateRange;
+  dateRange: DateRange | undefined;
   label: string;
 }
 
 export function useDateFilter() {
   const [filter, setFilter] = useState<DateFilterState>({
     type: DateFilterType.ALL,
-    dateRange: { from: undefined, to: undefined },
+    dateRange: undefined,
     label: "Todas as datas"
   });
 
@@ -64,7 +60,7 @@ export function useDateFilter() {
         return checkDate >= startOfCurrentMonth && checkDate <= endOfCurrentMonth;
         
       case DateFilterType.CUSTOM:
-        if (filter.dateRange.from && filter.dateRange.to) {
+        if (filter.dateRange?.from && filter.dateRange?.to) {
           // Ajustar o fim do dia para incluir todas as oportunidades do dia final
           const endDate = new Date(filter.dateRange.to);
           endDate.setHours(23, 59, 59, 999);
@@ -105,7 +101,7 @@ export function useDateFilter() {
       case DateFilterType.THIS_MONTH:
         return "Este mês";
       case DateFilterType.CUSTOM:
-        if (filter.dateRange.from && filter.dateRange.to) {
+        if (filter.dateRange?.from && filter.dateRange?.to) {
           const formatDate = (date: Date) => {
             return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
           };
@@ -122,12 +118,13 @@ export function useDateFilter() {
     setFilter(prev => ({
       ...prev,
       type,
+      dateRange: type !== DateFilterType.CUSTOM ? undefined : prev.dateRange,
       label: getFilterLabel
     }));
   };
 
   // Atualiza o intervalo de datas para filtro personalizado
-  const setDateRange = (range: DateRange) => {
+  const setDateRange = (range: DateRange | undefined) => {
     setFilter(prev => ({
       ...prev,
       dateRange: range,
@@ -141,6 +138,7 @@ export function useDateFilter() {
     setFilterType,
     setDateRange,
     isDateInFilter,
-    filterByDate
+    filterByDate,
+    getFilterLabel
   };
 }

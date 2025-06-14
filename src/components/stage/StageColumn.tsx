@@ -52,7 +52,7 @@ const StageColumn = ({
                 dragHandleProps={provided.dragHandleProps}
                 updateStage={onStageUpdated}
               />
-              <CardContent className="p-2 flex-1 overflow-hidden">
+              <CardContent className="p-3 flex-1 overflow-hidden">
                 <StageOpportunityList
                   stageId={stage.id}
                   opportunities={stage.opportunities}
