@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StageAlertConfig } from '@/types';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -18,6 +18,11 @@ export const StageAlertConfigComponent = ({
   const [config, setConfig] = useState<StageAlertConfig>(
     alertConfig || { enabled: false, maxDaysInStage: 3 }
   );
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setConfig(alertConfig || { enabled: false, maxDaysInStage: 3 });
+  }, [alertConfig]);
 
   const handleChange = (updates: Partial<StageAlertConfig>) => {
     const newConfig = { ...config, ...updates };

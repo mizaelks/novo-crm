@@ -29,7 +29,6 @@ const formSchema = z.object({
   isWinStage: z.boolean().optional(),
   isLossStage: z.boolean().optional()
 }).refine(data => {
-  // Can't be both win and loss
   return !(data.isWinStage && data.isLossStage);
 }, {
   message: "Uma etapa não pode ser de vitória e perda ao mesmo tempo",
@@ -53,7 +52,7 @@ const EditStageDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [requiredFields, setRequiredFields] = useState<RequiredField[]>([]);
-  const [alertConfig, setAlertConfig] = useState<StageAlertConfig | undefined>();
+  const [alertConfig, setAlertConfig] = useState<StageAlertConfig>({ enabled: false, maxDaysInStage: 3 });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,7 +78,11 @@ const EditStageDialog = ({
           if (stageData) {
             setStage(stageData);
             setRequiredFields(stageData.requiredFields || []);
-            setAlertConfig(stageData.alertConfig);
+            
+            // Handle alert config properly
+            const config = stageData.alertConfig || { enabled: false, maxDaysInStage: 3 };
+            setAlertConfig(config);
+            
             form.reset({
               name: stageData.name,
               description: stageData.description || "",
@@ -109,20 +112,13 @@ const EditStageDialog = ({
     
     try {
       console.log("Enviando atualização para a etapa:", stageId);
-      console.log("Dados:", {
-        name: values.name,
-        description: values.description,
-        funnelId: stage.funnelId,
-        color: values.color,
-        isWinStage: values.isWinStage,
-        isLossStage: values.isLossStage,
-        requiredFields: requiredFields,
-        alertConfig: alertConfig
-      });
+      console.log("Form values:", values);
+      console.log("Alert config:", alertConfig);
+      console.log("Required fields:", requiredFields);
       
       setIsSubmitting(true);
       
-      const updatedStage = await stageAPI.update(stageId, {
+      const updateData = {
         name: values.name,
         description: values.description,
         funnelId: stage.funnelId,
@@ -130,8 +126,12 @@ const EditStageDialog = ({
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage,
         requiredFields: requiredFields,
-        alertConfig: alertConfig
-      });
+        alertConfig: alertConfig.enabled ? alertConfig : undefined
+      };
+      
+      console.log("Dados para atualização:", updateData);
+      
+      const updatedStage = await stageAPI.update(stageId, updateData);
       
       console.log("Resposta da API:", updatedStage);
       

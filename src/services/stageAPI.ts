@@ -5,16 +5,13 @@ import { mapDbStageToStage } from "./utils/mappers";
 import { opportunityAPI } from "./opportunityAPI";
 import { triggerEntityWebhooks } from "./utils/webhook";
 
-// Valid field types for RequiredField
 type ValidFieldType = "text" | "number" | "date" | "checkbox" | "select";
 
-// Helper to ensure type is one of the valid field types
 const validateFieldType = (type: string): ValidFieldType => {
   const validTypes: ValidFieldType[] = ["text", "number", "date", "checkbox", "select"];
   if (validTypes.includes(type as ValidFieldType)) {
     return type as ValidFieldType;
   }
-  // Default to text if invalid type
   console.warn(`Invalid field type: ${type}, defaulting to "text"`);
   return "text";
 };
@@ -29,7 +26,6 @@ export const stageAPI = {
     
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
-      // Fetch required fields for this stage
       const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
       stages.push({
         ...stageBase,
@@ -50,7 +46,6 @@ export const stageAPI = {
     
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
-      // Fetch required fields for this stage
       const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
       stages.push({
         ...stageBase,
@@ -68,7 +63,6 @@ export const stageAPI = {
     
     const stageBase = mapDbStageToStage(data);
     const opportunities = await opportunityAPI.getByStageId(id);
-    // Fetch required fields for this stage
     const requiredFields = await stageAPI.getRequiredFieldsByStageId(id);
     
     return {
@@ -102,7 +96,6 @@ export const stageAPI = {
   create: async (data: StageFormData): Promise<Stage> => {
     console.log("Criando etapa com os dados:", data);
     
-    // Get current max order for this funnel
     let nextOrder = 0;
     try {
       const { data: stagesData, error: stagesError } = await supabase
@@ -141,7 +134,6 @@ export const stageAPI = {
     
     const stageBase = mapDbStageToStage(created);
     
-    // Create required fields if any
     const requiredFields: RequiredField[] = [];
     if (data.requiredFields && data.requiredFields.length > 0) {
       for (const field of data.requiredFields) {
@@ -170,6 +162,7 @@ export const stageAPI = {
 
   update: async (id: string, data: Partial<StageFormData>): Promise<Stage | null> => {
     console.log("Atualizando etapa:", id, "com dados:", data);
+    
     const dbData: any = {};
     
     if (data.name !== undefined) dbData.name = data.name;
@@ -178,38 +171,39 @@ export const stageAPI = {
     if (data.isWinStage !== undefined) dbData.is_win_stage = data.isWinStage;
     if (data.isLossStage !== undefined) dbData.is_loss_stage = data.isLossStage;
     if (data.order !== undefined) dbData.order = data.order;
+    if (data.funnelId !== undefined) dbData.funnel_id = data.funnelId;
     
-    if (data.funnelId !== undefined) {
-      dbData.funnel_id = data.funnelId;
-    }
-    
-    // Handle alert config
+    // Handle alert config correctly
     if (data.alertConfig !== undefined) {
-      dbData.alert_config = data.alertConfig ? {
-        enabled: data.alertConfig.enabled,
-        maxDaysInStage: data.alertConfig.maxDaysInStage,
-        alertMessage: data.alertConfig.alertMessage
-      } : null;
+      if (data.alertConfig && data.alertConfig.enabled) {
+        dbData.alert_config = {
+          enabled: data.alertConfig.enabled,
+          maxDaysInStage: data.alertConfig.maxDaysInStage,
+          alertMessage: data.alertConfig.alertMessage
+        };
+      } else {
+        dbData.alert_config = null;
+      }
     }
+    
+    console.log("Dados para o banco:", dbData);
     
     const { data: updated, error } = await supabase.from('stages').update(dbData).eq('id', id).select().single();
     
     if (error) {
       console.error("Erro ao atualizar etapa:", error);
-      return null;
+      throw error;
     }
     
     if (!updated) {
       console.error("Não foi possível atualizar a etapa. Nenhum dado retornado.");
-      return null;
+      throw new Error("Failed to update stage");
     }
     
     // Update required fields if provided
-    if (data.requiredFields) {
-      // First, delete all existing required fields for this stage
+    if (data.requiredFields !== undefined) {
       await supabase.from('required_fields').delete().eq('stage_id', id);
       
-      // Then add the new ones
       for (const field of data.requiredFields) {
         await stageAPI.addRequiredField({
           name: field.name,
@@ -234,7 +228,6 @@ export const stageAPI = {
     };
   },
 
-  // Add a required field to a stage
   addRequiredField: async (fieldData: {
     name: string;
     type: "text" | "number" | "date" | "checkbox" | "select";
@@ -266,10 +259,7 @@ export const stageAPI = {
   },
 
   delete: async (id: string): Promise<boolean> => {
-    // First delete all required fields for this stage
     await supabase.from('required_fields').delete().eq('stage_id', id);
-    
-    // Then delete the stage
     const { error } = await supabase.from('stages').delete().eq('id', id);
     return !error;
   }

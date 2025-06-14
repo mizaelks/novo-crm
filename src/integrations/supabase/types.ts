@@ -101,6 +101,7 @@ export type Database = {
           email: string | null
           funnel_id: string | null
           id: string
+          last_stage_change_at: string | null
           phone: string | null
           stage_id: string | null
           title: string
@@ -114,6 +115,7 @@ export type Database = {
           email?: string | null
           funnel_id?: string | null
           id?: string
+          last_stage_change_at?: string | null
           phone?: string | null
           stage_id?: string | null
           title: string
@@ -127,6 +129,7 @@ export type Database = {
           email?: string | null
           funnel_id?: string | null
           id?: string
+          last_stage_change_at?: string | null
           phone?: string | null
           stage_id?: string | null
           title?: string
@@ -240,6 +243,7 @@ export type Database = {
       }
       stages: {
         Row: {
+          alert_config: Json | null
           color: string | null
           created_at: string | null
           description: string | null
@@ -251,6 +255,7 @@ export type Database = {
           order: number | null
         }
         Insert: {
+          alert_config?: Json | null
           color?: string | null
           created_at?: string | null
           description?: string | null
@@ -262,6 +267,7 @@ export type Database = {
           order?: number | null
         }
         Update: {
+          alert_config?: Json | null
           color?: string | null
           created_at?: string | null
           description?: string | null
