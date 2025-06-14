@@ -21,7 +21,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -53,37 +52,6 @@ const Login = () => {
       toast.error(error.message || "Falha ao realizar login");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const createDefaultUser = async () => {
-    try {
-      setIsCreatingUser(true);
-      
-      // Get the anon key instead of session for authorization
-      const response = await fetch("https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/create-default-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmeWtneG5taWpvb255dXRjaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDYxODcsImV4cCI6MjA2MDM4MjE4N30.tO2-3eJN1DlM_WubpMaIEpounF-9qzqOunRshUuMo8w`
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar usuário padrão");
-      }
-      
-      toast.success("Usuário padrão criado com sucesso! Faça login com mizaellimadesigner@gmail.com e a senha @Pequenino");
-      
-      // Auto-fill the form with the default user email
-      form.setValue("email", "mizaellimadesigner@gmail.com");
-      form.setValue("password", "@Pequenino");
-    } catch (error: any) {
-      toast.error(error.message || "Falha ao criar usuário padrão");
-    } finally {
-      setIsCreatingUser(false);
     }
   };
 
@@ -144,16 +112,8 @@ const Login = () => {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={createDefaultUser}
-            disabled={isCreatingUser}
-          >
-            {isCreatingUser ? "Criando usuário padrão..." : "Criar usuário padrão"}
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
+        <CardFooter>
+          <p className="text-xs text-center text-muted-foreground w-full">
             Sistema de gerenciamento de funil de vendas
           </p>
         </CardFooter>
