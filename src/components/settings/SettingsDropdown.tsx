@@ -12,10 +12,12 @@ import { Settings, Trash2, Database, Users } from "lucide-react";
 import { useState } from "react";
 import FunnelManagementDialog from "./FunnelManagementDialog";
 import SystemSettingsDialog from "./SystemSettingsDialog";
+import UserManagementDialog from "./UserManagementDialog";
 
 const SettingsDropdown = () => {
   const [funnelDialogOpen, setFunnelDialogOpen] = useState(false);
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
 
   return (
     <>
@@ -36,7 +38,7 @@ const SettingsDropdown = () => {
             <Database className="mr-2 h-4 w-4" />
             Configurações Gerais
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setUserDialogOpen(true)}>
             <Users className="mr-2 h-4 w-4" />
             Usuários e Permissões
           </DropdownMenuItem>
@@ -50,6 +52,10 @@ const SettingsDropdown = () => {
       <SystemSettingsDialog 
         open={systemDialogOpen} 
         onOpenChange={setSystemDialogOpen} 
+      />
+      <UserManagementDialog 
+        open={userDialogOpen} 
+        onOpenChange={setUserDialogOpen} 
       />
     </>
   );

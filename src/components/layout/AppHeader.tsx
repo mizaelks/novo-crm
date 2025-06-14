@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import AlertsDropdown from "@/components/alerts/AlertsDropdown";
 import SettingsDropdown from "@/components/settings/SettingsDropdown";
+import UserProfileInfo from "./UserProfileInfo";
 
 const AppHeader = () => {
   const location = useLocation();
@@ -52,9 +53,7 @@ const AppHeader = () => {
             <div className="flex items-center space-x-4">
               <AlertsDropdown />
               <SettingsDropdown />
-              <span className="text-sm text-muted-foreground">
-                {user.email}
-              </span>
+              <UserProfileInfo />
               <Button
                 variant="ghost"
                 size="icon"
