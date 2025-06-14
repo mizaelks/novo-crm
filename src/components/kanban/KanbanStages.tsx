@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Droppable } from "react-beautiful-dnd";
-import { Stage } from "@/types";
+import { Stage, Opportunity } from "@/types";
 import StageColumn from "../stage/StageColumn";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -10,9 +10,18 @@ interface KanbanStagesProps {
   funnelId: string;
   onOpportunityCreated: (opportunity: any) => void;
   onStageUpdated?: (stage: Stage) => void;
+  onOpportunityUpdated?: (opportunity: Opportunity) => void;
+  onOpportunityDeleted?: (opportunityId: string) => void;
 }
 
-const KanbanStages = ({ stages, funnelId, onOpportunityCreated, onStageUpdated }: KanbanStagesProps) => {
+const KanbanStages = ({ 
+  stages, 
+  funnelId, 
+  onOpportunityCreated, 
+  onStageUpdated,
+  onOpportunityUpdated,
+  onOpportunityDeleted
+}: KanbanStagesProps) => {
   // Garantir que as etapas sejam renderizadas na ordem correta
   // Ordenamos as etapas com base no campo 'order'
   const sortedStages = [...stages].sort((a, b) => a.order - b.order);
@@ -36,6 +45,8 @@ const KanbanStages = ({ stages, funnelId, onOpportunityCreated, onStageUpdated }
                     funnelId={funnelId}
                     onOpportunityCreated={onOpportunityCreated}
                     onStageUpdated={onStageUpdated}
+                    onOpportunityUpdated={onOpportunityUpdated}
+                    onOpportunityDeleted={onOpportunityDeleted}
                   />
                 ))}
                 {provided.placeholder}

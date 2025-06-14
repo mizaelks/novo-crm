@@ -65,9 +65,9 @@ export default {
 				},
 				kanban: {
 					'blue': '#4EA8DE',
-					'purple': '#8884FF',
+					'secondary': '#6B73FF',
 					'light-blue': '#EFF9FF',
-					'light-purple': '#F5F5FF'
+					'light-secondary': '#F0F1FF'
 				}
 			},
 			borderRadius: {

@@ -4,6 +4,7 @@ import { Draggable } from "react-beautiful-dnd";
 import { Stage, Opportunity } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import CreateOpportunityDialog from "../opportunity/CreateOpportunityDialog";
+import OpportunityDetailsDialog from "../opportunity/OpportunityDetailsDialog";
 import StageHeader from "./StageHeader";
 import StageOpportunityList from "./StageOpportunityList";
 
@@ -13,10 +14,25 @@ interface StageColumnProps {
   funnelId: string;
   onOpportunityCreated: (opportunity: Opportunity) => void;
   onStageUpdated?: (stage: Stage) => void;
+  onOpportunityUpdated?: (opportunity: Opportunity) => void;
+  onOpportunityDeleted?: (opportunityId: string) => void;
 }
 
-const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpdated }: StageColumnProps) => {
+const StageColumn = ({ 
+  stage, 
+  index, 
+  funnelId, 
+  onOpportunityCreated, 
+  onStageUpdated,
+  onOpportunityUpdated,
+  onOpportunityDeleted
+}: StageColumnProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  
+  const handleOpportunityClick = (opportunity: Opportunity) => {
+    setSelectedOpportunityId(opportunity.id);
+  };
   
   return (
     <Draggable draggableId={stage.id} index={index}>
@@ -42,6 +58,7 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
                   opportunities={stage.opportunities}
                   stage={stage}
                   onAddClick={() => setIsDialogOpen(true)}
+                  onOpportunityClick={handleOpportunityClick}
                 />
               </CardContent>
             </Card>
@@ -53,6 +70,18 @@ const StageColumn = ({ stage, index, funnelId, onOpportunityCreated, onStageUpda
               funnelId={funnelId}
               onOpportunityCreated={onOpportunityCreated}
             />
+            
+            {selectedOpportunityId && (
+              <OpportunityDetailsDialog
+                open={!!selectedOpportunityId}
+                onOpenChange={(open) => {
+                  if (!open) setSelectedOpportunityId(null);
+                }}
+                opportunityId={selectedOpportunityId}
+                onOpportunityUpdated={onOpportunityUpdated || (() => {})}
+                onOpportunityDeleted={onOpportunityDeleted || (() => {})}
+              />
+            )}
           </div>
         );
       }}

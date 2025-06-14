@@ -11,9 +11,16 @@ interface StageOpportunityListProps {
   opportunities: Opportunity[];
   stage: Stage;
   onAddClick: () => void;
+  onOpportunityClick?: (opportunity: Opportunity) => void;
 }
 
-const StageOpportunityList = ({ stageId, opportunities, stage, onAddClick }: StageOpportunityListProps) => {
+const StageOpportunityList = ({ 
+  stageId, 
+  opportunities, 
+  stage, 
+  onAddClick, 
+  onOpportunityClick 
+}: StageOpportunityListProps) => {
   // Garantir que opportunities seja sempre um array válido
   const validOpportunities = Array.isArray(opportunities) ? opportunities : [];
   
@@ -35,6 +42,7 @@ const StageOpportunityList = ({ stageId, opportunities, stage, onAddClick }: Sta
                   opportunity={opportunity}
                   index={index}
                   stage={stage}
+                  onClick={onOpportunityClick}
                 />
               ))}
               {provided.placeholder}
