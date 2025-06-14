@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { Opportunity } from "@/types";
 import OpportunityCard from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useContext } from "react";
 
 interface StageOpportunityListProps {
   stageId: string;

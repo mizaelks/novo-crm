@@ -1,15 +1,13 @@
 
 import { Draggable } from "react-beautiful-dnd";
-import { Opportunity, RequiredField } from "@/types";
+import { Opportunity } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/services/utils/dateUtils";
 import { useState } from "react";
 import OpportunityDetailsDialog from "./OpportunityDetailsDialog";
 import { Badge } from "@/components/ui/badge";
-import { useKanbanDrag } from "../kanban/KanbanDragContext";
 import { AlertCircle, Clock } from "lucide-react";
 import { OpportunityQuickNavigation } from "./OpportunityQuickNavigation";
-import { shouldShowAlert, getAlertMessage } from "@/utils/stageAlerts";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -25,34 +23,17 @@ const OpportunityCard = ({
   onOpportunityDeleted
 }: OpportunityCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { stages } = useKanbanDrag();
   
   // Check if this opportunity was created from webhook/API and is missing required fields
   const isFromWebhook = opportunity.customFields?.isFromWebhook === true;
   
-  // Get current stage details
-  const currentStage = stages.find(stage => stage.id === opportunity.stageId);
-  const requiredFields = currentStage?.requiredFields?.filter(field => field.isRequired) || [];
+  // For now, we'll show a placeholder for required fields alert
+  // This would need to be integrated with the stage's required fields
+  const showRequiredFieldsAlert = isFromWebhook;
   
-  // Check if any required fields are missing
-  const hasMissingRequiredFields = requiredFields.some(field => {
-    const fieldValue = opportunity.customFields?.[field.name];
-    
-    if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
-      return true;
-    } else if (field.type === 'checkbox' && fieldValue !== true) {
-      return true;
-    }
-    
-    return false;
-  });
-  
-  // Only show the alert for webhook-generated opportunities that are missing required fields
-  const showRequiredFieldsAlert = isFromWebhook && hasMissingRequiredFields && requiredFields.length > 0;
-  
-  // Check for stage time alerts
-  const showStageAlert = currentStage ? shouldShowAlert(opportunity, currentStage) : false;
-  const stageAlertMessage = currentStage ? getAlertMessage(opportunity, currentStage) : '';
+  // Placeholder for stage alert - would need current stage info
+  const showStageAlert = false;
+  const stageAlertMessage = '';
   
   // Get custom fields to display in the card
   const getDisplayableCustomFields = () => {
@@ -75,15 +56,14 @@ const OpportunityCard = ({
   const hasCustomFields = displayableCustomFields.length > 0;
   
   const handleOpportunityMoved = () => {
-    // Let the Kanban context handle the state updates naturally
-    // No need to force a page reload - the drag context will update the UI
+    // Let the parent components handle the state updates naturally
     console.log("Opportunity moved via quick navigation");
   };
   
   return (
     <>
-      <Draggable draggableId={opportunity.id} index={index}>
-        {(provided) => (
+      <Draggable draggableId={`opportunity-${opportunity.id}`} index={index}>
+        {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
@@ -91,7 +71,9 @@ const OpportunityCard = ({
             className="mb-2"
           >
             <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow group"
+              className={`cursor-pointer hover:shadow-md transition-shadow group ${
+                snapshot.isDragging ? "rotate-2 shadow-lg" : ""
+              }`}
               onClick={() => setIsDialogOpen(true)}
             >
               <CardContent className="p-3">
