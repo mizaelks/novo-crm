@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ScheduledAction } from '@/types';
 import { format } from 'date-fns';
@@ -16,7 +17,6 @@ export const ActionContent: React.FC<ActionContentProps> = ({ action, onActionUp
     try {
       // Update the action status to completed
       const updatedAction = await scheduledActionAPI.update(action.id, {
-        ...action,
         status: 'completed'
       });
       

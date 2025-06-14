@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ScheduledAction, ScheduledActionFormData } from "@/types";
 import { mapDbScheduledActionToScheduledAction } from "./utils/mappers";
@@ -56,7 +55,7 @@ export const scheduledActionAPI = {
     return mapDbScheduledActionToScheduledAction(created);
   },
 
-  update: async (id: string, data: Partial<ScheduledActionFormData>): Promise<ScheduledAction | null> => {
+  update: async (id: string, data: Partial<ScheduledActionFormData> & { status?: string }): Promise<ScheduledAction | null> => {
     const dbData: any = {};
     
     if (data.opportunityId !== undefined) {
@@ -75,6 +74,9 @@ export const scheduledActionAPI = {
     }
     if (data.templateId !== undefined) {
       dbData.template_id = data.templateId;
+    }
+    if (data.status !== undefined) {
+      dbData.status = data.status;
     }
     
     const { data: updated, error: updateErr } = await supabase.from('scheduled_actions').update(dbData).eq('id', id).select().single();
