@@ -58,6 +58,34 @@ export const useKanbanState = (funnelId: string) => {
     setStages(updatedStages);
   };
 
+  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    console.log("Updating opportunity in kanban state:", updatedOpportunity);
+    
+    const updatedStages = stages.map(stage => {
+      return {
+        ...stage,
+        opportunities: stage.opportunities.map(opp => 
+          opp.id === updatedOpportunity.id ? updatedOpportunity : opp
+        )
+      };
+    });
+    
+    setStages(updatedStages);
+  };
+
+  const handleOpportunityDeleted = (opportunityId: string) => {
+    console.log("Deleting opportunity from kanban state:", opportunityId);
+    
+    const updatedStages = stages.map(stage => {
+      return {
+        ...stage,
+        opportunities: stage.opportunities.filter(opp => opp.id !== opportunityId)
+      };
+    });
+    
+    setStages(updatedStages);
+  };
+
   const handleStageUpdated = (updatedStage: Stage) => {
     const updatedStages = stages.map(stage => 
       stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
@@ -72,6 +100,8 @@ export const useKanbanState = (funnelId: string) => {
     setStages,
     handleStageCreated,
     handleOpportunityCreated,
+    handleOpportunityUpdated,
+    handleOpportunityDeleted,
     handleStageUpdated
   };
 };

@@ -47,6 +47,24 @@ const StageColumn = ({
     // Aqui você pode abrir um dialog específico para adicionar campos
     console.log('Add field for opportunity:', opportunity.id);
   };
+
+  const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    console.log('Opportunity updated in StageColumn:', updatedOpportunity);
+    if (onOpportunityUpdated) {
+      onOpportunityUpdated(updatedOpportunity);
+    }
+  };
+
+  const handleOpportunityDeleted = (opportunityId: string) => {
+    console.log('Opportunity deleted in StageColumn:', opportunityId);
+    if (onOpportunityDeleted) {
+      onOpportunityDeleted(opportunityId);
+    }
+    // Close the details dialog if it's open for this opportunity
+    if (selectedOpportunityId === opportunityId) {
+      setSelectedOpportunityId(null);
+    }
+  };
   
   return (
     <Draggable draggableId={stage.id} index={index}>
@@ -94,8 +112,8 @@ const StageColumn = ({
                   if (!open) setSelectedOpportunityId(null);
                 }}
                 opportunityId={selectedOpportunityId}
-                onOpportunityUpdated={onOpportunityUpdated || (() => {})}
-                onOpportunityDeleted={onOpportunityDeleted || (() => {})}
+                onOpportunityUpdated={handleOpportunityUpdated}
+                onOpportunityDeleted={handleOpportunityDeleted}
               />
             )}
           </div>

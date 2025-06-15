@@ -26,6 +26,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     setStages,
     handleStageCreated: onStageCreated,
     handleOpportunityCreated,
+    handleOpportunityUpdated,
+    handleOpportunityDeleted,
     handleStageUpdated
   } = useKanbanState(funnelId);
 
@@ -117,6 +119,8 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
           funnelId={funnelId}
           onOpportunityCreated={onOpportunityCreated}
           onStageUpdated={onStageUpdated}
+          onOpportunityUpdated={handleOpportunityUpdated}
+          onOpportunityDeleted={handleOpportunityDeleted}
         />
       </DragDropContext>
       
