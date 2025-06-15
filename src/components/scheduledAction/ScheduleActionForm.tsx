@@ -1,46 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { scheduledActionAPI, stageAPI } from "@/services/api";
-import { Stage } from "@/types";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { scheduledActionAPI } from "@/services/api";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-
-// Schema de validação para webhook
-const webhookSchema = z.object({
-  url: z.string().url("URL inválida").min(1, "URL é obrigatória"),
-  method: z.string().min(1, "Método é obrigatório"),
-  scheduledDate: z.string().min(1, "Data é obrigatória"),
-  scheduledTime: z.string().min(1, "Horário é obrigatório"),
-  moveToNextStage: z.boolean().default(false),
-  description: z.string().optional(),
-  taskType: z.literal("webhook")
-});
-
-// Schema de validação para tarefas
-const taskSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório"),
-  description: z.string().optional(),
-  scheduledDate: z.string().min(1, "Data é obrigatória"),
-  scheduledTime: z.string().min(1, "Horário é obrigatório"),
-  moveToNextStage: z.boolean().default(false),
-  assignedTo: z.string().optional(),
-  taskType: z.literal("task")
-});
-
-// União dos schemas
-const formSchema = z.discriminatedUnion("taskType", [webhookSchema, taskSchema]);
-
-type FormValues = z.infer<typeof formSchema>;
+import { formSchema, FormValues } from "./schemas/formSchemas";
+import { WebhookFields } from "./components/WebhookFields";
+import { TaskFields } from "./components/TaskFields";
+import { DateTimeFields } from "./components/DateTimeFields";
+import { StageToggle } from "./components/StageToggle";
+import { useNextStage } from "./hooks/useNextStage";
+import { useDefaultDateTime } from "./hooks/useDefaultDateTime";
 
 interface ScheduleActionFormProps {
   opportunityId: string;
@@ -52,43 +25,9 @@ interface ScheduleActionFormProps {
 const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionScheduled }: ScheduleActionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("webhook");
-  const [nextStage, setNextStage] = useState<Stage | null>(null);
-
-  // Set default date to current date + 1 hour
-  const today = new Date();
-  today.setHours(today.getHours() + 1);
-  const formattedDate = today.toISOString().split('T')[0];
-  const formattedTime = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
-
-  // Get today's date for min validation (allow today)
-  const todayForMin = new Date().toISOString().split('T')[0];
-
-  // Buscar o próximo estágio disponível
-  useEffect(() => {
-    const fetchNextStage = async () => {
-      try {
-        // Buscar todos os estágios do funil atual
-        const stages = await stageAPI.getByFunnelId(funnelId);
-        
-        // Organizar por ordem
-        const sortedStages = stages.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
-        // Encontrar o índice do estágio atual
-        const currentStageIndex = sortedStages.findIndex(s => s.id === stageId);
-        
-        // Se não for o último estágio, definir o próximo
-        if (currentStageIndex >= 0 && currentStageIndex < sortedStages.length - 1) {
-          setNextStage(sortedStages[currentStageIndex + 1]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar próximo estágio:", error);
-      }
-    };
-
-    if (funnelId && stageId) {
-      fetchNextStage();
-    }
-  }, [funnelId, stageId]);
+  
+  const nextStage = useNextStage(funnelId, stageId);
+  const { formattedDate, formattedTime, todayForMin } = useDefaultDateTime();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -239,158 +178,16 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
           <input type="hidden" {...form.register("taskType")} />
           
           <TabsContent value="webhook" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL do webhook</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://api.exemplo.com/webhook" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Método</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o método HTTP" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="POST">POST</SelectItem>
-                      <SelectItem value="GET">GET</SelectItem>
-                      <SelectItem value="PUT">PUT</SelectItem>
-                      <SelectItem value="PATCH">PATCH</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição do webhook..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <WebhookFields control={form.control} />
           </TabsContent>
           
           <TabsContent value="task" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título da Tarefa</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ligar para o cliente" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Detalhes da tarefa..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="assignedTo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Atribuir a (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do responsável" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <TaskFields control={form.control} />
           </TabsContent>
           
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="scheduledDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} min={todayForMin} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="scheduledTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horário</FormLabel>
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <DateTimeFields control={form.control} todayForMin={todayForMin} />
           
-          {nextStage && (
-            <FormField
-              control={form.control}
-              name="moveToNextStage"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Mover para próxima etapa</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Ao concluir, mover para "{nextStage.name}"
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          )}
+          <StageToggle control={form.control} nextStage={nextStage} />
           
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting 
