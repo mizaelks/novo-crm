@@ -70,7 +70,7 @@ const StageOpportunityList = ({
         </Button>
       </div>
       
-      <Droppable droppableId={stageId}>
+      <Droppable droppableId={stageId} type="OPPORTUNITY">
         {(provided, snapshot) => (
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">

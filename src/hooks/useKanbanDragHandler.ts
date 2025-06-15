@@ -65,6 +65,12 @@ export const useKanbanDragHandler = ({
       console.log("Handling stage reordering");
       await handleStageDrag(draggableId, source.index, destination.index);
     }
+
+    // Handle default type (for backward compatibility)
+    if (!type || type === "DEFAULT") {
+      console.log("Handling default drag type as opportunity");
+      await handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
+    }
   };
 
   return {
