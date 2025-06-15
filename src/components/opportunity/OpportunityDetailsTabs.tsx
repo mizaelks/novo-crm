@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Opportunity, ScheduledAction } from "@/types";
+import { Opportunity, ScheduledAction, Funnel } from "@/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 import ScheduleActionForm from "../scheduledAction/ScheduleActionForm";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
+import OpportunityMoveActions from "./OpportunityMoveActions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { scheduledActionAPI } from "@/services/scheduledActionAPI";
+import { funnelAPI } from "@/services/api";
 
 interface OpportunityDetailsTabsProps {
   opportunity: Opportunity;
@@ -26,6 +29,8 @@ const OpportunityDetailsTabs = ({
   const [activeTab, setActiveTab] = useState("details");
   const [scheduledActions, setScheduledActions] = useState<ScheduledAction[]>([]);
   const [loadingActions, setLoadingActions] = useState(false);
+  const [currentFunnel, setCurrentFunnel] = useState<Funnel | null>(null);
+  const [loadingFunnel, setLoadingFunnel] = useState(false);
 
   useEffect(() => {
     const loadScheduledActions = async () => {
@@ -44,6 +49,24 @@ const OpportunityDetailsTabs = ({
 
     loadScheduledActions();
   }, [opportunity?.id]);
+
+  useEffect(() => {
+    const loadCurrentFunnel = async () => {
+      if (!opportunity?.funnelId) return;
+      
+      setLoadingFunnel(true);
+      try {
+        const funnel = await funnelAPI.getById(opportunity.funnelId);
+        setCurrentFunnel(funnel);
+      } catch (error) {
+        console.error("Error loading current funnel:", error);
+      } finally {
+        setLoadingFunnel(false);
+      }
+    };
+
+    loadCurrentFunnel();
+  }, [opportunity?.funnelId]);
 
   const pendingActions = scheduledActions.filter(action => action.status === 'pending');
 
@@ -84,6 +107,16 @@ const OpportunityDetailsTabs = ({
         
         <div className="flex-1 overflow-y-auto min-h-0">
           <TabsContent value="details" className="space-y-6 px-6 pb-6 mt-0">
+            {/* Seção de Movimentação */}
+            {currentFunnel && !loadingFunnel && (
+              <OpportunityMoveActions
+                opportunity={opportunity}
+                currentFunnel={currentFunnel}
+                currentStage={currentStage}
+                onOpportunityMoved={onOpportunityUpdated}
+              />
+            )}
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Informações básicas</CardTitle>
@@ -124,6 +157,20 @@ const OpportunityDetailsTabs = ({
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Telefone</p>
                       <p className="font-medium">{opportunity.phone}</p>
+                    </div>
+                  )}
+
+                  {currentFunnel && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Funil Atual</p>
+                      <p className="font-medium">{currentFunnel.name}</p>
+                    </div>
+                  )}
+
+                  {currentStage && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Etapa Atual</p>
+                      <p className="font-medium">{currentStage.name}</p>
                     </div>
                   )}
                 </div>

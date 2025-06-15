@@ -10,44 +10,44 @@ import { useOpportunityMove } from "@/hooks/useOpportunityMove";
 
 interface OpportunityQuickNavigationProps {
   opportunityId: string;
+  funnelId: string;
   currentStageId: string;
   onOpportunityMoved?: () => void;
 }
 
 export const OpportunityQuickNavigation = ({ 
-  opportunityId, 
+  opportunityId,
+  funnelId, 
   currentStageId, 
   onOpportunityMoved 
 }: OpportunityQuickNavigationProps) => {
   const [stages, setStages] = useState<Stage[]>([]);
+  const [loading, setLoading] = useState(true);
   const { fireWinConfetti } = useConfetti();
   const { moveOpportunity, isMoving } = useOpportunityMove();
   
   useEffect(() => {
-    // We need to get the funnel ID from somewhere - for now we'll get all stages
-    // This is a temporary solution - ideally we'd have the funnel ID passed down
     const loadStages = async () => {
       try {
-        // This is not ideal but we need the stages for navigation
-        // In a real implementation, stages should be passed from parent or context
-        console.log("Loading stages for quick navigation");
+        setLoading(true);
+        const funnelStages = await stageAPI.getByFunnelId(funnelId);
+        setStages(funnelStages);
       } catch (error) {
         console.error("Error loading stages:", error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    loadStages();
-  }, []);
+    if (funnelId) {
+      loadStages();
+    }
+  }, [funnelId]);
   
-  // For now, return null since we don't have access to stages in this context
-  // This component would need to be refactored to receive stages as props
-  // or use a context that provides the current stages
-  return null;
+  if (loading || stages.length === 0) {
+    return null;
+  }
   
-  // TODO: Implement proper stage navigation when stages are available
-  // The logic below would work once we have access to the stages array
-  
-  /*
   // Find current stage index
   const currentStageIndex = stages.findIndex(stage => stage.id === currentStageId);
   const canMovePrevious = currentStageIndex > 0;
@@ -61,11 +61,12 @@ export const OpportunityQuickNavigation = ({
     
     if (!targetStage) return;
     
-    // Find the current stage and opportunity
-    const currentStage = stages[currentStageIndex];
-    const opportunity = currentStage?.opportunities.find(opp => opp.id === opportunityId);
-    
-    if (!opportunity) return;
+    // Find the opportunity object (we'll create a minimal one for the move)
+    const opportunity = {
+      id: opportunityId,
+      stageId: currentStageId,
+      funnelId: funnelId
+    } as any; // We only need these fields for the move operation
     
     // Check if moving to a win stage
     if (targetStage.isWinStage) {
@@ -119,5 +120,4 @@ export const OpportunityQuickNavigation = ({
       )}
     </div>
   );
-  */
 };

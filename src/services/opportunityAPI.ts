@@ -63,7 +63,7 @@ export const opportunityAPI = {
     return mapDbOpportunityToOpportunity(created);
   },
 
-  update: async (id: string, data: Partial<OpportunityFormData> & { sourceOpportunityId?: string }): Promise<Opportunity | null> => {
+  update: async (id: string, data: Partial<OpportunityFormData> & { sourceOpportunityId?: string; funnelId?: string }): Promise<Opportunity | null> => {
     console.log("Updating opportunity:", id, "with data:", data);
     
     const dbData: any = {};
@@ -76,6 +76,7 @@ export const opportunityAPI = {
     if (data.company !== undefined) dbData.company = data.company;
     if (data.customFields !== undefined) dbData.custom_fields = data.customFields;
     if (data.sourceOpportunityId !== undefined) dbData.source_opportunity_id = data.sourceOpportunityId;
+    if (data.funnelId !== undefined) dbData.funnel_id = data.funnelId;
     if (data.stageId !== undefined) {
       dbData.stage_id = data.stageId;
       dbData.last_stage_change_at = new Date().toISOString();
