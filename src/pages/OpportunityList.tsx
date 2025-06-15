@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Opportunity, Funnel, Stage } from "@/types";
 import { opportunityAPI } from "@/services/opportunityAPI";
@@ -152,7 +151,7 @@ const OpportunityList = () => {
         client,
         opportunityCount,
         totalValue,
-        mostRecentDate: mostRecent ? mostRecent.createdAt : null,
+        mostRecentDate: mostRecent ? mostRecent.createdAt.toString() : null,
         funnelId: mostRecent ? mostRecent.funnelId : null,
         stageId: mostRecent ? mostRecent.stageId : null
       };
