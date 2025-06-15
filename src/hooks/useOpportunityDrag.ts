@@ -9,7 +9,7 @@ export const useOpportunityDrag = (
   stages: Stage[],
   funnelId: string,
   setStages: (stages: Stage[]) => void,
-  setShowRequiredFieldsDialog: (show: boolean) => void,
+  setShowRequiredFieldsDialog: (show: boolean | string) => void,
   setCurrentDragOperation: (operation: any) => void
 ) => {
   const [isDragging, setIsDragging] = useState(false);
