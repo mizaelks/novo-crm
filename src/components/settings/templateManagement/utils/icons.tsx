@@ -1,4 +1,5 @@
 
+import React from "react";
 import { FileText, Hash, Calendar, CheckSquare, List } from "lucide-react";
 
 export const getFieldIcon = (type: string) => {
