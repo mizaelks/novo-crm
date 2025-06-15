@@ -37,6 +37,7 @@ const ChartSettingsDialog = ({ open, onOpenChange, selectedFunnel, funnelType }:
       case 'relacionamento':
         return 'Oportunidades ao Longo do Tempo';
       case 'mixed':
+        return 'Métricas Mistas ao Longo do Tempo';
       case 'all':
       default:
         return 'Métricas ao Longo do Tempo';
@@ -50,10 +51,24 @@ const ChartSettingsDialog = ({ open, onOpenChange, selectedFunnel, funnelType }:
       case 'relacionamento':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Funil de Relacionamento</Badge>;
       case 'mixed':
-        return <Badge variant="outline">Funis Mistos</Badge>;
+        return <Badge variant="outline" className="border-purple-300 text-purple-700">Funis Mistos</Badge>;
       case 'all':
       default:
         return <Badge variant="outline">Todos os Funis</Badge>;
+    }
+  };
+
+  const getTimeSeriesDescription = () => {
+    switch (funnelType) {
+      case 'venda':
+        return 'Mostra valores monetários para funis de venda';
+      case 'relacionamento':
+        return 'Mostra contagem de oportunidades para funis de relacionamento';
+      case 'mixed':
+        return 'Mostra valores monetários para funis de venda e contagem para relacionamento';
+      case 'all':
+      default:
+        return 'Combina métricas de todos os tipos de funil disponíveis';
     }
   };
 
@@ -113,16 +128,9 @@ const ChartSettingsDialog = ({ open, onOpenChange, selectedFunnel, funnelType }:
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label htmlFor="value-chart" className="text-sm">{getTimeSeriesLabel()}</Label>
-                {funnelType === 'relacionamento' && (
-                  <p className="text-xs text-muted-foreground">
-                    Mostra contagem de oportunidades para funis de relacionamento
-                  </p>
-                )}
-                {funnelType === 'venda' && (
-                  <p className="text-xs text-muted-foreground">
-                    Mostra valores monetários para funis de venda
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {getTimeSeriesDescription()}
+                </p>
               </div>
               <Switch
                 id="value-chart"

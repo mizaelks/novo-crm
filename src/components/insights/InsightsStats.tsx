@@ -23,7 +23,7 @@ interface InsightsStatsProps {
       conversionRate: number;
     };
   };
-  funnelType?: 'venda' | 'relacionamento' | 'all';
+  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
 const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProps) => {
@@ -34,17 +34,31 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
   }
 
   // Determinar se deve mostrar valores monetários e vendas
-  const showMonetaryValues = funnelType === 'venda' || funnelType === 'all';
-  const showSalesMetrics = funnelType === 'venda' || funnelType === 'all';
+  const showMonetaryValues = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  const showSalesMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
   
   // Labels baseados no tipo de funil
   const salesLabel = 'Vendas Realizadas'; // Sempre vendas, pois só aparecem para funis de venda
   const salesValueLabel = 'Valor de Vendas';
 
-  // Calcular subtitle para taxa de conversão
-  const conversionSubtitle = showSalesMetrics 
-    ? `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`
-    : `Apenas funis de venda geram vendas`;
+  // Calcular subtitle para taxa de conversão com base no tipo de funil
+  const getConversionSubtitle = () => {
+    if (!showSalesMetrics) {
+      return 'Apenas funis de venda geram vendas';
+    }
+    
+    if (funnelType === 'relacionamento') {
+      return 'Funis de relacionamento não têm vendas';
+    }
+    
+    if (funnelType === 'mixed') {
+      return `${stats.totalSales} vendas de oportunidades em funis de venda`;
+    }
+    
+    return `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`;
+  };
+
+  const conversionSubtitle = getConversionSubtitle();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -59,7 +73,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         <StatsCard
           title="Valor Total"
           value={formatCurrency(stats.totalValue)}
-          subtitle={getFilterLabel}
+          subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={DollarSign}
           valueClassName="text-2xl font-bold text-primary"
         />
@@ -69,7 +83,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         <StatsCard
           title={salesLabel}
           value={stats.totalSales}
-          subtitle={getFilterLabel}
+          subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={TrendingUp}
           valueClassName="text-2xl font-bold text-green-600"
         />
@@ -79,7 +93,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         <StatsCard
           title={salesValueLabel}
           value={formatCurrency(stats.totalSalesValue)}
-          subtitle={getFilterLabel}
+          subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={Zap}
           valueClassName="text-2xl font-bold text-green-600"
         />
@@ -89,7 +103,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         <StatsCard
           title="Ticket Médio"
           value={formatCurrency(stats.averageTicket)}
-          subtitle={getFilterLabel}
+          subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={Calculator}
           valueClassName="text-2xl font-bold text-blue-600"
         />

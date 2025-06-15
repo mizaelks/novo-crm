@@ -42,7 +42,7 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
       case 'relacionamento':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Funil de Relacionamento</Badge>;
       case 'mixed':
-        return <Badge variant="outline">Funis Mistos</Badge>;
+        return <Badge variant="outline" className="border-purple-300 text-purple-700">Funis Mistos</Badge>;
       case 'all':
       default:
         return <Badge variant="outline">Todos os Funis</Badge>;
@@ -56,10 +56,31 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
       case 'relacionamento':
         return 'Série Temporal (Oportunidades)';
       case 'mixed':
+        return 'Série Temporal (Métricas Mistas)';
       case 'all':
       default:
         return 'Série Temporal (Métricas)';
     }
+  };
+
+  const getConversionDataDescription = () => {
+    if (funnelType === 'relacionamento') {
+      return 'Funis de relacionamento não têm dados de conversão';
+    }
+    if (funnelType === 'mixed') {
+      return 'Dados de conversão apenas dos funis de venda';
+    }
+    return 'Dados de conversão disponíveis';
+  };
+
+  const getMonetaryDataDescription = () => {
+    if (funnelType === 'relacionamento') {
+      return 'Funis de relacionamento não têm dados monetários';
+    }
+    if (funnelType === 'mixed') {
+      return 'Dados monetários apenas dos funis de venda';
+    }
+    return 'Dados monetários disponíveis';
   };
 
   const handleExport = () => {
@@ -160,12 +181,10 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
                 />
                 <div className="space-y-1">
                   <Label htmlFor="conversion" className="text-sm">Dados de Conversão</Label>
-                  {!shouldShowSalesData && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      Apenas funis de venda têm dados de conversão
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {getConversionDataDescription()}
+                  </p>
                 </div>
               </div>
               
@@ -194,7 +213,12 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
                     checked={includeMonetaryData}
                     onCheckedChange={(checked) => setIncludeMonetaryData(checked as boolean)}
                   />
-                  <Label htmlFor="monetary" className="text-sm">Dados Monetários</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="monetary" className="text-sm">Dados Monetários</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {getMonetaryDataDescription()}
+                    </p>
+                  </div>
                 </div>
               )}
               

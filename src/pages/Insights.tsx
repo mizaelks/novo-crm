@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useInsightsData } from "@/hooks/useInsightsData";
+import { Badge } from "@/components/ui/badge";
 import InsightsFilters from "@/components/insights/InsightsFilters";
 import InsightsStats from "@/components/insights/InsightsStats";
 import InsightsCharts from "@/components/insights/InsightsCharts";
@@ -49,22 +50,55 @@ const Insights = () => {
     ? (funnelType as FunnelType)
     : (selectedFunnelData?.funnelType as FunnelType) || "venda";
 
+  // Get context information for better user feedback
+  const getContextInfo = () => {
+    if (selectedFunnel === "all") {
+      const types = [...new Set(funnels.map(f => f.funnelType))];
+      if (types.length === 1) {
+        return {
+          badge: types[0] === 'venda' 
+            ? <Badge variant="default" className="bg-green-100 text-green-800">Analisando: Funis de Venda</Badge>
+            : <Badge variant="secondary" className="bg-blue-100 text-blue-800">Analisando: Funis de Relacionamento</Badge>,
+          description: types[0] === 'venda' 
+            ? "Métricas incluem valores monetários e vendas realizadas"
+            : "Métricas focam em contagem de oportunidades e relacionamentos"
+        };
+      } else if (types.length > 1) {
+        return {
+          badge: <Badge variant="outline" className="border-purple-300 text-purple-700">Analisando: Funis Mistos</Badge>,
+          description: "Valores monetários e vendas apenas de funis de venda"
+        };
+      }
+    } else if (selectedFunnelData) {
+      return {
+        badge: selectedFunnelData.funnelType === 'venda'
+          ? <Badge variant="default" className="bg-green-100 text-green-800">Analisando: {selectedFunnelData.name} (Venda)</Badge>
+          : <Badge variant="secondary" className="bg-blue-100 text-blue-800">Analisando: {selectedFunnelData.name} (Relacionamento)</Badge>,
+        description: selectedFunnelData.funnelType === 'venda'
+          ? "Métricas incluem valores monetários e vendas realizadas"
+          : "Métricas focam em contagem de oportunidades e relacionamentos"
+      };
+    }
+    
+    return {
+      badge: <Badge variant="outline">Contexto Indeterminado</Badge>,
+      description: "Selecione um funil para ver métricas específicas"
+    };
+  };
+
+  const contextInfo = getContextInfo();
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Insights</h1>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold">Insights</h1>
+          <div className="flex items-center gap-3">
+            {contextInfo.badge}
+            <span className="text-sm text-muted-foreground">{contextInfo.description}</span>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
-          <InsightsFilters
-            funnels={funnels}
-            selectedFunnel={selectedFunnel}
-            onFunnelChange={setSelectedFunnel}
-            selectedUser={selectedUser}
-            onUserChange={setSelectedUser}
-            selectedWinReason={selectedWinReason}
-            onWinReasonChange={setSelectedWinReason}
-            selectedLossReason={selectedLossReason}
-            onLossReasonChange={setSelectedLossReason}
-          />
           <InsightsAdvancedSettings 
             selectedFunnel={selectedFunnel}
             funnelType={displayFunnelType}
@@ -72,10 +106,22 @@ const Insights = () => {
         </div>
       </div>
       
+      <InsightsFilters
+        funnels={funnels}
+        selectedFunnel={selectedFunnel}
+        onFunnelChange={setSelectedFunnel}
+        selectedUser={selectedUser}
+        onUserChange={setSelectedUser}
+        selectedWinReason={selectedWinReason}
+        onWinReasonChange={setSelectedWinReason}
+        selectedLossReason={selectedLossReason}
+        onLossReasonChange={setSelectedLossReason}
+      />
+      
       <InsightsStats 
         loading={loading} 
         stats={stats} 
-        funnelType={displayFunnelType as 'venda' | 'relacionamento' | 'all'}
+        funnelType={displayFunnelType as 'venda' | 'relacionamento' | 'all' | 'mixed'}
       />
       <InsightsCharts
         stageDistribution={stageDistribution}
