@@ -6,6 +6,7 @@ import { useInsightsData } from "@/hooks/useInsightsData";
 import InsightsFilters from "@/components/insights/InsightsFilters";
 import InsightsStats from "@/components/insights/InsightsStats";
 import InsightsCharts from "@/components/insights/InsightsCharts";
+import InsightsAdvancedSettings from "@/components/insights/InsightsAdvancedSettings";
 
 const Insights = () => {
   // All hooks must be called before any conditional returns
@@ -40,11 +41,14 @@ const Insights = () => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Insights</h1>
-        <InsightsFilters
-          funnels={funnels}
-          selectedFunnel={selectedFunnel}
-          onFunnelChange={setSelectedFunnel}
-        />
+        <div className="flex items-center gap-4">
+          <InsightsFilters
+            funnels={funnels}
+            selectedFunnel={selectedFunnel}
+            onFunnelChange={setSelectedFunnel}
+          />
+          <InsightsAdvancedSettings />
+        </div>
       </div>
       
       <InsightsStats loading={loading} stats={stats} />
