@@ -36,7 +36,7 @@ const StageOpportunityList = ({
         Adicionar oportunidade
       </Button>
       
-      <Droppable droppableId={stageId} type="OPPORTUNITY">
+      <Droppable droppableId={stageId}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -53,7 +53,7 @@ const StageOpportunityList = ({
                 onClick={() => onOpportunityClick(opportunity)}
                 onAddTask={onAddTask ? () => onAddTask(opportunity) : undefined}
                 onAddField={onAddField ? () => onAddField(opportunity) : undefined}
-                stageName={stage.name}
+                stage={stage}
               />
             ))}
             {provided.placeholder}

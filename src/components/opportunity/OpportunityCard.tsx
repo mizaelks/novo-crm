@@ -2,7 +2,7 @@
 import { Draggable } from "react-beautiful-dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Opportunity } from "@/types";
+import { Opportunity, Stage } from "@/types";
 import { formatCurrency } from "@/utils/constants";
 import { OpportunityQuickActions } from "./OpportunityQuickActions";
 import { OpportunityAlertIndicator } from "./OpportunityAlertIndicator";
@@ -14,7 +14,7 @@ interface OpportunityCardProps {
   onClick: () => void;
   onAddTask?: () => void;
   onAddField?: () => void;
-  stageName?: string;
+  stage: Stage;
 }
 
 const OpportunityCard = ({ 
@@ -23,7 +23,7 @@ const OpportunityCard = ({
   onClick, 
   onAddTask, 
   onAddField,
-  stageName 
+  stage 
 }: OpportunityCardProps) => {
   const handleClick = (e: React.MouseEvent) => {
     // Prevent click when dragging
@@ -55,7 +55,7 @@ const OpportunityCard = ({
                   {opportunity.title}
                 </h4>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <OpportunityAlertIndicator opportunity={opportunity} stageName={stageName} />
+                  <OpportunityAlertIndicator opportunity={opportunity} stage={stage} />
                   <OpportunityMigrationIndicator opportunity={opportunity} />
                 </div>
               </div>
