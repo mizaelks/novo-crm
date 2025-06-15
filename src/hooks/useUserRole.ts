@@ -27,20 +27,32 @@ export const useUserRole = () => {
     if (!user) return;
 
     try {
+      console.log("Checking user role for:", user.id);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      if (error) {
+        console.error("Error fetching user role:", error);
+        // Se não há papel definido, usar 'user' como padrão
+        if (error.code === 'PGRST116') {
+          console.log("No role found, setting default to 'user'");
+          setUserRole('user');
+          setIsAdmin(false);
+          setIsManager(false);
+        } else {
+          throw error;
+        }
+      } else {
+        console.log("User role found:", data.role);
+        const role = data.role as UserRole;
+        setUserRole(role);
+        setIsAdmin(role === 'admin');
+        setIsManager(role === 'manager' || role === 'admin');
       }
-
-      const role = data?.role || 'user';
-      setUserRole(role);
-      setIsAdmin(role === 'admin');
-      setIsManager(role === 'manager' || role === 'admin');
     } catch (error) {
       console.error("Error checking user role:", error);
       setUserRole('user');

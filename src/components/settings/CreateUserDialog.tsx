@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPlus } from "lucide-react";
+import { UserPlus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ type CreateUserFormValues = z.infer<typeof createUserSchema>;
 
 const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
@@ -50,13 +51,23 @@ const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialo
   const onSubmit = async (data: CreateUserFormValues) => {
     try {
       setIsLoading(true);
+      setError(null);
+
+      console.log("Creating user with data:", { ...data, password: "[REDACTED]" });
+
+      // Obter o token de acesso atual
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.session?.access_token) {
+        throw new Error("Erro de autenticação. Faça login novamente.");
+      }
 
       // Criar usuário usando a função edge
-      const response = await fetch("https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/create-user", {
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          "Authorization": `Bearer ${session.session.access_token}`
         },
         body: JSON.stringify({
           email: data.email,
@@ -70,15 +81,20 @@ const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialo
       const result = await response.json();
       
       if (!response.ok) {
+        console.error("Create user error:", result);
         throw new Error(result.error || "Erro ao criar usuário");
       }
       
+      console.log("User created successfully:", result);
       toast.success("Usuário criado com sucesso!");
       form.reset();
       onOpenChange(false);
       onUserCreated();
     } catch (error: any) {
-      toast.error(error.message || "Falha ao criar usuário");
+      console.error("Error creating user:", error);
+      const errorMessage = error.message || "Falha ao criar usuário";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +109,13 @@ const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialo
             Criar Novo Usuário
           </DialogTitle>
         </DialogHeader>
+
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-800">{error}</span>
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -179,7 +202,10 @@ const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialo
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  onOpenChange(false);
+                  setError(null);
+                }}
                 className="flex-1"
               >
                 Cancelar

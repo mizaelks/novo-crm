@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -11,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Crown, Shield, User, UserPlus } from "lucide-react";
+import { Users, Crown, Shield, User, UserPlus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import CreateUserDialog from "./CreateUserDialog";
 
 interface Profile {
@@ -37,31 +37,24 @@ interface UserManagementDialogProps {
 const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps) => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   useEffect(() => {
-    if (open) {
+    if (open && !roleLoading) {
       loadUsers();
-      checkAdminStatus();
     }
-  }, [open]);
-
-  const checkAdminStatus = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase.rpc('is_admin', { _user_id: user.id });
-      if (error) throw error;
-      setIsAdmin(data);
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-    }
-  };
+  }, [open, roleLoading]);
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
+      console.log("Loading users...");
+      
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -77,10 +70,17 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error loading users:", error);
+        setError(`Erro ao carregar usuários: ${error.message}`);
+        return;
+      }
+
+      console.log("Users loaded:", data);
       setUsers(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading users:", error);
+      setError(`Erro ao carregar usuários: ${error.message}`);
       toast.error("Erro ao carregar usuários");
     } finally {
       setLoading(false);
@@ -94,14 +94,21 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     }
 
     try {
+      console.log(`Updating user ${userId} role to ${newRole}`);
+      
       // Primeiro, remover papel atual
-      await supabase
+      const { error: deleteError } = await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
 
+      if (deleteError) {
+        console.error("Error deleting current role:", deleteError);
+        throw deleteError;
+      }
+
       // Então, adicionar novo papel
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
@@ -109,13 +116,16 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
           assigned_by: user?.id
         });
 
-      if (error) throw error;
+      if (insertError) {
+        console.error("Error inserting new role:", insertError);
+        throw insertError;
+      }
 
       toast.success("Papel do usuário atualizado com sucesso");
       loadUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user role:", error);
-      toast.error("Erro ao atualizar papel do usuário");
+      toast.error(`Erro ao atualizar papel do usuário: ${error.message}`);
     }
   };
 
@@ -166,6 +176,18 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     return email;
   };
 
+  if (roleLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl">
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary border-r-2" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,6 +218,21 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
                 <span className="text-sm text-yellow-800">
                   Você tem acesso de visualização. Apenas administradores podem alterar papéis.
                 </span>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-800">{error}</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadUsers}
+                  className="ml-auto"
+                >
+                  Tentar novamente
+                </Button>
               </div>
             )}
 
@@ -262,7 +299,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
                   );
                 })}
 
-                {users.length === 0 && (
+                {users.length === 0 && !error && (
                   <div className="text-center py-8 text-muted-foreground">
                     Nenhum usuário encontrado
                   </div>
