@@ -8,6 +8,9 @@ import InsightsStats from "@/components/insights/InsightsStats";
 import InsightsCharts from "@/components/insights/InsightsCharts";
 import InsightsAdvancedSettings from "@/components/insights/InsightsAdvancedSettings";
 
+// Define the FunnelType type locally to match what the components expect
+type FunnelType = 'venda' | 'relacionamento' | 'all' | 'mixed';
+
 const Insights = () => {
   // All hooks must be called before any conditional returns
   const { isManager, loading: roleLoading } = useUserRole();
@@ -42,7 +45,9 @@ const Insights = () => {
 
   // Determinar o tipo de funil selecionado para ajustar as estatísticas
   const selectedFunnelData = funnels.find(f => f.id === selectedFunnel);
-  const displayFunnelType = selectedFunnel === "all" ? funnelType : selectedFunnelData?.funnelType || "venda";
+  const displayFunnelType: FunnelType = selectedFunnel === "all" 
+    ? (funnelType as FunnelType)
+    : (selectedFunnelData?.funnelType as FunnelType) || "venda";
 
   return (
     <div className="space-y-6 p-6">
@@ -70,7 +75,7 @@ const Insights = () => {
       <InsightsStats 
         loading={loading} 
         stats={stats} 
-        funnelType={displayFunnelType}
+        funnelType={displayFunnelType as 'venda' | 'relacionamento' | 'all'}
       />
       <InsightsCharts
         stageDistribution={stageDistribution}
