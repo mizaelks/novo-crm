@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,62 +20,63 @@ import { FormField } from "@/components/forms/FormField";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { validateData } from "@/utils/validation";
-import { UserPlus } from "lucide-react";
+import { Edit } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
-const createUserSchema = z.object({
-  email: z.string().email("Email deve ter um formato válido"),
-  role: z.enum(["admin", "manager", "user"]),
+const editUserSchema = z.object({
   firstName: z.string().min(1, "Nome é obrigatório"),
   lastName: z.string().min(1, "Sobrenome é obrigatório"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  email: z.string().email("Email deve ter um formato válido"),
 });
 
-type CreateUserFormData = z.infer<typeof createUserSchema>;
+type EditUserFormData = z.infer<typeof editUserSchema>;
 
-interface CreateUserDialogProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  onUserCreated: () => void;
+interface User {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
 }
 
-export const CreateUserDialog = ({ isOpen, setIsOpen, onUserCreated }: CreateUserDialogProps) => {
-  const [formData, setFormData] = useState<CreateUserFormData>({
-    email: "",
-    role: "user",
+interface EditUserDialogProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  user: User;
+  onUserUpdated: () => void;
+}
+
+export const EditUserDialog = ({ isOpen, setIsOpen, user, onUserUpdated }: EditUserDialogProps) => {
+  const [formData, setFormData] = useState<EditUserFormData>({
     firstName: "",
     lastName: "",
-    password: "",
+    email: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { handleError } = useErrorHandler();
 
-  const resetForm = () => {
-    setFormData({
-      email: "",
-      role: "user",
-      firstName: "",
-      lastName: "",
-      password: "",
-    });
-    setErrors({});
-  };
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+      });
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = validateData(createUserSchema, formData);
+    const validation = validateData(editUserSchema, formData);
     if (!validation.success) {
       const newErrors: Record<string, string> = {};
       validation.errors?.forEach(error => {
         const field = error.toLowerCase().includes('email') ? 'email' :
                      error.toLowerCase().includes('nome') ? 'firstName' :
-                     error.toLowerCase().includes('sobrenome') ? 'lastName' :
-                     error.toLowerCase().includes('senha') ? 'password' :
-                     error.toLowerCase().includes('role') ? 'role' : 'general';
+                     error.toLowerCase().includes('sobrenome') ? 'lastName' : 'general';
         newErrors[field] = error;
       });
       setErrors(newErrors);
@@ -84,35 +85,32 @@ export const CreateUserDialog = ({ isOpen, setIsOpen, onUserCreated }: CreateUse
 
     setIsLoading(true);
     try {
-      console.log("Criando usuário:", formData);
+      console.log("Atualizando usuário:", user.id, formData);
       
-      // Chamar edge function para criar usuário
-      const { error } = await supabase.functions.invoke('create-user', {
-        body: {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: formData.role
-        }
-      });
+        })
+        .eq('id', user.id);
 
       if (error) {
         throw error;
       }
 
-      toast.success("Usuário criado com sucesso!");
-      resetForm();
+      toast.success("Usuário atualizado com sucesso!");
       setIsOpen(false);
-      onUserCreated();
+      onUserUpdated();
     } catch (error) {
-      handleError(error, "Erro ao criar usuário");
+      handleError(error, "Erro ao atualizar usuário");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateField = (field: keyof CreateUserFormData, value: string) => {
+  const updateField = (field: keyof EditUserFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
@@ -124,11 +122,11 @@ export const CreateUserDialog = ({ isOpen, setIsOpen, onUserCreated }: CreateUse
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Criar Novo Usuário
+            <Edit className="h-5 w-5" />
+            Editar Usuário
           </DialogTitle>
           <DialogDescription>
-            Crie um novo usuário para o sistema com acesso imediato.
+            Edite as informações do usuário selecionado.
           </DialogDescription>
         </DialogHeader>
         
@@ -164,38 +162,8 @@ export const CreateUserDialog = ({ isOpen, setIsOpen, onUserCreated }: CreateUse
             error={errors.email}
             placeholder="usuario@exemplo.com"
             required
+            disabled
           />
-
-          <FormField
-            label="Senha"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={(value) => updateField("password", value as string)}
-            error={errors.password}
-            placeholder="Digite a senha"
-            required
-          />
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Papel <span className="text-red-500">*</span>
-            </label>
-            <Select
-              value={formData.role}
-              onValueChange={(value: "admin" | "manager" | "user") => updateField("role", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o papel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Usuário - Acesso básico</SelectItem>
-                <SelectItem value="manager">Gerente - Pode gerenciar funis e etapas</SelectItem>
-                <SelectItem value="admin">Admin - Acesso total</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.role && <p className="text-sm text-red-500">{errors.role}</p>}
-          </div>
         </form>
 
         <DialogFooter className="gap-2">
@@ -215,9 +183,9 @@ export const CreateUserDialog = ({ isOpen, setIsOpen, onUserCreated }: CreateUse
             {isLoading ? (
               <LoadingSpinner size="sm" />
             ) : (
-              <UserPlus className="h-4 w-4" />
+              <Edit className="h-4 w-4" />
             )}
-            {isLoading ? "Criando..." : "Criar Usuário"}
+            {isLoading ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -13,9 +13,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
-import { UserInviteDialog } from "./UserInviteDialog";
+import { CreateUserDialog } from "./CreateUserDialog";
+import { EditUserDialog } from "./EditUserDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Shield, User, Crown, Trash2 } from "lucide-react";
+import { User, Shield, Crown, Trash2, Edit, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -33,7 +34,8 @@ interface UserManagementDialogProps {
 export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialogProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { handleError } = useErrorHandler();
 
@@ -92,6 +94,10 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
     }
   };
 
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg">
@@ -101,7 +107,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
             Gerenciar Usuários
           </DialogTitle>
           <DialogDescription>
-            Adicione, remova e gerencie os usuários do sistema.
+            Crie, edite, remova e gerencie os usuários do sistema.
           </DialogDescription>
         </DialogHeader>
 
@@ -113,7 +119,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
           ) : (
             <div className="divide-y divide-border">
               {users.map((user) => (
-                <div key={user.id} className="grid grid-cols-3 gap-4 py-4 items-center">
+                <div key={user.id} className="grid grid-cols-4 gap-4 py-4 items-center">
                   <div className="col-span-2">
                     <div className="font-medium">{user.firstName} {user.lastName}</div>
                     <div className="text-sm text-muted-foreground">{user.email}</div>
@@ -122,7 +128,14 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                       Usuário
                     </Badge>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="destructive"
                       size="sm"
@@ -132,10 +145,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                       {deletingUserId === user.id ? (
                         <LoadingSpinner size="sm" />
                       ) : (
-                        <>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remover
-                        </>
+                        <Trash2 className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
@@ -148,19 +158,28 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
         <DialogFooter>
           <Button
             type="button"
-            onClick={() => setIsInviteOpen(true)}
+            onClick={() => setIsCreateOpen(true)}
           >
-            <Mail className="h-4 w-4 mr-2" />
-            Convidar Usuário
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Usuário
           </Button>
         </DialogFooter>
       </DialogContent>
 
-      <UserInviteDialog
-        isOpen={isInviteOpen}
-        setIsOpen={setIsInviteOpen}
-        onUserInvited={loadUsers}
+      <CreateUserDialog
+        isOpen={isCreateOpen}
+        setIsOpen={setIsCreateOpen}
+        onUserCreated={loadUsers}
       />
+
+      {editingUser && (
+        <EditUserDialog
+          isOpen={!!editingUser}
+          setIsOpen={(open) => !open && setEditingUser(null)}
+          user={editingUser}
+          onUserUpdated={loadUsers}
+        />
+      )}
     </Dialog>
   );
 };
