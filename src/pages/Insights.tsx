@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ interface ValueData {
 }
 
 const Insights = () => {
+  // All hooks must be called before any conditional returns
   const { isManager, loading: roleLoading } = useUserRole();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [selectedFunnel, setSelectedFunnel] = useState<string>("all");
@@ -36,19 +38,6 @@ const Insights = () => {
   const [valueOverTime, setValueOverTime] = useState<ValueData[]>([]);
   
   const { filter, setFilterType, setDateRange, filterByDate, getFilterLabel } = useDateFilter();
-
-  // Check permissions first
-  if (!roleLoading && !isManager) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (roleLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary border-r-2" />
-      </div>
-    );
-  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -73,6 +62,19 @@ const Insights = () => {
 
     loadData();
   }, [selectedFunnel, filter, filterByDate]);
+
+  // Now we can do conditional returns after all hooks are called
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary border-r-2" />
+      </div>
+    );
+  }
+
+  if (!isManager) {
+    return <Navigate to="/" replace />;
+  }
 
   const processConversionData = (funnelsData: Funnel[]) => {
     const stageData: { [key: string]: { total: number, converted: number } } = {};
