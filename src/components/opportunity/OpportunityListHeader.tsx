@@ -7,6 +7,8 @@ interface ArchiveSettings {
   enabled: boolean;
   period: number;
   lastRun: string | null;
+  archiveWonOpportunities: boolean;
+  archiveLostOpportunities: boolean;
 }
 
 interface OpportunityListHeaderProps {

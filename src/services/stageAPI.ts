@@ -7,25 +7,25 @@ export const stageAPI = {
   getAll: async (): Promise<Stage[]> => {
     const { data, error } = await supabase.from('stages').select('*').order('order', { ascending: true });
     if (error) throw error;
-    return (data || []).map(mapDbStageToStage);
+    return (data || []).map(stage => ({ ...mapDbStageToStage(stage), opportunities: [] }));
   },
 
   getByFunnelId: async (funnelId: string): Promise<Stage[]> => {
     const { data, error } = await supabase.from('stages').select('*').eq('funnel_id', funnelId).order('order', { ascending: true });
     if (error) throw error;
-    return (data || []).map(mapDbStageToStage);
+    return (data || []).map(stage => ({ ...mapDbStageToStage(stage), opportunities: [] }));
   },
 
   getById: async (id: string): Promise<Stage | null> => {
     const { data, error } = await supabase.from('stages').select('*').eq('id', id).single();
     if (error || !data) return null;
-    return mapDbStageToStage(data);
+    return { ...mapDbStageToStage(data), opportunities: [] };
   },
 
   create: async (data: StageFormData): Promise<Stage> => {
     console.log("Creating stage with data:", data);
     
-    const { data: created, error } = await supabase.from('stages').insert([{
+    const { data: created, error } = await supabase.from('stages').insert({
       name: data.name,
       description: data.description,
       funnel_id: data.funnelId,
@@ -39,14 +39,14 @@ export const stageAPI = {
       loss_reason_required: data.lossReasonRequired || false,
       win_reasons: data.winReasons || [],
       loss_reasons: data.lossReasons || []
-    }]).select().single();
+    }).select().single();
     
     if (error || !created) {
       console.error("Error creating stage:", error);
       throw error || new Error('Stage creation failed');
     }
     
-    return mapDbStageToStage(created);
+    return { ...mapDbStageToStage(created), opportunities: [] };
   },
 
   update: async (id: string, data: Partial<StageFormData>): Promise<Stage | null> => {
@@ -79,7 +79,7 @@ export const stageAPI = {
       return null;
     }
     
-    return mapDbStageToStage(updated);
+    return { ...mapDbStageToStage(updated), opportunities: [] };
   },
 
   delete: async (id: string): Promise<boolean> => {
