@@ -9,12 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, Trash2, Database, Users } from "lucide-react";
+import { Settings, Trash2, Database, Users, Webhook, Code } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import FunnelManagementDialog from "./FunnelManagementDialog";
 import SystemSettingsDialog from "./SystemSettingsDialog";
 import UserManagementDialog from "./UserManagementDialog";
 
 const SettingsDropdown = () => {
+  const navigate = useNavigate();
   const [funnelDialogOpen, setFunnelDialogOpen] = useState(false);
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -41,6 +43,16 @@ const SettingsDropdown = () => {
           <DropdownMenuItem onClick={() => setUserDialogOpen(true)}>
             <Users className="mr-2 h-4 w-4" />
             Usuários e Permissões
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Integrações</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => navigate("/webhooks")}>
+            <Webhook className="mr-2 h-4 w-4" />
+            Webhooks
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/api")}>
+            <Code className="mr-2 h-4 w-4" />
+            API
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

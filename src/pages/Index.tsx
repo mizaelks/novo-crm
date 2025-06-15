@@ -6,6 +6,7 @@ import FunnelList from "@/pages/FunnelList";
 import FunnelDetail from "@/pages/FunnelDetail";
 import OpportunityList from "@/pages/OpportunityList";
 import WebhookManager from "@/pages/WebhookManager";
+import Insights from "@/pages/Insights";
 import NotFound from "@/pages/NotFound";
 
 const Index = () => {
@@ -16,6 +17,7 @@ const Index = () => {
         <Route path="funnels" element={<FunnelList />} />
         <Route path="funnels/:id" element={<FunnelDetail />} />
         <Route path="opportunities" element={<OpportunityList />} />
+        <Route path="insights" element={<Insights />} />
         <Route path="webhooks" element={<WebhookManager />} />
         <Route path="*" element={<NotFound />} />
       </Route>
