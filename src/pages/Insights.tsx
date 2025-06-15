@@ -63,6 +63,7 @@ const Insights = () => {
       <InsightsCharts
         stageDistribution={stageDistribution}
         valueOverTime={valueOverTime}
+        selectedFunnel={selectedFunnel}
       />
     </div>
   );
