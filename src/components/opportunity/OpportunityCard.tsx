@@ -1,4 +1,3 @@
-
 import { Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,8 +47,7 @@ const OpportunityCard = ({
     }
   };
 
-  const handleCompleteTask = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCompleteTask = async () => {
     if (!firstPendingTask) return;
     
     const success = await completeTask(firstPendingTask.id);
@@ -121,30 +119,18 @@ const OpportunityCard = ({
                     <Calendar className="h-3 w-3" />
                     <span>{format(opportunity.createdAt, "dd/MM")}</span>
                   </div>
-                  
-                  {/* Botão de concluir tarefa - mais compacto */}
-                  {firstPendingTask && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-5 px-2 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                      onClick={handleCompleteTask}
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Concluir
-                    </Button>
-                  )}
                 </div>
 
-                {/* Alertas múltiplos - mais compactos */}
+                {/* Alertas múltiplos com botão de concluir integrado */}
                 <OpportunityMultipleAlerts 
                   opportunity={opportunity}
                   stage={stage}
                   pendingTasks={pendingTasks}
+                  onCompleteTask={firstPendingTask ? handleCompleteTask : undefined}
                 />
               </CardContent>
 
-              {/* Ações rápidas no rodapé - mais compacto */}
+              {/* Ações rápidas no rodapé */}
               <OpportunityQuickActions
                 opportunity={opportunity}
                 onAddTask={handleAddTask}
