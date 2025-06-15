@@ -29,21 +29,9 @@ const StageColumn = ({
 }: StageColumnProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
-  const [taskDialogOpportunity, setTaskDialogOpportunity] = useState<Opportunity | null>(null);
-  const [fieldDialogOpportunity, setFieldDialogOpportunity] = useState<Opportunity | null>(null);
   
   const handleOpportunityClick = (opportunity: Opportunity) => {
     setSelectedOpportunityId(opportunity.id);
-  };
-
-  const handleAddTask = (opportunity: Opportunity) => {
-    setTaskDialogOpportunity(opportunity);
-    console.log('Add task for opportunity:', opportunity.id);
-  };
-
-  const handleAddField = (opportunity: Opportunity) => {
-    setFieldDialogOpportunity(opportunity);
-    console.log('Add field for opportunity:', opportunity.id);
   };
 
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
@@ -92,8 +80,6 @@ const StageColumn = ({
                   opportunities={stage.opportunities}
                   stage={stage}
                   onOpportunityClick={handleOpportunityClick}
-                  onAddTask={handleAddTask}
-                  onAddField={handleAddField}
                 />
               </CardContent>
             </Card>
