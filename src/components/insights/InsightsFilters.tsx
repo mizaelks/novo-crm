@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarDays } from "lucide-react";
 import { Funnel } from "@/types";
 import { useDateFilter, DateFilterType } from "@/hooks/useDateFilter";
+import DateRangePicker from "@/components/dashboard/DateRangePicker";
 
 interface InsightsFiltersProps {
   funnels: Funnel[];
@@ -11,10 +12,15 @@ interface InsightsFiltersProps {
 }
 
 const InsightsFilters = ({ funnels, selectedFunnel, onFunnelChange }: InsightsFiltersProps) => {
-  const { filter, setFilterType } = useDateFilter();
+  const { filter, setFilterType, setDateRange } = useDateFilter();
+
+  const handleDateRangeApply = () => {
+    // Trigger data refresh when custom date range is applied
+    console.log("Custom date range applied:", filter.dateRange);
+  };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 flex-wrap">
       <Select value={selectedFunnel} onValueChange={onFunnelChange}>
         <SelectTrigger className="w-48">
           <SelectValue placeholder="Selecionar funil" />
@@ -44,6 +50,14 @@ const InsightsFilters = ({ funnels, selectedFunnel, onFunnelChange }: InsightsFi
           </SelectContent>
         </Select>
       </div>
+
+      {filter.type === DateFilterType.CUSTOM && (
+        <DateRangePicker
+          date={filter.dateRange}
+          setDate={setDateRange}
+          onApply={handleDateRangeApply}
+        />
+      )}
     </div>
   );
 };
