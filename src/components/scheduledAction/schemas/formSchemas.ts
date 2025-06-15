@@ -9,7 +9,8 @@ export const webhookSchema = z.object({
   scheduledTime: z.string().min(1, "Horário é obrigatório"),
   moveToNextStage: z.boolean().default(false),
   description: z.string().optional(),
-  taskType: z.literal("webhook")
+  taskType: z.literal("webhook"),
+  templateId: z.string().optional()
 });
 
 // Schema de validação para tarefas
@@ -20,7 +21,8 @@ export const taskSchema = z.object({
   scheduledTime: z.string().min(1, "Horário é obrigatório"),
   moveToNextStage: z.boolean().default(false),
   assignedTo: z.string().optional(),
-  taskType: z.literal("task")
+  taskType: z.literal("task"),
+  templateId: z.string().optional()
 });
 
 // União dos schemas

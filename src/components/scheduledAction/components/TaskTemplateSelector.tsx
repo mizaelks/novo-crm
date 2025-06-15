@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Control } from "react-hook-form";
 import { DEFAULT_TASK_TEMPLATES, TaskTemplate } from "@/types/taskTemplates";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, FileText, Mail, Folder } from "lucide-react";
+import { Calendar, Phone, FileText, Mail, Folder, MessageCircle, Clock, FileCheck } from "lucide-react";
 
 interface TaskTemplateSelectorProps {
   control: Control<any>;
@@ -15,10 +15,13 @@ export const TaskTemplateSelector = ({ control, onTemplateSelect }: TaskTemplate
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'phone': return <Phone className="h-4 w-4" />;
+      case 'message-circle': return <MessageCircle className="h-4 w-4" />;
       case 'file-text': return <FileText className="h-4 w-4" />;
       case 'calendar': return <Calendar className="h-4 w-4" />;
       case 'mail': return <Mail className="h-4 w-4" />;
       case 'folder': return <Folder className="h-4 w-4" />;
+      case 'clock': return <Clock className="h-4 w-4" />;
+      case 'file-check': return <FileCheck className="h-4 w-4" />;
       default: return <Calendar className="h-4 w-4" />;
     }
   };
@@ -29,7 +32,10 @@ export const TaskTemplateSelector = ({ control, onTemplateSelect }: TaskTemplate
       green: 'border-green-200 bg-green-50 text-green-700',
       purple: 'border-purple-200 bg-purple-50 text-purple-700',
       orange: 'border-orange-200 bg-orange-50 text-orange-700',
-      yellow: 'border-yellow-200 bg-yellow-50 text-yellow-700'
+      yellow: 'border-yellow-200 bg-yellow-50 text-yellow-700',
+      indigo: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+      gray: 'border-gray-200 bg-gray-50 text-gray-700',
+      emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700'
     };
     return colorMap[color] || 'border-gray-200 bg-gray-50 text-gray-700';
   };

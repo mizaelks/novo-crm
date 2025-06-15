@@ -12,8 +12,10 @@ import { WebhookFields } from "./components/WebhookFields";
 import { TaskFields } from "./components/TaskFields";
 import { DateTimeFields } from "./components/DateTimeFields";
 import { StageToggle } from "./components/StageToggle";
+import { TaskTemplateSelector } from "./components/TaskTemplateSelector";
 import { useNextStage } from "./hooks/useNextStage";
 import { useDefaultDateTime } from "./hooks/useDefaultDateTime";
+import { TaskTemplate } from "@/types/taskTemplates";
 
 interface ScheduleActionFormProps {
   opportunityId: string;
@@ -24,7 +26,7 @@ interface ScheduleActionFormProps {
 
 const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionScheduled }: ScheduleActionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("webhook");
+  const [activeTab, setActiveTab] = useState<string>("task"); // Changed default to task
   
   const nextStage = useNextStage(funnelId, stageId);
   const { formattedDate, formattedTime, todayForMin } = useDefaultDateTime();
@@ -32,15 +34,31 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      taskType: "webhook",
-      url: "",
-      method: "POST",
+      taskType: "task", // Changed default to task
+      title: "",
+      description: "",
       scheduledDate: formattedDate,
       scheduledTime: formattedTime,
       moveToNextStage: false,
-      description: ""
+      assignedTo: ""
     }
   });
+
+  // Handle template selection
+  const handleTemplateSelect = (template: TaskTemplate | null) => {
+    if (template) {
+      // Calculate new date/time based on template duration
+      const now = new Date();
+      now.setHours(now.getHours() + template.defaultDuration);
+      const newFormattedDate = now.toISOString().split('T')[0];
+      const newFormattedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      form.setValue("title", template.name);
+      form.setValue("description", template.description);
+      form.setValue("scheduledDate", newFormattedDate);
+      form.setValue("scheduledTime", newFormattedTime);
+    }
+  };
 
   // Atualizar valores padrão ao trocar de tab
   useEffect(() => {
@@ -171,20 +189,24 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="webhook">Webhook</TabsTrigger>
         <TabsTrigger value="task">Tarefa</TabsTrigger>
+        <TabsTrigger value="webhook">Webhook</TabsTrigger>
       </TabsList>
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
           <input type="hidden" {...form.register("taskType")} />
           
-          <TabsContent value="webhook" className="space-y-4">
-            <WebhookFields control={form.control} />
+          <TabsContent value="task" className="space-y-4">
+            <TaskTemplateSelector 
+              control={form.control} 
+              onTemplateSelect={handleTemplateSelect}
+            />
+            <TaskFields control={form.control} />
           </TabsContent>
           
-          <TabsContent value="task" className="space-y-4">
-            <TaskFields control={form.control} />
+          <TabsContent value="webhook" className="space-y-4">
+            <WebhookFields control={form.control} />
           </TabsContent>
           
           <DateTimeFields control={form.control} todayForMin={todayForMin} />
