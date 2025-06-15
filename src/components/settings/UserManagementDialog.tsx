@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Crown, Shield, User, UserPlus, AlertCircle } from "lucide-react";
+import { Users, Crown, Shield, User, UserPlus, AlertCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import CreateUserDialog from "./CreateUserDialog";
 
 interface Profile {
@@ -41,6 +42,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const { showConfirmation, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     if (open && !roleLoading) {
@@ -127,6 +129,63 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     } catch (error: any) {
       console.error("Error updating user role:", error);
       toast.error(`Erro ao atualizar papel do usuário: ${error.message}`);
+    }
+  };
+
+  const deleteUser = async (userId: string, userEmail: string) => {
+    if (!isAdmin) {
+      toast.error("Apenas administradores podem excluir usuários");
+      return;
+    }
+
+    if (userId === user?.id) {
+      toast.error("Você não pode excluir seu próprio usuário");
+      return;
+    }
+
+    const confirmed = await showConfirmation(
+      "Excluir usuário",
+      `Esta é uma ação permanente. Deseja realmente excluir o usuário ${userEmail}? Todos os dados relacionados serão perdidos.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      console.log(`Deleting user ${userId}`);
+      
+      // Primeiro excluir o perfil do usuário (isso vai cascatear para user_roles devido ao foreign key)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) {
+        console.error("Error deleting user profile:", profileError);
+        throw profileError;
+      }
+
+      // Tentar excluir do auth.users usando uma edge function
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.access_token) {
+          await fetch(`https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/delete-user`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.session.access_token}`
+            },
+            body: JSON.stringify({ userId })
+          });
+        }
+      } catch (authError) {
+        console.warn("Could not delete from auth.users, but profile deleted:", authError);
+      }
+
+      toast.success("Usuário excluído com sucesso");
+      loadUsers();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error(`Erro ao excluir usuário: ${error.message}`);
     }
   };
 
@@ -277,21 +336,32 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
                             </Badge>
                             
                             {isAdmin && profile.id !== user?.id && (
-                              <Select
-                                value={currentRole}
-                                onValueChange={(value: 'admin' | 'manager' | 'user') => 
-                                  updateUserRole(profile.id, value)
-                                }
-                              >
-                                <SelectTrigger className="w-40">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="user">Usuário</SelectItem>
-                                  <SelectItem value="manager">Gerente</SelectItem>
-                                  <SelectItem value="admin">Administrador</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <>
+                                <Select
+                                  value={currentRole}
+                                  onValueChange={(value: 'admin' | 'manager' | 'user') => 
+                                    updateUserRole(profile.id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-40">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="user">Usuário</SelectItem>
+                                    <SelectItem value="manager">Gerente</SelectItem>
+                                    <SelectItem value="admin">Administrador</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteUser(profile.id, profile.email)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>
@@ -351,6 +421,8 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
         onOpenChange={setCreateUserOpen}
         onUserCreated={loadUsers}
       />
+      
+      <ConfirmDialog />
     </>
   );
 };
