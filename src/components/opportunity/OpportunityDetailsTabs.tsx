@@ -107,16 +107,6 @@ const OpportunityDetailsTabs = ({
         
         <div className="flex-1 overflow-y-auto min-h-0">
           <TabsContent value="details" className="space-y-6 px-6 pb-6 mt-0">
-            {/* Seção de Movimentação */}
-            {currentFunnel && !loadingFunnel && (
-              <OpportunityMoveActions
-                opportunity={opportunity}
-                currentFunnel={currentFunnel}
-                currentStage={currentStage}
-                onOpportunityMoved={onOpportunityUpdated}
-              />
-            )}
-
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Informações básicas</CardTitle>
@@ -176,6 +166,16 @@ const OpportunityDetailsTabs = ({
                 </div>
               </CardContent>
             </Card>
+
+            {/* Seção de Movimentação */}
+            {currentFunnel && !loadingFunnel && (
+              <OpportunityMoveActions
+                opportunity={opportunity}
+                currentFunnel={currentFunnel}
+                currentStage={currentStage}
+                onOpportunityMoved={onOpportunityUpdated}
+              />
+            )}
 
             {pendingActions.length > 0 && (
               <Card className="border-orange-200 bg-orange-50">
