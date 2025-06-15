@@ -22,6 +22,8 @@ interface UserRoleManagementProps {
   onUserUpdated: () => void;
 }
 
+type UserRole = 'admin' | 'manager' | 'user';
+
 export const UserRoleManagement = ({ users, onUserUpdated }: UserRoleManagementProps) => {
   const [editingRoles, setEditingRoles] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -68,7 +70,7 @@ export const UserRoleManagement = ({ users, onUserUpdated }: UserRoleManagementP
   };
 
   const saveUserRole = async (userId: string) => {
-    const newRole = editingRoles[userId];
+    const newRole = editingRoles[userId] as UserRole;
     if (!newRole) return;
 
     setSaving(prev => ({ ...prev, [userId]: true }));

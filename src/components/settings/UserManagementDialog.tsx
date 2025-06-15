@@ -22,12 +22,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Shield, Crown, Trash2, Edit, Plus, AlertTriangle, Users, Settings } from "lucide-react";
 import { toast } from "sonner";
 
-interface User {
+interface UserWithRole {
   id: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
-  role?: string;
+  role: string;
 }
 
 interface UserManagementDialogProps {
@@ -36,10 +36,10 @@ interface UserManagementDialogProps {
 }
 
 export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialogProps) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { handleError } = useErrorHandler();
   const { isAdmin } = useUserRole();
@@ -108,7 +108,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
           firstName: profile.first_name,
           lastName: profile.last_name,
           role: roleData?.role || 'user',
-        };
+        } as UserWithRole;
       });
 
       const mappedUsers = await Promise.all(userPromises);
@@ -161,7 +161,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
     }
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = (user: UserWithRole) => {
     setEditingUser(user);
   };
 
@@ -237,11 +237,11 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                         <div className="font-medium">{user.firstName} {user.lastName}</div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                         <Badge 
-                          variant={getRoleVariant(user.role || 'user')} 
+                          variant={getRoleVariant(user.role)} 
                           className="flex items-center gap-1 mt-1 w-fit"
                         >
-                          {getRoleIcon(user.role || 'user')}
-                          {getRoleLabel(user.role || 'user')}
+                          {getRoleIcon(user.role)}
+                          {getRoleLabel(user.role)}
                         </Badge>
                       </div>
                       <div className="flex justify-end gap-2">
