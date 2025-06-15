@@ -1,10 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ComposedChart } from "recharts";
 import { formatCurrency } from "@/services/utils/dateUtils";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B', '#4ECDC4', '#95E1D3'];
 
 interface ConversionData {
   stageName: string;
@@ -36,20 +36,47 @@ const InsightsCharts = ({ conversionData, stageDistribution, valueOverTime }: In
         <Card>
           <CardHeader>
             <CardTitle>Taxa de Conversão por Etapa</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Mostra quantas oportunidades avançaram da etapa atual para a próxima
+            </p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={conversionData}>
+              <ComposedChart data={conversionData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stageName" />
-                <YAxis />
-                <Tooltip formatter={(value, name) => [
-                  name === 'conversionRate' ? `${value}%` : value,
-                  name === 'conversionRate' ? 'Taxa de Conversão' : 'Oportunidades'
-                ]} />
-                <Bar dataKey="opportunities" fill="#8884d8" name="Oportunidades" />
-                <Bar dataKey="conversionRate" fill="#82ca9d" name="Taxa de Conversão %" />
-              </BarChart>
+                <XAxis 
+                  dataKey="stageName" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={0}
+                />
+                <YAxis yAxisId="left" orientation="left" />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'conversionRate' ? `${value}%` : value,
+                    name === 'conversionRate' ? 'Taxa de Conversão' : 'Oportunidades'
+                  ]}
+                  labelStyle={{ color: '#000' }}
+                />
+                <Bar 
+                  yAxisId="left"
+                  dataKey="opportunities" 
+                  fill="#8884d8" 
+                  name="Oportunidades"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="conversionRate" 
+                  stroke="#82ca9d" 
+                  strokeWidth={3}
+                  name="Taxa de Conversão %"
+                  dot={{ fill: '#82ca9d', r: 6 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -59,6 +86,9 @@ const InsightsCharts = ({ conversionData, stageDistribution, valueOverTime }: In
         <Card>
           <CardHeader>
             <CardTitle>Distribuição de Oportunidades por Etapa</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Quantidade total de oportunidades em cada etapa do funil
+            </p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
@@ -68,7 +98,9 @@ const InsightsCharts = ({ conversionData, stageDistribution, valueOverTime }: In
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent, value }) => 
+                    percent > 5 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : ''
+                  }
                   outerRadius={120}
                   fill="#8884d8"
                   dataKey="value"
@@ -77,7 +109,7 @@ const InsightsCharts = ({ conversionData, stageDistribution, valueOverTime }: In
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => [value, 'Oportunidades']} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -88,15 +120,28 @@ const InsightsCharts = ({ conversionData, stageDistribution, valueOverTime }: In
         <Card>
           <CardHeader>
             <CardTitle>Valor de Oportunidades ao Longo do Tempo</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Evolução do valor total das oportunidades nos últimos meses
+            </p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={valueOverTime}>
+              <LineChart data={valueOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Valor']} />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
+                  labelStyle={{ color: '#000' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#8884d8" 
+                  strokeWidth={3}
+                  dot={{ fill: '#8884d8', r: 6 }}
+                  activeDot={{ r: 8, fill: '#8884d8' }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
