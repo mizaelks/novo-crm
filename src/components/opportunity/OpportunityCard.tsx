@@ -61,37 +61,44 @@ export const OpportunityCard = ({
     }
   };
 
+  const getTaskTitle = () => {
+    if (pendingTasks.length > 0) {
+      return pendingTasks[0].actionConfig?.title || 'Tarefa';
+    }
+    return 'Tarefa';
+  };
+
   return (
     <div 
       className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative cursor-pointer"
       onClick={handleCardClick}
     >
-      {/* Header com título */}
-      <div className="p-3 pb-2">
-        <div className="flex justify-between items-start mb-2">
+      {/* Header - mais compacto */}
+      <div className="p-2">
+        <div className="flex justify-between items-start mb-1">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">{opportunity.title}</h3>
+            <h3 className="font-medium text-gray-900 text-xs leading-tight truncate">{opportunity.title}</h3>
           </div>
         </div>
 
-        {/* Cliente */}
-        <p className="text-sm text-gray-600 mb-1">{opportunity.client}</p>
+        {/* Cliente - fonte menor */}
+        <p className="text-xs text-gray-600 mb-1">{opportunity.client}</p>
         {opportunity.company && (
-          <p className="text-xs text-gray-500 mb-2">{opportunity.company}</p>
+          <p className="text-xs text-gray-500 mb-1">{opportunity.company}</p>
         )}
 
-        {/* Valor */}
+        {/* Valor - mais compacto */}
         {opportunity.value && opportunity.value > 0 && (
-          <div className="mb-3">
-            <div className="text-base font-bold text-green-600">
+          <div className="mb-2">
+            <div className="text-sm font-bold text-green-600">
               {formatCurrency(opportunity.value)}
             </div>
           </div>
         )}
 
-        {/* Contatos */}
+        {/* Contatos - mais compacto */}
         {(opportunity.phone || opportunity.email) && (
-          <div className="space-y-1 mb-3">
+          <div className="space-y-0.5 mb-2">
             {opportunity.phone && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <Phone className="h-3 w-3" />
@@ -107,29 +114,29 @@ export const OpportunityCard = ({
           </div>
         )}
 
-        {/* Alertas e tarefas */}
-        <div className="space-y-1">
+        {/* Alertas e tarefas - mais compacto */}
+        <div className="space-y-0.5">
           {hasAlert && (
             <div className="flex items-center gap-1">
               <AlertTriangle className="h-3 w-3 text-red-500" />
-              <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                {stage && getAlertMessage(opportunity, stage)}
+              <Badge variant="destructive" className="text-xs px-1 py-0 h-4">
+                Alerta
               </Badge>
             </div>
           )}
           
           {pendingTasks.length > 0 && (
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
                 <Calendar className="h-3 w-3 text-orange-500" />
-                <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-800">
-                  {pendingTasks.length === 1 ? 'Tarefa pendente' : `${pendingTasks.length} tarefas`}
+                <Badge variant="secondary" className="text-xs px-1 py-0 h-4 bg-orange-100 text-orange-800 truncate">
+                  {getTaskTitle()}
                 </Badge>
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                className="h-5 px-2 text-xs"
+                className="h-4 px-1.5 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCompleteTask();
@@ -142,14 +149,14 @@ export const OpportunityCard = ({
         </div>
       </div>
 
-      {/* Footer com ações rápidas */}
+      {/* Footer com ações rápidas - sempre mostrar quando disponível */}
       {(onAddTask || onAddField) && (
-        <div className="border-t bg-gray-50/50 px-3 py-2 flex items-center justify-center gap-3 text-xs">
+        <div className="border-t bg-gray-50/50 px-2 py-1 flex items-center justify-center gap-2 text-xs">
           {onAddTask && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-gray-600 hover:text-blue-600 flex items-center gap-1"
+              className="h-5 px-1.5 text-xs text-gray-600 hover:text-blue-600 flex items-center gap-1"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddTask(opportunity);
@@ -168,7 +175,7 @@ export const OpportunityCard = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-gray-600 hover:text-blue-600 flex items-center gap-1"
+              className="h-5 px-1.5 text-xs text-gray-600 hover:text-blue-600 flex items-center gap-1"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddField(opportunity);
