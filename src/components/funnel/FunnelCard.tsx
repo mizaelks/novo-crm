@@ -12,8 +12,22 @@ interface FunnelCardProps {
 }
 
 const FunnelCard = ({ funnel }: FunnelCardProps) => {
+  console.log('🔍 FunnelCard - Rendering funnel:', funnel);
+  
+  // Verificar se o funnel está válido
+  if (!funnel || typeof funnel !== 'object') {
+    console.error('❌ FunnelCard - Invalid funnel data:', funnel);
+    return null;
+  }
+
+  // Verificar se stages existe e é um array
+  const stages = Array.isArray(funnel.stages) ? funnel.stages : [];
+  console.log('📊 FunnelCard - Stages:', stages);
+
   const getFunnelTypeBadge = () => {
-    if (funnel.funnelType === 'venda') {
+    const funnelType = funnel.funnelType || 'venda';
+    
+    if (funnelType === 'venda') {
       return (
         <Badge variant="default" className="bg-green-100 text-green-800 flex items-center gap-1">
           <DollarSign className="h-3 w-3" />
@@ -31,29 +45,44 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
   };
 
   const getFunnelTypeDescription = () => {
-    if (funnel.funnelType === 'venda') {
+    const funnelType = funnel.funnelType || 'venda';
+    
+    if (funnelType === 'venda') {
       return "Funil focado em vendas com valores monetários";
     } else {
       return "Funil focado em relacionamentos e networking";
     }
   };
 
+  // Calcular total de oportunidades de forma segura
+  const totalOpportunities = stages.reduce((acc, stage) => {
+    if (!stage || !Array.isArray(stage.opportunities)) {
+      console.warn('⚠️ FunnelCard - Invalid stage or opportunities:', stage);
+      return acc;
+    }
+    return acc + stage.opportunities.length;
+  }, 0);
+
+  console.log('📈 FunnelCard - Total opportunities:', totalOpportunities);
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            <CardTitle>{funnel.name}</CardTitle>
+            <CardTitle>{funnel.name || 'Funil sem nome'}</CardTitle>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   className="h-6 px-1"
-                  onClick={() => navigator.clipboard.writeText(funnel.id)}
+                  onClick={() => navigator.clipboard.writeText(funnel.id || '')}
                 >
                   <Hash className="h-3 w-3 mr-1" />
-                  <span className="text-xs font-mono">{funnel.id.split('-')[0]}</span>
+                  <span className="text-xs font-mono">
+                    {funnel.id ? funnel.id.split('-')[0] : 'N/A'}
+                  </span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -70,12 +99,14 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
                 <p>{getFunnelTypeDescription()}</p>
               </TooltipContent>
             </Tooltip>
-            <Badge variant="outline">{funnel.stages.length} etapas</Badge>
+            <Badge variant="outline">{stages.length} etapas</Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{funnel.description}</p>
+        <p className="text-sm text-muted-foreground">
+          {funnel.description || 'Sem descrição'}
+        </p>
       </CardContent>
       <CardFooter className="pt-1 flex justify-between">
         <Link 
@@ -85,8 +116,7 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
           Ver detalhes
         </Link>
         <span className="text-xs text-muted-foreground">
-          {funnel.stages.reduce((acc, stage) => 
-            acc + stage.opportunities.length, 0)} oportunidades
+          {totalOpportunities} oportunidades
         </span>
       </CardFooter>
     </Card>

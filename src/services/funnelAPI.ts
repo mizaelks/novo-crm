@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Funnel, FunnelFormData } from "@/types";
 import { mapDbFunnelToFunnel } from "./utils/mappers";
@@ -7,34 +6,101 @@ import { triggerEntityWebhooks } from "./utils/webhook";
 
 export const funnelAPI = {
   getAll: async (): Promise<Funnel[]> => {
-    const { data, error } = await supabase.from('funnels').select('*').order('order', { ascending: true });
-    if (error) throw error;
-    
-    const funnelBases = (data || []).map(mapDbFunnelToFunnel);
-    const funnels: Funnel[] = [];
-    
-    for (const funnelBase of funnelBases) {
-      const stages = await stageAPI.getByFunnelId(funnelBase.id);
-      funnels.push({
-        ...funnelBase,
-        stages
-      });
+    try {
+      console.log('🔄 funnelAPI.getAll - Starting fetch...');
+      
+      const { data, error } = await supabase
+        .from('funnels')
+        .select('*')
+        .order('order', { ascending: true });
+      
+      if (error) {
+        console.error('❌ funnelAPI.getAll - Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('✅ funnelAPI.getAll - Raw data from Supabase:', data);
+      
+      if (!Array.isArray(data)) {
+        console.error('❌ funnelAPI.getAll - Data is not an array:', data);
+        return [];
+      }
+      
+      const funnelBases = data.map(item => {
+        try {
+          return mapDbFunnelToFunnel(item);
+        } catch (mapError) {
+          console.error('❌ funnelAPI.getAll - Error mapping funnel:', item, mapError);
+          return null;
+        }
+      }).filter(Boolean) as Funnel[];
+      
+      console.log('📊 funnelAPI.getAll - Mapped funnel bases:', funnelBases);
+      
+      const funnels: Funnel[] = [];
+      
+      for (const funnelBase of funnelBases) {
+        try {
+          console.log(`🔄 funnelAPI.getAll - Loading stages for funnel ${funnelBase.id}...`);
+          const stages = await stageAPI.getByFunnelId(funnelBase.id);
+          console.log(`✅ funnelAPI.getAll - Stages loaded for ${funnelBase.id}:`, stages);
+          
+          // Verificar se stages é válido
+          const validStages = Array.isArray(stages) ? stages : [];
+          
+          funnels.push({
+            ...funnelBase,
+            stages: validStages
+          });
+        } catch (stageError) {
+          console.error(`❌ funnelAPI.getAll - Error loading stages for funnel ${funnelBase.id}:`, stageError);
+          // Adicionar funil mesmo sem stages
+          funnels.push({
+            ...funnelBase,
+            stages: []
+          });
+        }
+      }
+      
+      console.log('✅ funnelAPI.getAll - Final funnels with stages:', funnels);
+      return funnels;
+    } catch (error) {
+      console.error('❌ funnelAPI.getAll - General error:', error);
+      return [];
     }
-    
-    return funnels;
   },
 
   getById: async (id: string): Promise<Funnel | null> => {
-    const { data, error } = await supabase.from('funnels').select('*').eq('id', id).single();
-    if (error || !data) return null;
-    
-    const funnelBase = mapDbFunnelToFunnel(data);
-    const stages = await stageAPI.getByFunnelId(data.id);
-    
-    return {
-      ...funnelBase,
-      stages
-    };
+    try {
+      console.log(`🔄 funnelAPI.getById - Fetching funnel ${id}...`);
+      
+      const { data, error } = await supabase
+        .from('funnels')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error || !data) {
+        console.error(`❌ funnelAPI.getById - Error or no data for ${id}:`, error);
+        return null;
+      }
+      
+      console.log(`✅ funnelAPI.getById - Raw data for ${id}:`, data);
+      
+      const funnelBase = mapDbFunnelToFunnel(data);
+      const stages = await stageAPI.getByFunnelId(data.id);
+      
+      const result = {
+        ...funnelBase,
+        stages: Array.isArray(stages) ? stages : []
+      };
+      
+      console.log(`✅ funnelAPI.getById - Final result for ${id}:`, result);
+      return result;
+    } catch (error) {
+      console.error(`❌ funnelAPI.getById - Error for ${id}:`, error);
+      return null;
+    }
   },
 
   create: async (data: FunnelFormData): Promise<Funnel> => {
