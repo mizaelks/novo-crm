@@ -33,15 +33,18 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
     return <InsightsStatsSkeleton />;
   }
 
-  // Determinar se deve mostrar valores monetários
+  // Determinar se deve mostrar valores monetários e vendas
   const showMonetaryValues = funnelType === 'venda' || funnelType === 'all';
+  const showSalesMetrics = funnelType === 'venda' || funnelType === 'all';
   
   // Labels baseados no tipo de funil
-  const salesLabel = funnelType === 'relacionamento' ? 'Oportunidades Convertidas' : 'Vendas Realizadas';
-  const salesValueLabel = funnelType === 'relacionamento' ? 'Total Convertido' : 'Valor de Vendas';
+  const salesLabel = 'Vendas Realizadas'; // Sempre vendas, pois só aparecem para funis de venda
+  const salesValueLabel = 'Valor de Vendas';
 
   // Calcular subtitle para taxa de conversão
-  const conversionSubtitle = `${stats.totalSales} de ${stats.totalOpportunities} oportunidades`;
+  const conversionSubtitle = showSalesMetrics 
+    ? `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`
+    : `Apenas funis de venda geram vendas`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -62,15 +65,17 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         />
       )}
       
-      <StatsCard
-        title={salesLabel}
-        value={stats.totalSales}
-        subtitle={getFilterLabel}
-        icon={TrendingUp}
-        valueClassName="text-2xl font-bold text-green-600"
-      />
+      {showSalesMetrics && (
+        <StatsCard
+          title={salesLabel}
+          value={stats.totalSales}
+          subtitle={getFilterLabel}
+          icon={TrendingUp}
+          valueClassName="text-2xl font-bold text-green-600"
+        />
+      )}
       
-      {showMonetaryValues && (
+      {showSalesMetrics && showMonetaryValues && (
         <StatsCard
           title={salesValueLabel}
           value={formatCurrency(stats.totalSalesValue)}
@@ -80,7 +85,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         />
       )}
       
-      {showMonetaryValues && (
+      {showSalesMetrics && showMonetaryValues && (
         <StatsCard
           title="Ticket Médio"
           value={formatCurrency(stats.averageTicket)}
@@ -90,13 +95,15 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         />
       )}
       
-      <StatsCard
-        title="Taxa de Conversão"
-        value={`${stats.conversionRate.toFixed(1)}%`}
-        subtitle={conversionSubtitle}
-        icon={Percent}
-        valueClassName="text-2xl font-bold text-purple-600"
-      />
+      {showSalesMetrics && (
+        <StatsCard
+          title="Taxa de Conversão"
+          value={`${stats.conversionRate.toFixed(1)}%`}
+          subtitle={conversionSubtitle}
+          icon={Percent}
+          valueClassName="text-2xl font-bold text-purple-600"
+        />
+      )}
     </div>
   );
 };
