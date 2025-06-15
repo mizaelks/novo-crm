@@ -97,6 +97,8 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          archived: boolean
+          archived_at: string | null
           client: string | null
           company: string | null
           created_at: string | null
@@ -116,6 +118,8 @@ export type Database = {
           win_reason: string | null
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
           client?: string | null
           company?: string | null
           created_at?: string | null
@@ -135,6 +139,8 @@ export type Database = {
           win_reason?: string | null
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
           client?: string | null
           company?: string | null
           created_at?: string | null

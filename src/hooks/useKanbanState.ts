@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Funnel, Stage, Opportunity } from "@/types";
-import { funnelAPI, stageAPI } from "@/services/api";
+import { funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
 import { toast } from "sonner";
 
 export const useKanbanState = (funnelId: string) => {
@@ -19,8 +19,19 @@ export const useKanbanState = (funnelId: string) => {
         // Sort stages by order property to ensure consistent order
         const sortedStages = [...stagesData].sort((a, b) => a.order - b.order);
         
+        // Load opportunities for each stage, excluding archived ones
+        const stagesWithOpportunities = await Promise.all(
+          sortedStages.map(async (stage) => {
+            const opportunities = await opportunityAPI.getByStageId(stage.id, false); // false = exclude archived
+            return {
+              ...stage,
+              opportunities
+            };
+          })
+        );
+        
         setFunnel(funnelData);
-        setStages(sortedStages);
+        setStages(stagesWithOpportunities);
       } catch (error) {
         console.error("Error loading kanban data:", error);
         toast.error("Erro ao carregar dados do kanban.");
@@ -45,17 +56,20 @@ export const useKanbanState = (funnelId: string) => {
   };
 
   const handleOpportunityCreated = (newOpportunity: Opportunity) => {
-    const updatedStages = stages.map(stage => {
-      if (stage.id === newOpportunity.stageId) {
-        return {
-          ...stage,
-          opportunities: [...stage.opportunities, newOpportunity]
-        };
-      }
-      return stage;
-    });
-    
-    setStages(updatedStages);
+    // Only add if not archived
+    if (!newOpportunity.customFields?.archived) {
+      const updatedStages = stages.map(stage => {
+        if (stage.id === newOpportunity.stageId) {
+          return {
+            ...stage,
+            opportunities: [...stage.opportunities, newOpportunity]
+          };
+        }
+        return stage;
+      });
+      
+      setStages(updatedStages);
+    }
   };
 
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
@@ -86,6 +100,20 @@ export const useKanbanState = (funnelId: string) => {
     setStages(updatedStages);
   };
 
+  const handleOpportunityArchived = (opportunityId: string) => {
+    console.log("Archiving opportunity from kanban state:", opportunityId);
+    
+    // Remove from kanban view when archived
+    const updatedStages = stages.map(stage => {
+      return {
+        ...stage,
+        opportunities: stage.opportunities.filter(opp => opp.id !== opportunityId)
+      };
+    });
+    
+    setStages(updatedStages);
+  };
+
   const handleStageUpdated = (updatedStage: Stage) => {
     const updatedStages = stages.map(stage => 
       stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
@@ -102,6 +130,7 @@ export const useKanbanState = (funnelId: string) => {
     handleOpportunityCreated,
     handleOpportunityUpdated,
     handleOpportunityDeleted,
+    handleOpportunityArchived,
     handleStageUpdated
   };
 };

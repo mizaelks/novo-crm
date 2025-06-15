@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Opportunity, Funnel, Stage } from "@/types";
 import { opportunityAPI } from "@/services/opportunityAPI";
@@ -41,7 +42,6 @@ interface ArchiveSettings {
 
 const OpportunityList = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [archivedOpportunities, setArchivedOpportunities] = useState<Opportunity[]>([]);
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,10 +67,9 @@ const OpportunityList = () => {
 
   // Get unique clients
   const uniqueClients = useMemo(() => {
-    const displayOpportunities = showArchived ? archivedOpportunities : opportunities;
-    const clients = displayOpportunities.map(opp => opp.client);
+    const clients = opportunities.map(opp => opp.client);
     return [...new Set(clients)].filter(Boolean).sort();
-  }, [opportunities, archivedOpportunities, showArchived]);
+  }, [opportunities]);
 
   // Get available stages based on selected funnel
   const availableStages = useMemo(() => {
@@ -127,9 +126,7 @@ const OpportunityList = () => {
 
   // Filter opportunities
   const filteredOpportunities = useMemo(() => {
-    const displayOpportunities = showArchived ? archivedOpportunities : opportunities;
-    
-    return displayOpportunities.filter(opp => {
+    return opportunities.filter(opp => {
       // Apply search filter
       const matchesSearch = searchTerm ? 
         opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -153,8 +150,6 @@ const OpportunityList = () => {
     });
   }, [
     opportunities, 
-    archivedOpportunities, 
-    showArchived, 
     searchTerm, 
     filterFunnel, 
     filterStage, 
@@ -168,8 +163,7 @@ const OpportunityList = () => {
     if (!showUniqueClients) return null;
     
     const summary = uniqueClients.map(client => {
-      const displayOpportunities = showArchived ? archivedOpportunities : opportunities;
-      const clientOpportunities = displayOpportunities.filter(
+      const clientOpportunities = opportunities.filter(
         opp => opp.client === client && applyDateFilter(opp)
       );
       
@@ -193,7 +187,7 @@ const OpportunityList = () => {
     });
     
     return summary;
-  }, [opportunities, archivedOpportunities, uniqueClients, showUniqueClients, showArchived, dateFilter, dateRange]);
+  }, [opportunities, uniqueClients, showUniqueClients, dateFilter, dateRange]);
 
   // Função para verificar se uma oportunidade tem alerta
   const getStageAlertStatus = (opportunity: Opportunity): boolean => {
@@ -211,16 +205,16 @@ const OpportunityList = () => {
   // Função para arquivar/desarquivar oportunidades
   const archiveOpportunity = async (opportunity: Opportunity, archive: boolean) => {
     try {
-      // Em um sistema real, você poderia adicionar um campo "archived" à tabela
-      // Aqui, estamos apenas movendo entre os arrays de estado para simular
-      if (archive) {
-        setOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
-        setArchivedOpportunities(ops => [...ops, opportunity]);
-        toast.success("Oportunidade arquivada com sucesso");
+      const success = archive 
+        ? await opportunityAPI.archive(opportunity.id)
+        : await opportunityAPI.unarchive(opportunity.id);
+      
+      if (success) {
+        // Reload data to get updated list
+        await loadOpportunities();
+        toast.success(archive ? "Oportunidade arquivada com sucesso" : "Oportunidade restaurada com sucesso");
       } else {
-        setArchivedOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
-        setOpportunities(ops => [...ops, opportunity]);
-        toast.success("Oportunidade restaurada com sucesso");
+        toast.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade`);
       }
     } catch (error) {
       console.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade:`, error);
@@ -229,29 +223,51 @@ const OpportunityList = () => {
   };
 
   // Função para arquivar oportunidades automaticamente
-  const processAutoArchive = () => {
+  const processAutoArchive = async () => {
     if (!archiveSettings.enabled) return;
     
-    const cutoffDate = subDays(new Date(), archiveSettings.period);
-    
-    // Encontrar oportunidades antigas para arquivar
-    const opportunitiesToArchive = opportunities.filter(
-      opp => new Date(opp.createdAt) < cutoffDate
-    );
-    
-    // Arquivar as oportunidades encontradas
-    if (opportunitiesToArchive.length > 0) {
-      setOpportunities(ops => ops.filter(op => !opportunitiesToArchive.some(o => o.id === o.id)));
-      setArchivedOpportunities(ops => [...ops, ...opportunitiesToArchive]);
+    try {
+      // Get all active opportunities
+      const allOpportunities = await opportunityAPI.getAll(false);
+      const cutoffDate = subDays(new Date(), archiveSettings.period);
       
-      toast.success(`${opportunitiesToArchive.length} oportunidades arquivadas automaticamente`);
+      // Find opportunities to archive
+      const opportunitiesToArchive = allOpportunities.filter(
+        opp => new Date(opp.createdAt) < cutoffDate
+      );
+      
+      // Archive them
+      for (const opp of opportunitiesToArchive) {
+        await opportunityAPI.archive(opp.id);
+      }
+      
+      if (opportunitiesToArchive.length > 0) {
+        await loadOpportunities(); // Reload data
+        toast.success(`${opportunitiesToArchive.length} oportunidades arquivadas automaticamente`);
+      }
+      
+      // Update last run
+      setArchiveSettings({
+        ...archiveSettings,
+        lastRun: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Erro no arquivamento automático:", error);
+      toast.error("Erro no arquivamento automático");
     }
-    
-    // Atualizar a data da última execução
-    setArchiveSettings({
-      ...archiveSettings,
-      lastRun: new Date().toISOString()
-    });
+  };
+
+  // Load opportunities based on archive view
+  const loadOpportunities = async () => {
+    try {
+      const data = showArchived 
+        ? await opportunityAPI.getArchived()
+        : await opportunityAPI.getAll(false);
+      setOpportunities(data);
+    } catch (error) {
+      console.error("Error loading opportunities:", error);
+      toast.error("Erro ao carregar oportunidades");
+    }
   };
 
   // Verificar arquivamento automático na inicialização
@@ -266,21 +282,23 @@ const OpportunityList = () => {
         processAutoArchive();
       }
     }
-  }, [archiveSettings.enabled, opportunities]);
+  }, [archiveSettings.enabled]);
+
+  // Load opportunities when archive view changes
+  useEffect(() => {
+    loadOpportunities();
+  }, [showArchived]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const [opportunitiesData, funnelsData] = await Promise.all([
-          opportunityAPI.getAll(),
+          showArchived ? opportunityAPI.getArchived() : opportunityAPI.getAll(false),
           funnelAPI.getAll()
         ]);
         
-        // Para fins de demonstração, simulamos oportunidades arquivadas
         setOpportunities(opportunitiesData);
-        setArchivedOpportunities([]); // Inicialmente vazio, na implementação real seriam buscadas do backend
-        
         setFunnels(funnelsData);
         
         // Load all stages from all funnels
@@ -305,8 +323,7 @@ const OpportunityList = () => {
     try {
       const success = await opportunityAPI.delete(id);
       if (success) {
-        setOpportunities(opportunities.filter(opp => opp.id !== id));
-        setArchivedOpportunities(archivedOpportunities.filter(opp => opp.id !== id));
+        await loadOpportunities(); // Reload data
         toast.success("Oportunidade excluída com sucesso!");
       } else {
         toast.error("Erro ao excluir oportunidade");
@@ -320,8 +337,7 @@ const OpportunityList = () => {
   const refreshData = async () => {
     try {
       setLoading(true);
-      const data = await opportunityAPI.getAll();
-      setOpportunities(data);
+      await loadOpportunities();
       toast.success("Dados atualizados com sucesso!");
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -373,20 +389,9 @@ const OpportunityList = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={async () => {
-              try {
-                setLoading(true);
-                const data = await opportunityAPI.getAll();
-                setOpportunities(data);
-                toast.success("Dados atualizados com sucesso!");
-              } catch (error) {
-                console.error("Error refreshing data:", error);
-                toast.error("Erro ao atualizar dados");
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onClick={refreshData}
             className="flex items-center gap-2"
+            disabled={loading}
           >
             <RefreshCw className="h-4 w-4" /> 
             Atualizar
@@ -456,7 +461,7 @@ const OpportunityList = () => {
                 )}
               </div>
               <DialogFooter>
-                <Button onClick={() => processAutoArchive()} disabled={!archiveSettings.enabled}>
+                <Button onClick={processAutoArchive} disabled={!archiveSettings.enabled}>
                   Executar agora
                 </Button>
               </DialogFooter>
@@ -541,6 +546,7 @@ const OpportunityList = () => {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Data de Criação</TableHead>
+                    {showArchived && <TableHead>Data de Arquivamento</TableHead>}
                     <TableHead>Funil</TableHead>
                     <TableHead>Etapa</TableHead>
                     <TableHead>Status</TableHead>
@@ -556,37 +562,8 @@ const OpportunityList = () => {
                       getStageName={getStageName}
                       getStageAlertStatus={getStageAlertStatus}
                       showArchived={showArchived}
-                      onArchive={(opportunity, archive) => {
-                        try {
-                          if (archive) {
-                            setOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
-                            setArchivedOpportunities(ops => [...ops, opportunity]);
-                            toast.success("Oportunidade arquivada com sucesso");
-                          } else {
-                            setArchivedOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
-                            setOpportunities(ops => [...ops, opportunity]);
-                            toast.success("Oportunidade restaurada com sucesso");
-                          }
-                        } catch (error) {
-                          console.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade:`, error);
-                          toast.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade`);
-                        }
-                      }}
-                      onDelete={async (id) => {
-                        try {
-                          const success = await opportunityAPI.delete(id);
-                          if (success) {
-                            setOpportunities(opportunities.filter(opp => opp.id !== id));
-                            setArchivedOpportunities(archivedOpportunities.filter(opp => opp.id !== id));
-                            toast.success("Oportunidade excluída com sucesso!");
-                          } else {
-                            toast.error("Erro ao excluir oportunidade");
-                          }
-                        } catch (error) {
-                          console.error("Error deleting opportunity:", error);
-                          toast.error("Erro ao excluir oportunidade");
-                        }
-                      }}
+                      onArchive={archiveOpportunity}
+                      onDelete={handleDeleteOpportunity}
                     />
                   ))}
                 </TableBody>

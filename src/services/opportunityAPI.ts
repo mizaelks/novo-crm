@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, OpportunityFormData } from "@/types";
 import { mapDbOpportunityToOpportunity } from "./utils/mappers";
@@ -8,14 +7,35 @@ import { stageAPI } from "./stageAPI";
 import { stageHistoryAPI } from "./stageHistoryAPI";
 
 export const opportunityAPI = {
-  getAll: async (): Promise<Opportunity[]> => {
-    const { data, error } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false });
+  getAll: async (includeArchived: boolean = false): Promise<Opportunity[]> => {
+    let query = supabase.from('opportunities').select('*');
+    
+    if (!includeArchived) {
+      query = query.eq('archived', false);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map(mapDbOpportunityToOpportunity);
   },
 
-  getByStageId: async (stageId: string): Promise<Opportunity[]> => {
-    const { data, error } = await supabase.from('opportunities').select('*').eq('stage_id', stageId).order('created_at', { ascending: false });
+  getArchived: async (): Promise<Opportunity[]> => {
+    const { data, error } = await supabase.from('opportunities')
+      .select('*')
+      .eq('archived', true)
+      .order('archived_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(mapDbOpportunityToOpportunity);
+  },
+
+  getByStageId: async (stageId: string, includeArchived: boolean = false): Promise<Opportunity[]> => {
+    let query = supabase.from('opportunities').select('*').eq('stage_id', stageId);
+    
+    if (!includeArchived) {
+      query = query.eq('archived', false);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map(mapDbOpportunityToOpportunity);
   },
@@ -24,6 +44,42 @@ export const opportunityAPI = {
     const { data, error } = await supabase.from('opportunities').select('*').eq('id', id).single();
     if (error || !data) return null;
     return mapDbOpportunityToOpportunity(data);
+  },
+
+  archive: async (id: string): Promise<boolean> => {
+    console.log("Archiving opportunity:", id);
+    
+    const { error } = await supabase.from('opportunities')
+      .update({ 
+        archived: true, 
+        archived_at: new Date().toISOString() 
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error archiving opportunity:", error);
+      return false;
+    }
+    
+    return true;
+  },
+
+  unarchive: async (id: string): Promise<boolean> => {
+    console.log("Unarchiving opportunity:", id);
+    
+    const { error } = await supabase.from('opportunities')
+      .update({ 
+        archived: false, 
+        archived_at: null 
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error unarchiving opportunity:", error);
+      return false;
+    }
+    
+    return true;
   },
 
   create: async (data: OpportunityFormData & { sourceOpportunityId?: string }): Promise<Opportunity> => {

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Opportunity, Stage } from "@/types";
 import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
-import { Trash2, Archive, ExternalLink, AlertTriangle } from "lucide-react";
+import { Trash2, Archive, ArchiveRestore, ExternalLink, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface OpportunityTableRowProps {
@@ -37,7 +37,7 @@ const OpportunityTableRow = ({
   onArchive,
   onDelete
 }: OpportunityTableRowProps) => {
-  const hasAlert = getStageAlertStatus(opportunity);
+  const hasAlert = !showArchived && getStageAlertStatus(opportunity);
 
   return (
     <TableRow className={hasAlert ? "bg-red-50" : ""}>
@@ -52,6 +52,14 @@ const OpportunityTableRow = ({
       <TableCell>{opportunity.client}</TableCell>
       <TableCell>{formatCurrency(opportunity.value)}</TableCell>
       <TableCell>{formatDateBRT(opportunity.createdAt)}</TableCell>
+      {showArchived && (
+        <TableCell>
+          {opportunity.customFields?.archived_at 
+            ? formatDateBRT(new Date(opportunity.customFields.archived_at))
+            : "N/A"
+          }
+        </TableCell>
+      )}
       <TableCell>{getFunnelName(opportunity.funnelId)}</TableCell>
       <TableCell>{getStageName(opportunity.stageId)}</TableCell>
       <TableCell>
@@ -61,36 +69,49 @@ const OpportunityTableRow = ({
               Alerta
             </Badge>
           )}
-          <Badge variant="outline">
-            {opportunity.scheduledActions?.some(
-              action => action.status === 'pending'
-            ) 
-              ? "Com ações agendadas"
-              : "Sem ações agendadas"
-            }
-          </Badge>
+          {showArchived ? (
+            <Badge variant="secondary" className="text-xs">
+              Arquivada
+            </Badge>
+          ) : (
+            <Badge variant="outline">
+              {opportunity.scheduledActions?.some(
+                action => action.status === 'pending'
+              ) 
+                ? "Com ações agendadas"
+                : "Sem ações agendadas"
+              }
+            </Badge>
+          )}
         </div>
       </TableCell>
       <TableCell>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            asChild
-          >
-            <Link to={`/funnels/${opportunity.funnelId}`}>
-              <ExternalLink className="h-4 w-4" />
-            </Link>
-          </Button>
+          {!showArchived && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0"
+              asChild
+            >
+              <Link to={`/funnels/${opportunity.funnelId}`}>
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </Button>
+          )}
           
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
             onClick={() => onArchive(opportunity, !showArchived)}
+            title={showArchived ? "Restaurar oportunidade" : "Arquivar oportunidade"}
           >
-            <Archive className="h-4 w-4" />
+            {showArchived ? (
+              <ArchiveRestore className="h-4 w-4" />
+            ) : (
+              <Archive className="h-4 w-4" />
+            )}
           </Button>
           
           <AlertDialog>
