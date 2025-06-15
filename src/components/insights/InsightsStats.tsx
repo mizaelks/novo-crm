@@ -23,7 +23,7 @@ interface InsightsStatsProps {
       conversionRate: number;
     };
   };
-  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed'; // CORRIGIDO - incluído 'relacionamento'
+  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
 const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProps) => {
@@ -35,7 +35,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
     return <InsightsStatsSkeleton />;
   }
 
-  // Determinar se deve mostrar valores monetários e vendas - CORRIGIDO
+  // Determinar se deve mostrar valores monetários e vendas
   const showMonetaryValues = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
   const showSalesMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
   
@@ -59,7 +59,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
       return `${stats.totalSales} vendas de oportunidades em funis de venda`;
     }
     
-    return `${stats.totalSales} vendas de ${stats.totalOpportunidades} oportunidades`;
+    return `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`;
   };
 
   const conversionSubtitle = getConversionSubtitle();
