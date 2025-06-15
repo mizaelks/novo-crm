@@ -28,6 +28,7 @@ const StageColumn = ({
   onOpportunityDeleted
 }: StageColumnProps) => {
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const handleOpportunityClick = (opportunity: Opportunity) => {
     setSelectedOpportunityId(opportunity.id);
@@ -50,9 +51,14 @@ const StageColumn = ({
     }
   };
 
+  const handleAddOpportunity = () => {
+    setIsCreateDialogOpen(true);
+  };
+
   const handleOpportunityCreatedWrapper = () => {
     // Trigger a refresh without needing the opportunity object
     // The parent component will handle reloading the data
+    setIsCreateDialogOpen(false);
     if (onOpportunityCreated) {
       // Call with a dummy opportunity object or trigger a refresh
       window.location.reload();
@@ -76,6 +82,7 @@ const StageColumn = ({
                 stage={stage}
                 dragHandleProps={provided.dragHandleProps}
                 updateStage={onStageUpdated}
+                onAddOpportunity={handleAddOpportunity}
               />
               <CardContent className="p-3 flex-1 overflow-hidden">
                 <StageOpportunityList
@@ -88,6 +95,8 @@ const StageColumn = ({
             </Card>
             
             <CreateOpportunityDialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
               onOpportunityCreated={handleOpportunityCreatedWrapper}

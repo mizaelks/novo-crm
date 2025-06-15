@@ -1,24 +1,30 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { opportunityAPI } from "@/services/opportunityAPI";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
 import { ProductTitleInput } from "./ProductTitleInput";
 import { productSuggestionsAPI } from "@/services/productSuggestionsAPI";
 
 interface CreateOpportunityDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   stageId: string;
   funnelId: string;
   onOpportunityCreated: () => void;
 }
 
-export const CreateOpportunityDialog = ({ stageId, funnelId, onOpportunityCreated }: CreateOpportunityDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const CreateOpportunityDialog = ({ 
+  open, 
+  onOpenChange, 
+  stageId, 
+  funnelId, 
+  onOpportunityCreated 
+}: CreateOpportunityDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -68,7 +74,6 @@ export const CreateOpportunityDialog = ({ stageId, funnelId, onOpportunityCreate
         email: "",
         company: ""
       });
-      setOpen(false);
       onOpportunityCreated();
     } catch (error) {
       console.error("Error creating opportunity:", error);
@@ -79,13 +84,7 @@ export const CreateOpportunityDialog = ({ stageId, funnelId, onOpportunityCreate
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Oportunidade
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Nova Oportunidade</DialogTitle>
@@ -155,7 +154,7 @@ export const CreateOpportunityDialog = ({ stageId, funnelId, onOpportunityCreate
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? "Criando..." : "Criar Oportunidade"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
           </div>
