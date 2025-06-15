@@ -44,7 +44,7 @@ export const ConfirmDialog = ({
           <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            variant={variant}
+            className={variant === "destructive" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
             disabled={loading}
           >
             {loading ? "Processando..." : confirmText}
