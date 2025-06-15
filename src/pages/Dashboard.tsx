@@ -47,13 +47,15 @@ const Dashboard = () => {
             // Count all opportunities
             oppCount += filteredOpportunities.length;
             
-            // Sum all opportunity values
-            filteredOpportunities.forEach(opp => {
-              totalOppValue += opp.value;
-            });
+            // Sum values only for 'venda' funnels
+            if (funnel.funnelType === 'venda') {
+              filteredOpportunities.forEach(opp => {
+                totalOppValue += opp.value;
+              });
+            }
             
-            // Count and sum values for win stages only
-            if (stage.isWinStage) {
+            // Count and sum values for win stages ONLY in 'venda' funnels
+            if (stage.isWinStage && funnel.funnelType === 'venda') {
               salesCount += filteredOpportunities.length;
               filteredOpportunities.forEach(opp => {
                 totalSalesValue += opp.value;
