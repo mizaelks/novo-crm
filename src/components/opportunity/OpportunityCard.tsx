@@ -5,24 +5,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Opportunity, Stage } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, Edit, Calendar } from "lucide-react";
+import { Eye, Edit, Calendar, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
-import { OpportunityAlertIndicator } from "./OpportunityAlertIndicator";
 import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
+import { OpportunityMultipleAlerts } from "./OpportunityMultipleAlerts";
+import { OpportunityQuickActions } from "./OpportunityQuickActions";
+import { usePendingTasks } from "@/hooks/usePendingTasks";
+import { toast } from "sonner";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
   index: number;
   stage: Stage;
   onClick?: (opportunity: Opportunity) => void;
+  onAddTask?: (opportunity: Opportunity) => void;
+  onAddField?: (opportunity: Opportunity) => void;
 }
 
 const OpportunityCard = ({ 
   opportunity, 
   index, 
   stage,
-  onClick
+  onClick,
+  onAddTask,
+  onAddField
 }: OpportunityCardProps) => {
+  const { pendingTasks, completeTask } = usePendingTasks(opportunity.id);
+  const firstPendingTask = pendingTasks[0];
+
   const handleCardClick = (e: React.MouseEvent) => {
     // Prevent opening details when clicking on buttons
     if ((e.target as HTMLElement).closest('button')) {
@@ -30,6 +40,30 @@ const OpportunityCard = ({
     }
     if (onClick) {
       onClick(opportunity);
+    }
+  };
+
+  const handleCompleteTask = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!firstPendingTask) return;
+    
+    const success = await completeTask(firstPendingTask.id);
+    if (success) {
+      toast.success("Tarefa concluída com sucesso!");
+    } else {
+      toast.error("Erro ao concluir tarefa");
+    }
+  };
+
+  const handleAddTask = () => {
+    if (onAddTask) {
+      onAddTask(opportunity);
+    }
+  };
+
+  const handleAddField = () => {
+    if (onAddField) {
+      onAddField(opportunity);
     }
   };
 
@@ -43,7 +77,7 @@ const OpportunityCard = ({
           className={`mb-3 ${snapshot.isDragging ? 'rotate-1 scale-105' : ''}`}
         >
           <Card 
-            className="cursor-pointer hover:shadow-md transition-all duration-200 group"
+            className="cursor-pointer hover:shadow-md transition-all duration-200 group overflow-hidden"
             onClick={handleCardClick}
           >
             <CardHeader className="pb-2">
@@ -63,17 +97,33 @@ const OpportunityCard = ({
               </div>
             </CardHeader>
             
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between">
+            <CardContent className="pt-0 pb-0">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Calendar className="h-3 w-3" />
                   <span>{format(opportunity.createdAt, "dd/MM")}</span>
-                  <OpportunityAlertIndicator 
-                    opportunity={opportunity}
-                    stage={stage}
-                  />
                 </div>
+                
+                {/* Botão de concluir tarefa na primeira visão */}
+                {firstPendingTask && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                    onClick={handleCompleteTask}
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Concluir
+                  </Button>
+                )}
               </div>
+
+              {/* Alertas múltiplos */}
+              <OpportunityMultipleAlerts 
+                opportunity={opportunity}
+                stage={stage}
+                pendingTasks={pendingTasks}
+              />
               
               {opportunity.company && (
                 <div className="mt-2">
@@ -81,6 +131,13 @@ const OpportunityCard = ({
                 </div>
               )}
             </CardContent>
+
+            {/* Ações rápidas no rodapé */}
+            <OpportunityQuickActions
+              opportunity={opportunity}
+              onAddTask={handleAddTask}
+              onAddField={handleAddField}
+            />
           </Card>
         </div>
       )}

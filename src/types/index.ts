@@ -20,6 +20,7 @@ export interface Stage {
   requiredFields?: RequiredField[]; // Required fields for opportunities in this stage
   alertConfig?: StageAlertConfig; // Alert configuration for this stage
   migrateConfig?: StageMigrateConfig; // Migration configuration for this stage
+  sortConfig?: StageSortConfig; // Sorting configuration for this stage
 }
 
 export interface StageAlertConfig {
@@ -95,9 +96,10 @@ export interface ScheduledAction {
     // Task-specific fields
     title?: string;
     assignedTo?: string;
+    templateId?: string; // ID do template de tarefa padrão
     // Common fields
     description?: string;
-    templateId?: string; // ID of webhook template
+    templateId?: string;
     moveToNextStage?: boolean;
     nextStageId?: string;
     response?: {
@@ -156,6 +158,7 @@ export interface StageFormData {
   order?: number; // Add order property to fix the TypeScript errors
   alertConfig?: StageAlertConfig;
   migrateConfig?: StageMigrateConfig;
+  sortConfig?: StageSortConfig;
 }
 
 export interface RequiredFieldFormData {
@@ -225,3 +228,6 @@ export interface ScheduledActionFormData {
   scheduledDateTime: Date;
   templateId?: string; // Adding the missing templateId property
 }
+
+import { SortingOption } from "./taskTemplates";
+import { StageSortConfig } from "./taskTemplates";

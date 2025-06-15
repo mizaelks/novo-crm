@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, RequiredField, StageAlertConfig, StageMigrateConfig } from "@/types";
+import { Stage, RequiredField, StageAlertConfig, StageMigrateConfig, SortingOption } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -21,6 +21,7 @@ import { StageAlertConfigComponent } from "./StageAlertConfig";
 import { StageMigrateConfigComponent } from "./StageMigrateConfig";
 import { StageBasicForm } from "./StageBasicForm";
 import { StageTypeToggles } from "./StageTypeToggles";
+import { StageSortingConfig } from "./StageSortingConfig";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -57,6 +58,10 @@ const EditStageDialog = ({
     enabled: false, 
     targetFunnelId: '', 
     targetStageId: '' 
+  });
+  const [sortConfig, setSortConfig] = useState<{ type: SortingOption; enabled: boolean }>({
+    type: 'free',
+    enabled: false
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -95,6 +100,10 @@ const EditStageDialog = ({
               targetStageId: '' 
             };
             setMigrateConfig(migrateConf);
+
+            // Handle sort config
+            const sortConf = stageData.sortConfig || { type: 'free' as SortingOption, enabled: false };
+            setSortConfig(sortConf);
             
             form.reset({
               name: stageData.name,
@@ -128,6 +137,7 @@ const EditStageDialog = ({
       console.log("Form values:", values);
       console.log("Alert config:", alertConfig);
       console.log("Migrate config:", migrateConfig);
+      console.log("Sort config:", sortConfig);
       console.log("Required fields:", requiredFields);
       
       setIsSubmitting(true);
@@ -141,7 +151,8 @@ const EditStageDialog = ({
         isLossStage: values.isLossStage,
         requiredFields: requiredFields,
         alertConfig: alertConfig.enabled ? alertConfig : undefined,
-        migrateConfig: migrateConfig.enabled ? migrateConfig : undefined
+        migrateConfig: migrateConfig.enabled ? migrateConfig : undefined,
+        sortConfig: sortConfig.enabled ? sortConfig : undefined
       };
       
       console.log("Dados para atualização:", updateData);
@@ -191,6 +202,14 @@ const EditStageDialog = ({
                 <StageBasicForm form={form} />
                 
                 <StageTypeToggles form={form} />
+                
+                <Separator className="my-4" />
+                
+                <StageSortingConfig
+                  control={form.control}
+                  sortConfig={sortConfig}
+                  onSortConfigChange={setSortConfig}
+                />
                 
                 <Separator className="my-4" />
                 
