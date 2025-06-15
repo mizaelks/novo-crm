@@ -1,25 +1,19 @@
 
-import { Opportunity } from '@/types';
+import { Opportunity, Stage } from '@/types';
 import { shouldShowAlert, getAlertMessage } from '@/utils/stageAlerts';
 import { Badge } from '@/components/ui/badge';
 
 interface OpportunityAlertIndicatorProps {
   opportunity: Opportunity;
-  stageName?: string;
+  stage: Stage;
 }
 
-export const OpportunityAlertIndicator = ({ opportunity, stageName }: OpportunityAlertIndicatorProps) => {
-  // Create a mock stage object for the shouldShowAlert function
-  const mockStage = {
-    name: stageName || '',
-    alertConfig: opportunity.stage?.alertConfig
-  };
-
-  if (!shouldShowAlert(opportunity, mockStage as any)) {
+export const OpportunityAlertIndicator = ({ opportunity, stage }: OpportunityAlertIndicatorProps) => {
+  if (!shouldShowAlert(opportunity, stage)) {
     return null;
   }
 
-  const alertMessage = getAlertMessage(opportunity, mockStage as any);
+  const alertMessage = getAlertMessage(opportunity, stage);
 
   return (
     <Badge variant="destructive" className="text-xs">
@@ -27,5 +21,3 @@ export const OpportunityAlertIndicator = ({ opportunity, stageName }: Opportunit
     </Badge>
   );
 };
-
-export default OpportunityAlertIndicator;

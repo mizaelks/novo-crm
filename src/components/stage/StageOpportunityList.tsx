@@ -36,7 +36,7 @@ const StageOpportunityList = ({
         Adicionar oportunidade
       </Button>
       
-      <Droppable droppableId={stageId}>
+      <Droppable droppableId={stageId} type="OPPORTUNITY">
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}

@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Opportunity } from "@/types";
 import { formatCurrency } from "@/utils/constants";
-import { OpportunityQuickActions } from "./OpportunityQuickActions";
-import { OpportunityAlertIndicator } from "./OpportunityAlertIndicator";
-import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
+import OpportunityQuickActions from "./OpportunityQuickActions";
+import OpportunityAlertIndicator from "./OpportunityAlertIndicator";
+import OpportunityMigrationIndicator from "./OpportunityMigrationIndicator";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -37,6 +37,7 @@ const OpportunityCard = ({
     <Draggable 
       draggableId={opportunity.id} 
       index={index}
+      type="OPPORTUNITY"
     >
       {(provided, snapshot) => (
         <Card
