@@ -77,7 +77,7 @@ export const useInsightsData = (selectedFunnel: string) => {
       default:
         return null;
     }
-  }, [filter]);
+  }, [filter.type, filter.dateRange]);
 
   // Function to calculate stats for a given period
   const calculateStatsForPeriod = useCallback((funnelsData: Funnel[], fromDate?: Date, toDate?: Date): StatsData => {
@@ -125,6 +125,7 @@ export const useInsightsData = (selectedFunnel: string) => {
     };
   }, [filterByDate]);
 
+  // Memoize data processing functions
   const processConversionData = useCallback((funnelsData: Funnel[]) => {
     const stageData: { [key: string]: { total: number, converted: number } } = {};
     
@@ -137,7 +138,6 @@ export const useInsightsData = (selectedFunnel: string) => {
         const filteredOpportunities = filterByDate(stage.opportunities, 'createdAt');
         stageData[stage.name].total += filteredOpportunities.length;
         
-        // Calculate conversions (opportunities that moved to next stage)
         if (index < funnel.stages.length - 1) {
           const nextStage = funnel.stages[index + 1];
           const nextStageOpps = filterByDate(nextStage.opportunities, 'createdAt');
@@ -152,7 +152,7 @@ export const useInsightsData = (selectedFunnel: string) => {
       conversionRate: data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0
     }));
 
-    setConversionData(conversionArray);
+    return conversionArray;
   }, [filterByDate]);
 
   const processStageDistribution = useCallback((funnelsData: Funnel[]) => {
@@ -168,12 +168,10 @@ export const useInsightsData = (selectedFunnel: string) => {
       });
     });
 
-    const distributionArray = Object.entries(stageData).map(([name, value]) => ({
+    return Object.entries(stageData).map(([name, value]) => ({
       name,
       value
     }));
-
-    setStageDistribution(distributionArray);
   }, [filterByDate]);
 
   const processValueOverTime = useCallback((funnelsData: Funnel[]) => {
@@ -191,17 +189,15 @@ export const useInsightsData = (selectedFunnel: string) => {
       });
     });
 
-    const valueArray = Object.entries(monthData)
+    return Object.entries(monthData)
       .map(([month, value]) => ({ month, value }))
-      .slice(-6); // Last 6 months
-
-    setValueOverTime(valueArray);
+      .slice(-6);
   }, []);
 
+  // Memoize stats calculation
   const getTotalStats = useCallback((): EnhancedStatsData => {
     const currentStats = calculateStatsForPeriod(filteredFunnels);
     
-    // Calculate previous period stats for comparison
     const previousPeriod = getPreviousPeriodDates();
     let previousPeriodStats: StatsData | undefined;
     
@@ -219,21 +215,28 @@ export const useInsightsData = (selectedFunnel: string) => {
     };
   }, [filteredFunnels, calculateStatsForPeriod, getPreviousPeriodDates]);
 
+  // Memoize processed data to prevent unnecessary recalculations
+  const memoizedConversionData = useMemo(() => 
+    processConversionData(filteredFunnels), 
+    [processConversionData, filteredFunnels, filter]
+  );
+
+  const memoizedStageDistribution = useMemo(() => 
+    processStageDistribution(filteredFunnels), 
+    [processStageDistribution, filteredFunnels, filter]
+  );
+
+  const memoizedValueOverTime = useMemo(() => 
+    processValueOverTime(filteredFunnels), 
+    [processValueOverTime, filteredFunnels]
+  );
+
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const funnelsData = await funnelAPI.getAll();
         setFunnels(funnelsData);
-        
-        // Process data for charts with the filtered funnels
-        const filtered = selectedFunnel === "all" 
-          ? funnelsData 
-          : funnelsData.filter(f => f.id === selectedFunnel);
-        
-        processConversionData(filtered);
-        processStageDistribution(filtered);
-        processValueOverTime(filtered);
       } catch (error) {
         console.error("Error loading insights data:", error);
       } finally {
@@ -242,7 +245,16 @@ export const useInsightsData = (selectedFunnel: string) => {
     };
 
     loadData();
-  }, [selectedFunnel, filter, processConversionData, processStageDistribution, processValueOverTime]);
+  }, []);
+
+  // Update processed data when dependencies change
+  useEffect(() => {
+    if (!loading) {
+      setConversionData(memoizedConversionData);
+      setStageDistribution(memoizedStageDistribution);
+      setValueOverTime(memoizedValueOverTime);
+    }
+  }, [loading, memoizedConversionData, memoizedStageDistribution, memoizedValueOverTime]);
 
   return {
     funnels,

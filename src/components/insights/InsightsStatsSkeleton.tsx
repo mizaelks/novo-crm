@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const InsightsStatsSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      {[1, 2, 3, 4].map((i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <Card key={i}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <Skeleton className="h-4 w-32" />
