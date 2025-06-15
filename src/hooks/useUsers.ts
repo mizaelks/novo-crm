@@ -7,6 +7,7 @@ interface User {
   email: string;
   first_name: string | null;
   last_name: string | null;
+  role?: string;
 }
 
 export const useUsers = () => {
@@ -16,19 +17,39 @@ export const useUsers = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data, error } = await supabase
+        console.log("useUsers: Buscando usuários...");
+        
+        // Buscar perfis
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, email, first_name, last_name')
           .order('first_name', { ascending: true });
 
-        if (error) {
-          console.error('Error fetching users:', error);
+        if (profilesError) {
+          console.error('useUsers: Erro ao buscar perfis:', profilesError);
           return;
         }
 
-        setUsers(data || []);
+        // Buscar papéis para cada usuário
+        const usersWithRoles = await Promise.all(
+          (profilesData || []).map(async (profile) => {
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', profile.id)
+              .single();
+
+            return {
+              ...profile,
+              role: roleData?.role || 'user'
+            };
+          })
+        );
+
+        console.log("useUsers: Usuários carregados:", usersWithRoles);
+        setUsers(usersWithRoles);
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('useUsers: Erro geral:', error);
       } finally {
         setLoading(false);
       }

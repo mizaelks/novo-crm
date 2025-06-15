@@ -73,33 +73,49 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      // Buscar usuários com seus papéis
+      console.log("Carregando usuários...");
+      
+      // Primeiro, buscar todos os perfis
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id, 
-          email, 
-          first_name, 
-          last_name,
-          user_roles!inner(role)
-        `)
-        .order('created_at', { ascending: false });
+        .select('id, email, first_name, last_name')
+        .order('first_name', { ascending: true });
 
       if (profilesError) {
+        console.error("Erro ao buscar perfis:", profilesError);
         throw profilesError;
       }
 
-      const mappedUsers: User[] = (profilesData || []).map(user => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: (user.user_roles as any)?.[0]?.role || 'user',
-      }));
+      console.log("Perfis encontrados:", profilesData);
 
+      // Em seguida, buscar os papéis de cada usuário
+      const userPromises = (profilesData || []).map(async (profile) => {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', profile.id)
+          .single();
+
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error(`Erro ao buscar papel do usuário ${profile.id}:`, roleError);
+        }
+
+        return {
+          id: profile.id,
+          email: profile.email || '',
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          role: roleData?.role || 'user',
+        };
+      });
+
+      const mappedUsers = await Promise.all(userPromises);
+      console.log("Usuários mapeados:", mappedUsers);
       setUsers(mappedUsers);
     } catch (error) {
-      handleError(error, "Erro ao carregar usuários");
+      console.error("Erro geral ao carregar usuários:", error);
+      const errorMessage = handleError(error, "Erro ao carregar usuários");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +124,8 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
   const handleDeleteUser = async (userId: string) => {
     setDeletingUserId(userId);
     try {
+      console.log("Removendo usuário:", userId);
+      
       // Primeiro remover papel do usuário
       const { error: roleError } = await supabase
         .from('user_roles')
@@ -115,6 +133,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
         .eq('user_id', userId);
 
       if (roleError) {
+        console.error("Erro ao remover papel:", roleError);
         throw roleError;
       }
 
@@ -125,13 +144,16 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
         .eq('id', userId);
 
       if (profileError) {
+        console.error("Erro ao remover perfil:", profileError);
         throw profileError;
       }
 
       toast.success("Usuário removido com sucesso!");
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
-      handleError(error, "Erro ao remover usuário");
+      console.error("Erro ao remover usuário:", error);
+      const errorMessage = handleError(error, "Erro ao remover usuário");
+      toast.error(errorMessage);
     } finally {
       setDeletingUserId(null);
     }
