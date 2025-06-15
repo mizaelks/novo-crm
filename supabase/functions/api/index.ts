@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -286,7 +285,7 @@ async function handleStageRequest(req, supabaseClient, id, action) {
       if (id) {
         const { data, error } = await supabaseClient
           .from('stages')
-          .select('*, opportunities(*)')
+          .select('*, opportunities(*), required_fields(*), required_tasks(*)')
           .eq('id', id)
           .single();
           
@@ -295,7 +294,7 @@ async function handleStageRequest(req, supabaseClient, id, action) {
       } else {
         const { data, error } = await supabaseClient
           .from('stages')
-          .select('*, opportunities(*)')
+          .select('*, opportunities(*), required_fields(*), required_tasks(*)')
           .order('order', { ascending: true });
           
         if (error) throw error;
@@ -303,37 +302,130 @@ async function handleStageRequest(req, supabaseClient, id, action) {
       }
     case 'POST':
       const postBody = await req.json();
+      
+      // Create stage
       const { data: newStage, error: createError } = await supabaseClient
         .from('stages')
         .insert({
           name: postBody.name,
           description: postBody.description,
-          funnel_id: postBody.funnelId
+          funnel_id: postBody.funnelId,
+          color: postBody.color,
+          is_win_stage: postBody.isWinStage,
+          is_loss_stage: postBody.isLossStage
         })
         .select()
         .single();
         
       if (createError) throw createError;
+      
+      // Add required fields if provided (optional via API)
+      if (postBody.requiredFields && Array.isArray(postBody.requiredFields)) {
+        for (const field of postBody.requiredFields) {
+          await supabaseClient
+            .from('required_fields')
+            .insert({
+              stage_id: newStage.id,
+              name: field.name,
+              type: field.type,
+              options: field.options,
+              is_required: field.isRequired !== false // Default to true if not specified
+            });
+        }
+      }
+      
+      // Add required tasks if provided (optional via API)
+      if (postBody.requiredTasks && Array.isArray(postBody.requiredTasks)) {
+        for (const task of postBody.requiredTasks) {
+          await supabaseClient
+            .from('required_tasks')
+            .insert({
+              stage_id: newStage.id,
+              name: task.name,
+              description: task.description,
+              default_duration: task.defaultDuration || 1,
+              template_id: task.templateId,
+              is_required: task.isRequired !== false // Default to true if not specified
+            });
+        }
+      }
+      
       return newStage;
     case 'PUT':
     case 'PATCH':
       if (!id) throw new Error("ID is required for update");
       const patchBody = await req.json();
+      
+      const updateData = {};
+      if (patchBody.name !== undefined) updateData.name = patchBody.name;
+      if (patchBody.description !== undefined) updateData.description = patchBody.description;
+      if (patchBody.funnelId !== undefined) updateData.funnel_id = patchBody.funnelId;
+      if (patchBody.color !== undefined) updateData.color = patchBody.color;
+      if (patchBody.isWinStage !== undefined) updateData.is_win_stage = patchBody.isWinStage;
+      if (patchBody.isLossStage !== undefined) updateData.is_loss_stage = patchBody.isLossStage;
+      
       const { data: updatedStage, error: updateError } = await supabaseClient
         .from('stages')
-        .update({
-          name: patchBody.name,
-          description: patchBody.description,
-          funnel_id: patchBody.funnelId
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
         
       if (updateError) throw updateError;
+      
+      // Update required fields if provided (optional via API - won't break existing functionality)
+      if (patchBody.requiredFields && Array.isArray(patchBody.requiredFields)) {
+        // Delete existing fields
+        await supabaseClient
+          .from('required_fields')
+          .delete()
+          .eq('stage_id', id);
+          
+        // Add new fields
+        for (const field of patchBody.requiredFields) {
+          await supabaseClient
+            .from('required_fields')
+            .insert({
+              stage_id: id,
+              name: field.name,
+              type: field.type,
+              options: field.options,
+              is_required: field.isRequired !== false
+            });
+        }
+      }
+      
+      // Update required tasks if provided (optional via API - won't break existing functionality)
+      if (patchBody.requiredTasks && Array.isArray(patchBody.requiredTasks)) {
+        // Delete existing tasks
+        await supabaseClient
+          .from('required_tasks')
+          .delete()
+          .eq('stage_id', id);
+          
+        // Add new tasks
+        for (const task of patchBody.requiredTasks) {
+          await supabaseClient
+            .from('required_tasks')
+            .insert({
+              stage_id: id,
+              name: task.name,
+              description: task.description,
+              default_duration: task.defaultDuration || 1,
+              template_id: task.templateId,
+              is_required: task.isRequired !== false
+            });
+        }
+      }
+      
       return updatedStage;
     case 'DELETE':
       if (!id) throw new Error("ID is required for delete");
+      
+      // Delete related data first
+      await supabaseClient.from('required_fields').delete().eq('stage_id', id);
+      await supabaseClient.from('required_tasks').delete().eq('stage_id', id);
+      
       const { error: deleteError } = await supabaseClient
         .from('stages')
         .delete()
@@ -381,7 +473,8 @@ async function handleOpportunityRequest(req, supabaseClient, id, action) {
           email: postBody.email || null,
           stage_id: postBody.stageId,
           funnel_id: postBody.funnelId,
-          custom_fields: postBody.customFields || null
+          custom_fields: postBody.customFields || null,
+          required_tasks_completed: postBody.requiredTasksCompleted || []
         })
         .select()
         .single();
@@ -404,6 +497,7 @@ async function handleOpportunityRequest(req, supabaseClient, id, action) {
       if (patchBody.stageId !== undefined) updateData.stage_id = patchBody.stageId;
       if (patchBody.funnelId !== undefined) updateData.funnel_id = patchBody.funnelId;
       if (patchBody.customFields !== undefined) updateData.custom_fields = patchBody.customFields;
+      if (patchBody.requiredTasksCompleted !== undefined) updateData.required_tasks_completed = patchBody.requiredTasksCompleted;
       
       const { data: updatedOpportunity, error: updateError } = await supabaseClient
         .from('opportunities')

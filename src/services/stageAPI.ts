@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Stage, StageFormData, RequiredField } from "@/types";
+import { Stage, StageFormData, RequiredField, RequiredTask } from "@/types";
 import { mapDbStageToStage } from "./utils/mappers";
 import { opportunityAPI } from "./opportunityAPI";
 import { triggerEntityWebhooks } from "./utils/webhook";
@@ -27,10 +27,12 @@ export const stageAPI = {
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
       const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
+      const requiredTasks = await stageAPI.getRequiredTasksByStageId(stageBase.id);
       stages.push({
         ...stageBase,
         opportunities,
-        requiredFields
+        requiredFields,
+        requiredTasks
       });
     }
     
@@ -47,10 +49,12 @@ export const stageAPI = {
     for (const stageBase of stageBases) {
       const opportunities = await opportunityAPI.getByStageId(stageBase.id);
       const requiredFields = await stageAPI.getRequiredFieldsByStageId(stageBase.id);
+      const requiredTasks = await stageAPI.getRequiredTasksByStageId(stageBase.id);
       stages.push({
         ...stageBase,
         opportunities,
-        requiredFields
+        requiredFields,
+        requiredTasks
       });
     }
     
@@ -64,11 +68,13 @@ export const stageAPI = {
     const stageBase = mapDbStageToStage(data);
     const opportunities = await opportunityAPI.getByStageId(id);
     const requiredFields = await stageAPI.getRequiredFieldsByStageId(id);
+    const requiredTasks = await stageAPI.getRequiredTasksByStageId(id);
     
     return {
       ...stageBase,
       opportunities,
-      requiredFields
+      requiredFields,
+      requiredTasks
     };
   },
 
@@ -90,6 +96,28 @@ export const stageAPI = {
       options: field.options,
       isRequired: field.is_required,
       stageId: field.stage_id
+    }));
+  },
+
+  getRequiredTasksByStageId: async (stageId: string): Promise<RequiredTask[]> => {
+    const { data, error } = await supabase
+      .from('required_tasks')
+      .select('*')
+      .eq('stage_id', stageId);
+      
+    if (error) {
+      console.error("Error fetching required tasks:", error);
+      return [];
+    }
+    
+    return (data || []).map(task => ({
+      id: task.id,
+      name: task.name,
+      description: task.description,
+      defaultDuration: task.default_duration,
+      templateId: task.template_id,
+      isRequired: task.is_required,
+      stageId: task.stage_id
     }));
   },
 
@@ -155,13 +183,32 @@ export const stageAPI = {
         }
       }
     }
+
+    const requiredTasks: RequiredTask[] = [];
+    if (data.requiredTasks && data.requiredTasks.length > 0) {
+      for (const task of data.requiredTasks) {
+        const addedTask = await stageAPI.addRequiredTask({
+          name: task.name,
+          description: task.description,
+          defaultDuration: task.defaultDuration,
+          templateId: task.templateId,
+          isRequired: task.isRequired,
+          stageId: created.id
+        });
+        
+        if (addedTask) {
+          requiredTasks.push(addedTask);
+        }
+      }
+    }
     
     await triggerEntityWebhooks('stage', created.id, 'create', created);
     
     return {
       ...stageBase,
       opportunities: [],
-      requiredFields
+      requiredFields,
+      requiredTasks
     };
   },
 
@@ -232,17 +279,35 @@ export const stageAPI = {
         });
       }
     }
+
+    // Update required tasks if provided
+    if (data.requiredTasks !== undefined) {
+      await supabase.from('required_tasks').delete().eq('stage_id', id);
+      
+      for (const task of data.requiredTasks) {
+        await stageAPI.addRequiredTask({
+          name: task.name,
+          description: task.description,
+          defaultDuration: task.defaultDuration,
+          templateId: task.templateId,
+          isRequired: task.isRequired,
+          stageId: id
+        });
+      }
+    }
     
     await triggerEntityWebhooks('stage', id, 'update', updated);
     
     const stageBase = mapDbStageToStage(updated);
     const opportunities = await opportunityAPI.getByStageId(id);
     const requiredFields = data.requiredFields || await stageAPI.getRequiredFieldsByStageId(id);
+    const requiredTasks = data.requiredTasks || await stageAPI.getRequiredTasksByStageId(id);
     
     return {
       ...stageBase,
       opportunities,
-      requiredFields
+      requiredFields,
+      requiredTasks
     };
   },
 
@@ -276,8 +341,42 @@ export const stageAPI = {
     };
   },
 
+  addRequiredTask: async (taskData: {
+    name: string;
+    description?: string;
+    defaultDuration: number;
+    templateId?: string;
+    isRequired: boolean;
+    stageId: string;
+  }): Promise<RequiredTask | null> => {
+    const { data, error } = await supabase.from('required_tasks').insert([{
+      name: taskData.name,
+      description: taskData.description,
+      default_duration: taskData.defaultDuration,
+      template_id: taskData.templateId,
+      is_required: taskData.isRequired,
+      stage_id: taskData.stageId
+    }]).select().single();
+    
+    if (error || !data) {
+      console.error("Error adding required task:", error);
+      return null;
+    }
+    
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      defaultDuration: data.default_duration,
+      templateId: data.template_id,
+      isRequired: data.is_required,
+      stageId: data.stage_id
+    };
+  },
+
   delete: async (id: string): Promise<boolean> => {
     await supabase.from('required_fields').delete().eq('stage_id', id);
+    await supabase.from('required_tasks').delete().eq('stage_id', id);
     const { error } = await supabase.from('stages').delete().eq('id', id);
     return !error;
   }

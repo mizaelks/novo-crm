@@ -23,6 +23,7 @@ export interface Stage {
   isWinStage?: boolean; // Whether this is a "win" stage
   isLossStage?: boolean; // Whether this is a "loss" stage
   requiredFields?: RequiredField[]; // Required fields for opportunities in this stage
+  requiredTasks?: RequiredTask[]; // Required tasks for opportunities in this stage
   alertConfig?: StageAlertConfig; // Alert configuration for this stage
   migrateConfig?: StageMigrateConfig; // Migration configuration for this stage
   sortConfig?: StageSortConfig; // Sorting configuration for this stage
@@ -49,6 +50,16 @@ export interface RequiredField {
   stageId: string;
 }
 
+export interface RequiredTask {
+  id: string;
+  name: string;
+  description?: string;
+  defaultDuration: number; // em horas
+  templateId?: string; // ID do template de tarefa (como 'ligar', 'whatsapp', etc.)
+  isRequired: boolean;
+  stageId: string;
+}
+
 export interface Opportunity {
   id: string;
   title: string;
@@ -64,6 +75,7 @@ export interface Opportunity {
   customFields?: Record<string, any>; // For storing custom field values
   lastStageChangeAt?: Date; // Track when opportunity was moved to current stage
   sourceOpportunityId?: string; // ID of the original opportunity when this was created by migration
+  requiredTasksCompleted?: string[]; // Array of required task IDs that have been completed
 }
 
 export interface WebhookConfig {
@@ -159,6 +171,7 @@ export interface StageFormData {
   isWinStage?: boolean;
   isLossStage?: boolean;
   requiredFields?: RequiredField[];
+  requiredTasks?: RequiredTask[];
   order?: number; // Add order property to fix the TypeScript errors
   alertConfig?: StageAlertConfig;
   migrateConfig?: StageMigrateConfig;
@@ -169,6 +182,15 @@ export interface RequiredFieldFormData {
   name: string;
   type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
   options?: string[]; // For select type fields
+  isRequired: boolean;
+  stageId: string;
+}
+
+export interface RequiredTaskFormData {
+  name: string;
+  description?: string;
+  defaultDuration: number;
+  templateId?: string;
   isRequired: boolean;
   stageId: string;
 }

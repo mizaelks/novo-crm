@@ -103,6 +103,7 @@ export type Database = {
           id: string
           last_stage_change_at: string | null
           phone: string | null
+          required_tasks_completed: Json | null
           source_opportunity_id: string | null
           stage_id: string | null
           title: string
@@ -118,6 +119,7 @@ export type Database = {
           id?: string
           last_stage_change_at?: string | null
           phone?: string | null
+          required_tasks_completed?: Json | null
           source_opportunity_id?: string | null
           stage_id?: string | null
           title: string
@@ -133,6 +135,7 @@ export type Database = {
           id?: string
           last_stage_change_at?: string | null
           phone?: string | null
+          required_tasks_completed?: Json | null
           source_opportunity_id?: string | null
           stage_id?: string | null
           title?: string
@@ -226,6 +229,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "required_fields_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      required_tasks: {
+        Row: {
+          created_at: string
+          default_duration: number | null
+          description: string | null
+          id: string
+          is_required: boolean
+          name: string
+          stage_id: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_duration?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name: string
+          stage_id: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_duration?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name?: string
+          stage_id?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "required_tasks_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "stages"

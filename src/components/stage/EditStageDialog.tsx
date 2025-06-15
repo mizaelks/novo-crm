@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Stage, RequiredField, StageAlertConfig, StageMigrateConfig, SortingOption } from "@/types";
+import { Stage, RequiredField, RequiredTask, StageAlertConfig, StageMigrateConfig, SortingOption } from "@/types";
 import { stageAPI } from "@/services/api";
 import { 
   Dialog, 
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import StageRequiredFields from "./StageRequiredFields";
+import StageRequiredTasks from "./StageRequiredTasks";
 import { StageAlertConfigComponent } from "./StageAlertConfig";
 import { StageMigrateConfigComponent } from "./StageMigrateConfig";
 import { StageBasicForm } from "./StageBasicForm";
@@ -53,6 +55,7 @@ const EditStageDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [requiredFields, setRequiredFields] = useState<RequiredField[]>([]);
+  const [requiredTasks, setRequiredTasks] = useState<RequiredTask[]>([]);
   const [alertConfig, setAlertConfig] = useState<StageAlertConfig>({ enabled: false, maxDaysInStage: 3 });
   const [migrateConfig, setMigrateConfig] = useState<StageMigrateConfig>({ 
     enabled: false, 
@@ -88,6 +91,7 @@ const EditStageDialog = ({
           if (stageData) {
             setStage(stageData);
             setRequiredFields(stageData.requiredFields || []);
+            setRequiredTasks(stageData.requiredTasks || []);
             
             // Handle alert config properly
             const alertConf = stageData.alertConfig || { enabled: false, maxDaysInStage: 3 };
@@ -139,6 +143,7 @@ const EditStageDialog = ({
       console.log("Migrate config:", migrateConfig);
       console.log("Sort config:", sortConfig);
       console.log("Required fields:", requiredFields);
+      console.log("Required tasks:", requiredTasks);
       
       setIsSubmitting(true);
       
@@ -150,6 +155,7 @@ const EditStageDialog = ({
         isWinStage: values.isWinStage,
         isLossStage: values.isLossStage,
         requiredFields: requiredFields,
+        requiredTasks: requiredTasks,
         alertConfig: alertConfig.enabled ? alertConfig : undefined,
         migrateConfig: migrateConfig.enabled ? migrateConfig : undefined,
         sortConfig: sortConfig.enabled ? sortConfig : undefined
@@ -231,6 +237,14 @@ const EditStageDialog = ({
                 <StageRequiredFields 
                   requiredFields={requiredFields}
                   setRequiredFields={setRequiredFields}
+                  stageId={stageId}
+                />
+                
+                <Separator className="my-4" />
+                
+                <StageRequiredTasks 
+                  requiredTasks={requiredTasks}
+                  setRequiredTasks={setRequiredTasks}
                   stageId={stageId}
                 />
                 
