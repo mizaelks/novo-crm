@@ -1,7 +1,7 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import KanbanBoard from "@/components/kanban/KanbanBoard";
+import { LazyKanbanBoard } from "@/components/lazy/LazyKanbanBoard";
 import { toast } from "sonner";
 import { funnelAPI } from "@/services/api";
 import { Funnel } from "@/types";
@@ -73,7 +73,7 @@ const FunnelDetail = () => {
           
           <Card>
             <CardContent className="p-0">
-              <KanbanBoard funnelId={id!} />
+              <LazyKanbanBoard funnelId={id!} />
             </CardContent>
           </Card>
         </>

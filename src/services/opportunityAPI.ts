@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, OpportunityFormData } from "@/types";
 import { mapDbOpportunityToOpportunity } from "./utils/mappers";
@@ -7,6 +8,39 @@ import { stageAPI } from "./stageAPI";
 import { stageHistoryAPI } from "./stageHistoryAPI";
 
 export const opportunityAPI = {
+  // Método otimizado que busca oportunidades com dados relacionados em uma única query
+  getAllWithRelations: async (includeArchived: boolean = false): Promise<{
+    opportunities: Opportunity[];
+    funnels: any[];
+    stages: any[];
+  }> => {
+    let opportunityQuery = supabase.from('opportunities').select(`
+      *,
+      stages!inner(id, name, funnel_id, color),
+      funnels!inner(id, name)
+    `);
+    
+    if (!includeArchived) {
+      opportunityQuery = opportunityQuery.eq('archived', false);
+    }
+    
+    const [opportunitiesResult, funnelsResult, stagesResult] = await Promise.all([
+      opportunityQuery.order('created_at', { ascending: false }),
+      supabase.from('funnels').select('*').order('order', { ascending: true }),
+      supabase.from('stages').select('*').order('order', { ascending: true })
+    ]);
+    
+    if (opportunitiesResult.error) throw opportunitiesResult.error;
+    if (funnelsResult.error) throw funnelsResult.error;
+    if (stagesResult.error) throw stagesResult.error;
+    
+    return {
+      opportunities: (opportunitiesResult.data || []).map(mapDbOpportunityToOpportunity),
+      funnels: funnelsResult.data || [],
+      stages: stagesResult.data || []
+    };
+  },
+
   getAll: async (includeArchived: boolean = false): Promise<Opportunity[]> => {
     let query = supabase.from('opportunities').select('*');
     

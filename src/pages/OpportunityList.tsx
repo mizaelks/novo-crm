@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
@@ -11,8 +10,8 @@ import { LoadingScreen } from "@/components/ui/loading-spinner";
 import OpportunityMetricsCards from "@/components/opportunity/OpportunityMetricsCards";
 import OpportunityTableFilters from "@/components/opportunity/OpportunityTableFilters";
 import OpportunityListHeader from "@/components/opportunity/OpportunityListHeader";
-import ClientSummaryTable from "@/components/opportunity/ClientSummaryTable";
-import OpportunitiesTable from "@/components/opportunity/OpportunitiesTable";
+import ClientSummaryTableWithPagination from "@/components/opportunity/ClientSummaryTableWithPagination";
+import OpportunitiesTableWithPagination from "@/components/opportunity/OpportunitiesTableWithPagination";
 
 const OpportunityList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,13 +132,14 @@ const OpportunityList = () => {
         </CardHeader>
         <CardContent>
           {showUniqueClients ? (
-            <ClientSummaryTable
+            <ClientSummaryTableWithPagination
               clientSummary={clientSummary || []}
               getFunnelName={getFunnelName}
               getStageName={getStageName}
+              itemsPerPage={15}
             />
           ) : (
-            <OpportunitiesTable
+            <OpportunitiesTableWithPagination
               opportunities={filteredOpportunities}
               getFunnelName={getFunnelName}
               getStageName={getStageName}
@@ -147,6 +147,7 @@ const OpportunityList = () => {
               showArchived={showArchived}
               onArchive={handleArchive}
               onDelete={handleDelete}
+              itemsPerPage={15}
             />
           )}
         </CardContent>

@@ -1,193 +1,101 @@
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Crown, Shield, User, UserPlus, AlertCircle, Trash2, Mail } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { UserInviteDialog } from "./UserInviteDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Mail, Shield, User, Crown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import CreateUserDialog from "./CreateUserDialog";
-import UserInviteDialog from "./UserInviteDialog";
 
-interface Profile {
+interface User {
   id: string;
   email: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  user_roles: {
-    role: 'admin' | 'manager' | 'user';
-  }[];
+  role: 'admin' | 'manager' | 'user';
+  firstName: string | null;
+  lastName: string | null;
 }
 
 interface UserManagementDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
-const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps) => {
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [createUserOpen, setCreateUserOpen] = useState(false);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
-  const { showConfirmation, ConfirmDialog } = useConfirmDialog();
+export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialogProps) => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
-    if (open && !roleLoading) {
+    if (isOpen) {
       loadUsers();
     }
-  }, [open, roleLoading]);
+  }, [isOpen]);
 
   const loadUsers = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log("Loading users...");
-      
-      // Especificar qual relacionamento usar para evitar ambiguidade
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          avatar_url,
-          created_at,
-          user_roles!user_roles_user_id_fkey (
-            role
-          )
-        `)
+        .select('id, email, role, first_name, last_name')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Error loading users:", error);
-        setError(`Erro ao carregar usuários: ${error.message}`);
-        return;
+        throw error;
       }
 
-      console.log("Users loaded:", data);
-      setUsers(data || []);
-    } catch (error: any) {
-      console.error("Error loading users:", error);
-      setError(`Erro ao carregar usuários: ${error.message}`);
-      toast.error("Erro ao carregar usuários");
+      const mappedUsers: User[] = (data || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.first_name,
+        lastName: user.last_name,
+      }));
+
+      setUsers(mappedUsers);
+    } catch (error) {
+      handleError(error, "Erro ao carregar usuários");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'manager' | 'user') => {
-    if (!isAdmin) {
-      toast.error("Apenas administradores podem alterar papéis");
-      return;
-    }
-
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingUserId(userId);
     try {
-      console.log(`Updating user ${userId} role to ${newRole}`);
-      
-      // Primeiro, remover papel atual
-      const { error: deleteError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-
-      if (deleteError) {
-        console.error("Error deleting current role:", deleteError);
-        throw deleteError;
+      // Remover usuário do auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) {
+        throw authError;
       }
 
-      // Então, adicionar novo papel
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: newRole,
-          assigned_by: user?.id
-        });
-
-      if (insertError) {
-        console.error("Error inserting new role:", insertError);
-        throw insertError;
-      }
-
-      toast.success("Papel do usuário atualizado com sucesso");
-      loadUsers();
-    } catch (error: any) {
-      console.error("Error updating user role:", error);
-      toast.error(`Erro ao atualizar papel do usuário: ${error.message}`);
-    }
-  };
-
-  const deleteUser = async (userId: string, userEmail: string) => {
-    if (!isAdmin) {
-      toast.error("Apenas administradores podem excluir usuários");
-      return;
-    }
-
-    if (userId === user?.id) {
-      toast.error("Você não pode excluir seu próprio usuário");
-      return;
-    }
-
-    const confirmed = await showConfirmation(
-      "Excluir usuário",
-      `Esta é uma ação permanente. Deseja realmente excluir o usuário ${userEmail}? Todos os dados relacionados serão perdidos.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      console.log(`Deleting user ${userId}`);
-      
-      // Primeiro excluir o perfil do usuário (isso vai cascatear para user_roles devido ao foreign key)
+      // Remover perfil do usuário
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
 
       if (profileError) {
-        console.error("Error deleting user profile:", profileError);
         throw profileError;
       }
 
-      // Tentar excluir do auth.users usando uma edge function
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session?.access_token) {
-          await fetch(`https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/delete-user`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${session.session.access_token}`
-            },
-            body: JSON.stringify({ userId })
-          });
-        }
-      } catch (authError) {
-        console.warn("Could not delete from auth.users, but profile deleted:", authError);
-      }
-
-      toast.success("Usuário excluído com sucesso");
-      loadUsers();
-    } catch (error: any) {
-      console.error("Error deleting user:", error);
-      toast.error(`Erro ao excluir usuário: ${error.message}`);
+      toast.success("Usuário removido com sucesso!");
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+    } catch (error) {
+      handleError(error, "Erro ao remover usuário");
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -202,17 +110,6 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive';
-      case 'manager':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
-
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'admin':
@@ -224,218 +121,84 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
     }
   };
 
-  const getUserInitials = (firstName: string | null, lastName: string | null, email: string) => {
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'manager':
+        return 'default';
+      default:
+        return 'secondary';
     }
-    return email.substring(0, 2).toUpperCase();
   };
-
-  const getUserDisplayName = (firstName: string | null, lastName: string | null, email: string) => {
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    return email;
-  };
-
-  if (roleLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary border-r-2" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="pr-10">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Usuários e Permissões
-              </DialogTitle>
-              {isAdmin && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setInviteDialogOpen(true)}
-                    className="flex items-center gap-2"
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Convidar Usuário
-                  </Button>
-                </div>
-              )}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Gerenciar Usuários
+          </DialogTitle>
+          <DialogDescription>
+            Adicione, remova e gerencie os usuários do sistema.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="h-[400px] space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <LoadingSpinner size="lg" />
             </div>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {!isAdmin && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <Shield className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm text-yellow-800">
-                  Você tem acesso de visualização. Apenas administradores podem alterar papéis.
-                </span>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm text-red-800">{error}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={loadUsers}
-                  className="ml-auto"
-                >
-                  Tentar novamente
-                </Button>
-              </div>
-            )}
-
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {users.map((profile) => {
-                  const currentRole = profile.user_roles[0]?.role || 'user';
-                  
-                  return (
-                    <Card key={profile.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={profile.avatar_url || ''} />
-                              <AvatarFallback>
-                                {getUserInitials(profile.first_name, profile.last_name, profile.email)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">
-                                {getUserDisplayName(profile.first_name, profile.last_name, profile.email)}
-                              </p>
-                              <p className="text-sm text-muted-foreground">{profile.email}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Cadastrado em {new Date(profile.created_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <Badge variant={getRoleBadgeVariant(currentRole)} className="flex items-center gap-1">
-                              {getRoleIcon(currentRole)}
-                              {getRoleLabel(currentRole)}
-                            </Badge>
-                            
-                            {isAdmin && profile.id !== user?.id && (
-                              <>
-                                <Select
-                                  value={currentRole}
-                                  onValueChange={(value: 'admin' | 'manager' | 'user') => 
-                                    updateUserRole(profile.id, value)
-                                  }
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="user">Usuário</SelectItem>
-                                    <SelectItem value="manager">Gerente</SelectItem>
-                                    <SelectItem value="admin">Administrador</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => deleteUser(profile.id, profile.email)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-
-                {users.length === 0 && !error && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Nenhum usuário encontrado
+          ) : (
+            <div className="divide-y divide-border">
+              {users.map((user) => (
+                <div key={user.id} className="grid grid-cols-3 gap-4 py-4 items-center">
+                  <div className="col-span-2">
+                    <div className="font-medium">{user.firstName} {user.lastName}</div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center gap-1 mt-1 w-fit">
+                      {getRoleIcon(user.role)}
+                      {getRoleLabel(user.role)}
+                    </Badge>
                   </div>
-                )}
-              </div>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Descrição dos Papéis</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Crown className="h-5 w-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Administrador</p>
-                    <p className="text-sm text-muted-foreground">
-                      Acesso completo ao sistema, pode gerenciar usuários e todas as configurações.
-                    </p>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteUser(user.id)}
+                      disabled={deletingUserId === user.id}
+                    >
+                      {deletingUserId === user.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      Remover
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-blue-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Gerente</p>
-                    <p className="text-sm text-muted-foreground">
-                      Pode gerenciar funis, oportunidades e visualizar relatórios avançados.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User className="h-5 w-5 text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Usuário</p>
-                    <p className="text-sm text-muted-foreground">
-                      Acesso básico para visualizar e editar oportunidades atribuídas.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </DialogContent>
-      </Dialog>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
 
-      <CreateUserDialog
-        open={createUserOpen}
-        onOpenChange={setCreateUserOpen}
-        onUserCreated={loadUsers}
-      />
-      
+        <DialogFooter>
+          <Button
+            type="button"
+            onClick={() => setIsInviteOpen(true)}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Convidar Usuário
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+
       <UserInviteDialog
-        isOpen={inviteDialogOpen}
-        setIsOpen={setInviteDialogOpen}
+        isOpen={isInviteOpen}
+        setIsOpen={setIsInviteOpen}
         onUserInvited={loadUsers}
       />
-      
-      <ConfirmDialog />
-    </>
+    </Dialog>
   );
 };
-
-export default UserManagementDialog;
