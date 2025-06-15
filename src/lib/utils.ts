@@ -6,5 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Re-export formatCurrency from dateUtils
-export { formatCurrency } from "@/services/utils/dateUtils";
+// Format currency in BRL
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL' 
+  }).format(value);
+};

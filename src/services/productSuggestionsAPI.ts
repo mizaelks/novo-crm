@@ -15,15 +15,22 @@ export interface ProductSuggestion {
 
 export const productSuggestionsAPI = {
   getAll: async (): Promise<ProductSuggestion[]> => {
+    console.log("productSuggestionsAPI.getAll: Starting request...");
+    
     const { data, error } = await supabase
       .from('product_suggestions')
       .select('*')
       .eq('is_active', true)
       .order('usage_count', { ascending: false });
     
-    if (error) throw error;
+    console.log("productSuggestionsAPI.getAll: Raw response:", { data, error });
     
-    return (data || []).map(item => ({
+    if (error) {
+      console.error("productSuggestionsAPI.getAll: Error:", error);
+      throw error;
+    }
+    
+    const mapped = (data || []).map(item => ({
       id: item.id,
       name: item.name,
       description: item.description,
@@ -34,9 +41,14 @@ export const productSuggestionsAPI = {
       createdAt: item.created_at,
       updatedAt: item.updated_at
     }));
+    
+    console.log("productSuggestionsAPI.getAll: Mapped data:", mapped);
+    return mapped;
   },
 
   getPopular: async (limit: number = 10): Promise<ProductSuggestion[]> => {
+    console.log(`productSuggestionsAPI.getPopular: Starting request with limit ${limit}...`);
+    
     const { data, error } = await supabase
       .from('product_suggestions')
       .select('*')
@@ -44,9 +56,14 @@ export const productSuggestionsAPI = {
       .order('usage_count', { ascending: false })
       .limit(limit);
     
-    if (error) throw error;
+    console.log("productSuggestionsAPI.getPopular: Raw response:", { data, error });
     
-    return (data || []).map(item => ({
+    if (error) {
+      console.error("productSuggestionsAPI.getPopular: Error:", error);
+      throw error;
+    }
+    
+    const mapped = (data || []).map(item => ({
       id: item.id,
       name: item.name,
       description: item.description,
@@ -57,6 +74,9 @@ export const productSuggestionsAPI = {
       createdAt: item.created_at,
       updatedAt: item.updated_at
     }));
+    
+    console.log("productSuggestionsAPI.getPopular: Mapped data:", mapped);
+    return mapped;
   },
 
   create: async (data: Omit<ProductSuggestion, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>): Promise<ProductSuggestion> => {
@@ -129,12 +149,16 @@ export const productSuggestionsAPI = {
   },
 
   incrementUsage: async (productName: string): Promise<void> => {
+    console.log(`productSuggestionsAPI.incrementUsage: Incrementing usage for "${productName}"`);
+    
     const { error } = await supabase.rpc('increment_product_usage', {
       product_name: productName
     });
     
     if (error) {
-      console.error("Error incrementing product usage:", error);
+      console.error("productSuggestionsAPI.incrementUsage: Error:", error);
+    } else {
+      console.log("productSuggestionsAPI.incrementUsage: Success");
     }
   }
 };

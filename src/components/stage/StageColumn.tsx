@@ -38,13 +38,11 @@ const StageColumn = ({
 
   const handleAddTask = (opportunity: Opportunity) => {
     setTaskDialogOpportunity(opportunity);
-    // Aqui você pode abrir um dialog específico para adicionar tarefas
     console.log('Add task for opportunity:', opportunity.id);
   };
 
   const handleAddField = (opportunity: Opportunity) => {
     setFieldDialogOpportunity(opportunity);
-    // Aqui você pode abrir um dialog específico para adicionar campos
     console.log('Add field for opportunity:', opportunity.id);
   };
 
@@ -60,7 +58,6 @@ const StageColumn = ({
     if (onOpportunityDeleted) {
       onOpportunityDeleted(opportunityId);
     }
-    // Close the details dialog if it's open for this opportunity
     if (selectedOpportunityId === opportunityId) {
       setSelectedOpportunityId(null);
     }

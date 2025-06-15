@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Package, TrendingUp } from "lucide-react";
+import { Check, ChevronDown, Package, TrendingUp, AlertCircle } from "lucide-react";
 import { productSuggestionsAPI, ProductSuggestion } from "@/services/productSuggestionsAPI";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ interface ProductTitleInputProps {
 export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInputProps) => {
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,16 +32,27 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
   const loadSuggestions = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log("ProductTitleInput: Starting to load suggestions...");
+      
       const data = await productSuggestionsAPI.getPopular(20);
+      console.log("ProductTitleInput: Loaded suggestions:", data);
+      
       setSuggestions(data);
+      
+      if (data.length === 0) {
+        console.warn("ProductTitleInput: No suggestions returned from API");
+      }
     } catch (error) {
-      console.error("Error loading product suggestions:", error);
+      console.error("ProductTitleInput: Error loading product suggestions:", error);
+      setError("Erro ao carregar sugestões de produtos");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSelectProduct = (product: ProductSuggestion) => {
+    console.log("ProductTitleInput: Product selected:", product);
     setSelectedProduct(product);
     onChange(product.name);
     setOpen(false);
@@ -48,7 +60,6 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
 
   const handleInputChange = (inputValue: string) => {
     onChange(inputValue);
-    // Reset selected product if user types something different
     if (selectedProduct && inputValue !== selectedProduct.name) {
       setSelectedProduct(null);
     }
@@ -76,6 +87,14 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
       <Label htmlFor="product-title">
         Produto/Serviço {required && "*"}
       </Label>
+      
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
+      
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -108,11 +127,27 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   Carregando sugestões...
                 </div>
+              ) : error ? (
+                <div className="p-4 text-center">
+                  <p className="text-sm text-red-600 mb-2">
+                    {error}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadSuggestions}
+                  >
+                    Tentar novamente
+                  </Button>
+                </div>
               ) : filteredSuggestions.length === 0 ? (
                 <CommandEmpty>
                   <div className="p-4 text-center">
                     <p className="text-sm text-muted-foreground mb-2">
-                      Nenhum produto encontrado
+                      {suggestions.length === 0 
+                        ? "Nenhuma sugestão disponível" 
+                        : "Nenhum produto encontrado"
+                      }
                     </p>
                     {value && (
                       <p className="text-xs text-muted-foreground">
@@ -187,6 +222,11 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
           </span>
         </div>
       )}
+      
+      {/* Debug info - removível em produção */}
+      <div className="text-xs text-gray-400">
+        Debug: {suggestions.length} sugestões carregadas, loading: {loading.toString()}, error: {error || 'nenhum'}
+      </div>
     </div>
   );
 };
