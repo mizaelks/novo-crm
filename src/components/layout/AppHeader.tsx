@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import AlertsDropdown from "@/components/alerts/AlertsDropdown";
 import SettingsDropdown from "@/components/settings/SettingsDropdown";
 import UserProfileInfo from "./UserProfileInfo";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const AppHeader = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { isManager } = useUserRole();
   
   const handleSignOut = async () => {
     await signOut();
@@ -21,8 +23,12 @@ const AppHeader = () => {
     { href: "/", label: "Dashboard" },
     { href: "/funnels", label: "Funis" },
     { href: "/opportunities", label: "Oportunidades" },
-    { href: "/insights", label: "Insights" },
   ];
+
+  // Add insights link only for managers and admins
+  if (isManager) {
+    links.push({ href: "/insights", label: "Insights" });
+  }
 
   return (
     <header className="border-b">

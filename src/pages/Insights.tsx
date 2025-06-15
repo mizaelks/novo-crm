@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,8 @@ import { formatCurrency } from "@/services/utils/dateUtils";
 import { CalendarDays, TrendingUp, DollarSign, Target, Zap } from "lucide-react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Navigate } from "react-router-dom";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -26,6 +27,7 @@ interface ValueData {
 }
 
 const Insights = () => {
+  const { isManager, loading: roleLoading } = useUserRole();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [selectedFunnel, setSelectedFunnel] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,19 @@ const Insights = () => {
   const [valueOverTime, setValueOverTime] = useState<ValueData[]>([]);
   
   const { filter, setFilterType, setDateRange, filterByDate, getFilterLabel } = useDateFilter();
+
+  // Check permissions first
+  if (!roleLoading && !isManager) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary border-r-2" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     const loadData = async () => {
