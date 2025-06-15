@@ -142,7 +142,7 @@ const ArchiveSettingsDialog = ({
                 Última execução: {formatDateBRT(new Date(archiveSettings.lastRun))}
               </span>
             </div>
-          </div>
+          )}
         </div>
         <DialogFooter>
           <Button 
