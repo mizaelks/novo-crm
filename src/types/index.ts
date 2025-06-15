@@ -199,35 +199,11 @@ export interface WebhookTemplateFormData {
 
 export interface ScheduledActionFormData {
   opportunityId: string;
-  actionType: 'email' | 'webhook' | 'task';
-  actionConfig: {
-    // Webhook-specific fields
-    url?: string;
-    method?: string;
-    payload?: any;
-    // Email-specific fields
-    email?: string;
-    subject?: string;
-    body?: string;
-    // Task-specific fields
-    title?: string;
-    assignedTo?: string;
-    // Common fields
-    description?: string;
-    templateId?: string;
-    moveToNextStage?: boolean;
-    nextStageId?: string;
-    response?: {
-      status?: number;
-      body?: string;
-      success?: boolean;
-      executed_at?: string;
-      error?: string;
-    }
-  };
-  scheduledDateTime: Date;
-  templateId?: string; // Adding the missing templateId property
+  actionType: 'webhook' | 'task';
+  actionConfig: any;
+  scheduledDateTime: Date | string;
+  templateId?: string | null;
 }
 
-import { SortingOption } from "./taskTemplates";
-import { StageSortConfig } from "./taskTemplates";
+// Export SortingOption that was missing
+export type { SortingOption } from './taskTemplates';
