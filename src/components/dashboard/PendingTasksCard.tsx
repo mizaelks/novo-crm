@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, Calendar, Check } from "lucide-react";
 import { scheduledActionAPI } from "@/services/scheduledActionAPI";
 import { ScheduledAction } from "@/types";
-import { formatCurrency } from "@/services/utils/dateUtils";
 import { toast } from "sonner";
 
 interface PendingTasksCardProps {
@@ -29,6 +28,7 @@ const PendingTasksCard = ({ className }: PendingTasksCardProps) => {
         setPendingTasks(pending.slice(0, 5)); // Mostrar apenas 5 tarefas
       } catch (error) {
         console.error("Erro ao carregar tarefas pendentes:", error);
+        toast.error("Erro ao carregar tarefas pendentes");
       } finally {
         setLoading(false);
       }
