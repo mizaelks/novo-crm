@@ -6,6 +6,7 @@ export interface ProductSuggestion {
   name: string;
   description?: string;
   category: string;
+  price?: number;
   isActive: boolean;
   usageCount: number;
   createdAt: string;
@@ -27,6 +28,7 @@ export const productSuggestionsAPI = {
       name: item.name,
       description: item.description,
       category: item.category,
+      price: item.price,
       isActive: item.is_active,
       usageCount: item.usage_count,
       createdAt: item.created_at,
@@ -49,6 +51,7 @@ export const productSuggestionsAPI = {
       name: item.name,
       description: item.description,
       category: item.category,
+      price: item.price,
       isActive: item.is_active,
       usageCount: item.usage_count,
       createdAt: item.created_at,
@@ -63,6 +66,7 @@ export const productSuggestionsAPI = {
         name: data.name,
         description: data.description,
         category: data.category,
+        price: data.price,
         is_active: data.isActive
       }])
       .select()
@@ -75,6 +79,7 @@ export const productSuggestionsAPI = {
       name: created.name,
       description: created.description,
       category: created.category,
+      price: created.price,
       isActive: created.is_active,
       usageCount: created.usage_count,
       createdAt: created.created_at,
@@ -87,6 +92,7 @@ export const productSuggestionsAPI = {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.category !== undefined) updateData.category = data.category;
+    if (data.price !== undefined) updateData.price = data.price;
     if (data.isActive !== undefined) updateData.is_active = data.isActive;
     
     updateData.updated_at = new Date().toISOString();
@@ -105,6 +111,7 @@ export const productSuggestionsAPI = {
       name: updated.name,
       description: updated.description,
       category: updated.category,
+      price: updated.price,
       isActive: updated.is_active,
       usageCount: updated.usage_count,
       createdAt: updated.created_at,

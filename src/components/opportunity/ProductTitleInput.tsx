@@ -2,192 +2,190 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronDown, Package, TrendingUp } from "lucide-react";
 import { productSuggestionsAPI, ProductSuggestion } from "@/services/productSuggestionsAPI";
+import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface ProductTitleInputProps {
   value: string;
   onChange: (value: string) => void;
-  label?: string;
-  placeholder?: string;
   required?: boolean;
 }
 
-export const ProductTitleInput = ({ 
-  value, 
-  onChange, 
-  label = "Produto/Serviço",
-  placeholder = "Digite o nome do produto ou serviço...",
-  required = false
-}: ProductTitleInputProps) => {
+export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInputProps) => {
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<ProductSuggestion[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadSuggestions = async () => {
-      try {
-        const data = await productSuggestionsAPI.getPopular(20);
-        setSuggestions(data);
-      } catch (error) {
-        console.error("Error loading product suggestions:", error);
-      }
-    };
-    
     loadSuggestions();
   }, []);
 
-  useEffect(() => {
-    if (value.length > 0) {
-      const filtered = suggestions.filter(suggestion =>
-        suggestion.name.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredSuggestions(filtered.slice(0, 8));
-      setIsOpen(filtered.length > 0);
-      setSelectedIndex(-1);
-    } else {
-      setFilteredSuggestions(suggestions.slice(0, 8));
-      setIsOpen(false);
-    }
-  }, [value, suggestions]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-  };
-
-  const handleSuggestionClick = async (suggestion: ProductSuggestion) => {
-    onChange(suggestion.name);
-    setIsOpen(false);
-    
-    // Incrementar contador de uso
+  const loadSuggestions = async () => {
     try {
-      await productSuggestionsAPI.incrementUsage(suggestion.name);
+      setLoading(true);
+      const data = await productSuggestionsAPI.getPopular(20);
+      setSuggestions(data);
     } catch (error) {
-      console.error("Error incrementing usage:", error);
+      console.error("Error loading product suggestions:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || filteredSuggestions.length === 0) return;
+  const handleSelectProduct = (product: ProductSuggestion) => {
+    setSelectedProduct(product);
+    onChange(product.name);
+    setOpen(false);
+  };
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < filteredSuggestions.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredSuggestions.length) {
-          handleSuggestionClick(filteredSuggestions[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        setIsOpen(false);
-        setSelectedIndex(-1);
-        break;
+  const handleInputChange = (inputValue: string) => {
+    onChange(inputValue);
+    // Reset selected product if user types something different
+    if (selectedProduct && inputValue !== selectedProduct.name) {
+      setSelectedProduct(null);
     }
   };
+
+  const filteredSuggestions = suggestions.filter(product =>
+    product.name.toLowerCase().includes(value.toLowerCase())
+  );
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      produto: "bg-blue-100 text-blue-800",
-      servico: "bg-green-100 text-green-800",
-      software: "bg-purple-100 text-purple-800",
-      consultoria: "bg-orange-100 text-orange-800",
-      treinamento: "bg-yellow-100 text-yellow-800",
-      desenvolvimento: "bg-indigo-100 text-indigo-800",
-      personalizado: "bg-gray-100 text-gray-800"
+      'produto': 'bg-blue-100 text-blue-800',
+      'servico': 'bg-green-100 text-green-800',
+      'software': 'bg-purple-100 text-purple-800',
+      'consultoria': 'bg-orange-100 text-orange-800',
+      'treinamento': 'bg-yellow-100 text-yellow-800',
+      'desenvolvimento': 'bg-indigo-100 text-indigo-800',
+      'personalizado': 'bg-gray-100 text-gray-800'
     };
-    return colors[category] || "bg-gray-100 text-gray-800";
+    return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div className="space-y-2">
       <Label htmlFor="product-title">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        Produto/Serviço {required && "*"}
       </Label>
-      <Input
-        ref={inputRef}
-        id="product-title"
-        type="text"
-        value={value}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (filteredSuggestions.length > 0) {
-            setIsOpen(true);
-          }
-        }}
-        placeholder={placeholder}
-        className="mt-1"
-        autoComplete="off"
-      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-10 px-3 py-2 text-left font-normal"
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Package className="h-4 w-4 flex-shrink-0" />
+              <span className={cn(
+                "truncate",
+                !value && "text-muted-foreground"
+              )}>
+                {value || "Selecione ou digite um produto/serviço"}
+              </span>
+            </div>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
+            <CommandInput
+              placeholder="Buscar produtos..."
+              value={value}
+              onValueChange={handleInputChange}
+            />
+            <CommandList>
+              {loading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Carregando sugestões...
+                </div>
+              ) : filteredSuggestions.length === 0 ? (
+                <CommandEmpty>
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Nenhum produto encontrado
+                    </p>
+                    {value && (
+                      <p className="text-xs text-muted-foreground">
+                        Digite para criar "{value}" como novo produto
+                      </p>
+                    )}
+                  </div>
+                </CommandEmpty>
+              ) : (
+                <CommandGroup>
+                  {filteredSuggestions.map((product) => (
+                    <CommandItem
+                      key={product.id}
+                      value={product.name}
+                      onSelect={() => handleSelectProduct(product)}
+                      className="flex items-center justify-between p-3 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            selectedProduct?.id === product.id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium truncate">
+                              {product.name}
+                            </span>
+                            <Badge 
+                              variant="secondary" 
+                              className={cn("text-xs", getCategoryColor(product.category))}
+                            >
+                              {product.category}
+                            </Badge>
+                          </div>
+                          {product.description && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {product.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {product.price && (
+                              <span className="text-xs font-medium text-green-600">
+                                {formatCurrency(product.price)}
+                              </span>
+                            )}
+                            {product.usageCount > 0 && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                {product.usageCount} usos
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       
-      {isOpen && filteredSuggestions.length > 0 && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto">
-          <CardContent className="p-2">
-            {filteredSuggestions.map((suggestion, index) => (
-              <div
-                key={suggestion.id}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className={cn(
-                  "flex items-center justify-between p-2 rounded cursor-pointer transition-colors",
-                  index === selectedIndex 
-                    ? "bg-accent text-accent-foreground" 
-                    : "hover:bg-accent/50"
-                )}
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{suggestion.name}</div>
-                  {suggestion.description && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {suggestion.description}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 ml-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={cn("text-xs", getCategoryColor(suggestion.category))}
-                  >
-                    {suggestion.category}
-                  </Badge>
-                  {suggestion.usageCount > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {suggestion.usageCount}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {selectedProduct && selectedProduct.price && (
+        <div className="text-sm text-muted-foreground">
+          <span className="text-green-600 font-medium">
+            Preço sugerido: {formatCurrency(selectedProduct.price)}
+          </span>
+        </div>
       )}
     </div>
   );
