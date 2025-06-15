@@ -3,25 +3,15 @@ import { Button } from "@/components/ui/button";
 import { RequiredTask } from "@/types";
 import { DEFAULT_TASK_TEMPLATES } from "@/types/taskTemplates";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Phone, MessageCircle, Mail, FileText, Calendar } from "lucide-react";
+import { Clock } from "lucide-react";
 import { translateTaskCategory } from "@/components/settings/templateManagement/utils/translations";
+import { taskIconMap } from "@/components/settings/templateManagement/utils/taskIcons";
 
 interface TaskTemplateSelectorProps {
   requiredTasks: RequiredTask[];
   setRequiredTasks: (tasks: RequiredTask[]) => void;
   stageId: string;
 }
-
-const iconMap = {
-  phone: Phone,
-  'message-circle': MessageCircle,
-  mail: Mail,
-  'file-text': FileText,
-  calendar: Calendar,
-  clock: Clock,
-  folder: FileText,
-  'file-check': FileText
-};
 
 export const TaskTemplateSelector = ({
   requiredTasks,
@@ -56,7 +46,7 @@ export const TaskTemplateSelector = ({
         <div className="grid grid-cols-2 gap-2">
           {DEFAULT_TASK_TEMPLATES.map((template) => {
             const isSelected = requiredTasks.some(task => task.templateId === template.id);
-            const IconComponent = iconMap[template.icon as keyof typeof iconMap] || Clock;
+            const IconComponent = taskIconMap[template.icon as keyof typeof taskIconMap] || Clock;
             
             return (
               <Button
