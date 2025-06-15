@@ -33,30 +33,15 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
     return <InsightsStatsSkeleton />;
   }
 
-  const { previousPeriodStats } = stats;
-
-  const calculatePercentageChange = (current: number, previous: number) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
-    return ((current - previous) / previous) * 100;
-  };
-
-  const formatTrend = (current: number, previous: number, isCurrency = false, isPercentage = false) => {
-    const change = calculatePercentageChange(current, previous);
-    const isPositive = change > 0;
-    const isNeutral = change === 0;
-    
-    if (isNeutral) return "Sem alteração";
-    
-    const sign = isPositive ? "+" : "";
-    return `${sign}${change.toFixed(1)}%`;
-  };
-
   // Determinar se deve mostrar valores monetários
   const showMonetaryValues = funnelType === 'venda' || funnelType === 'all';
   
-  // Label para vendas baseado no tipo
-  const salesLabel = funnelType === 'relacionamento' ? 'Oportunidades Ganhas' : 'Vendas Realizadas';
-  const salesValueLabel = funnelType === 'relacionamento' ? 'Oportunidades Convertidas' : 'Valor de Vendas';
+  // Labels baseados no tipo de funil
+  const salesLabel = funnelType === 'relacionamento' ? 'Oportunidades Convertidas' : 'Vendas Realizadas';
+  const salesValueLabel = funnelType === 'relacionamento' ? 'Total Convertido' : 'Valor de Vendas';
+
+  // Calcular subtitle para taxa de conversão
+  const conversionSubtitle = `${stats.totalSales} de ${stats.totalOpportunities} oportunidades`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -108,7 +93,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
       <StatsCard
         title="Taxa de Conversão"
         value={`${stats.conversionRate.toFixed(1)}%`}
-        subtitle={`${stats.totalSales} de ${stats.totalOpportunities} oportunidades`}
+        subtitle={conversionSubtitle}
         icon={Percent}
         valueClassName="text-2xl font-bold text-purple-600"
       />

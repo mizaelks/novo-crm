@@ -70,7 +70,6 @@ export const useStatsCalculation = (
         
         opportunities.forEach(opp => {
           // Para funis de venda, contabiliza valor sempre
-          // Para funis de relacionamento, não contabiliza valor nas vendas
           if (funnel.funnelType === 'venda') {
             totalValue += opp.value;
             if (stage.isWinStage) {
@@ -78,7 +77,7 @@ export const useStatsCalculation = (
               totalSalesValue += opp.value;
             }
           } else {
-            // Funil de relacionamento: não considera valor monetário
+            // Para funis de relacionamento, não contabiliza valores monetários
             if (stage.isWinStage) {
               totalSales++;
               // Não adiciona valor para funis de relacionamento
@@ -89,7 +88,7 @@ export const useStatsCalculation = (
     });
 
     const averageTicket = totalSales > 0 ? totalSalesValue / totalSales : 0;
-    // Taxa de conversão corrigida: vendas dividido por total de oportunidades (%)
+    // CORREÇÃO: Taxa de conversão = (vendas / total de oportunidades) * 100
     const conversionRate = totalOpportunities > 0 ? (totalSales / totalOpportunities) * 100 : 0;
 
     return {
