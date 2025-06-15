@@ -63,7 +63,7 @@ const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialo
       }
 
       // Criar usuário usando a função edge
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-user`, {
+      const response = await fetch(`https://ffykgxnmijoonyutchzx.supabase.co/functions/v1/create-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
