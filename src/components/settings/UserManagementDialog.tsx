@@ -10,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Crown, Shield, User, UserPlus, AlertCircle, Trash2 } from "lucide-react";
+import { Users, Crown, Shield, User, UserPlus, AlertCircle, Trash2, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import CreateUserDialog from "./CreateUserDialog";
+import UserInviteDialog from "./UserInviteDialog";
 
 interface Profile {
   id: string;
@@ -39,6 +40,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
@@ -259,14 +261,17 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
                 Usuários e Permissões
               </DialogTitle>
               {isAdmin && (
-                <Button
-                  onClick={() => setCreateUserOpen(true)}
-                  className="flex items-center gap-2"
-                  size="sm"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Criar Usuário
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setInviteDialogOpen(true)}
+                    className="flex items-center gap-2"
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Convidar Usuário
+                  </Button>
+                </div>
               )}
             </div>
           </DialogHeader>
@@ -420,6 +425,12 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
         open={createUserOpen}
         onOpenChange={setCreateUserOpen}
         onUserCreated={loadUsers}
+      />
+      
+      <UserInviteDialog
+        isOpen={inviteDialogOpen}
+        setIsOpen={setInviteDialogOpen}
+        onUserInvited={loadUsers}
       />
       
       <ConfirmDialog />

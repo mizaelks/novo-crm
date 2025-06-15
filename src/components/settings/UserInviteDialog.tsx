@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -21,9 +20,10 @@ import { FormField } from "@/components/forms/FormField";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { validateData } from "@/utils/validation";
-import { UserPlus, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const inviteSchema = z.object({
   email: z.string().email("Email deve ter um formato válido"),
@@ -35,12 +35,12 @@ const inviteSchema = z.object({
 type InviteFormData = z.infer<typeof inviteSchema>;
 
 interface UserInviteDialogProps {
-  onInviteUser: (userData: InviteFormData) => Promise<void>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  onUserInvited: () => void;
 }
 
-export const UserInviteDialog = ({ onInviteUser, isOpen, setIsOpen }: UserInviteDialogProps) => {
+export const UserInviteDialog = ({ isOpen, setIsOpen, onUserInvited }: UserInviteDialogProps) => {
   const [formData, setFormData] = useState<InviteFormData>({
     email: "",
     role: "user",
@@ -80,10 +80,26 @@ export const UserInviteDialog = ({ onInviteUser, isOpen, setIsOpen }: UserInvite
 
     setIsLoading(true);
     try {
-      await onInviteUser(validation.data!);
+      console.log("Enviando convite para:", formData);
+      
+      // Chamar edge function para enviar convite
+      const { error } = await supabase.functions.invoke('send-invite', {
+        body: {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          role: formData.role
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success("Convite enviado com sucesso!");
       resetForm();
       setIsOpen(false);
+      onUserInvited();
     } catch (error) {
       handleError(error, "Erro ao enviar convite");
     } finally {
@@ -100,12 +116,6 @@ export const UserInviteDialog = ({ onInviteUser, isOpen, setIsOpen }: UserInvite
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          Convidar Usuário
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

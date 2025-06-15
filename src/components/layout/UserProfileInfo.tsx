@@ -1,9 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
+import { User } from "lucide-react";
 
 interface Profile {
   first_name: string | null;
@@ -14,6 +16,7 @@ const UserProfileInfo = () => {
   const { user } = useAuth();
   const { userRole, loading } = useUserRole();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -79,9 +82,15 @@ const UserProfileInfo = () => {
           {getRoleLabel()}
         </Badge>
       )}
-      <span className="text-sm text-muted-foreground">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate('/profile')}
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <User className="h-4 w-4" />
         {getUserDisplayName()}
-      </span>
+      </Button>
     </div>
   );
 };

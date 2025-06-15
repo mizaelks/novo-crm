@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
 import WebhookManager from "./pages/webhook/WebhookManager";
 import ApiDocs from "./pages/api/ApiDocs";
 import ApiTokenManager from "./pages/ApiTokenManager";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute />}>
               <Route index element={<Index />} />
+              <Route path="/profile" element={<UserProfile />} />
               <Route path="/webhooks" element={<WebhookManager />} />
               <Route path="/api" element={<ApiDocs />} />
               <Route path="/api/tokens" element={<ApiTokenManager />} />
