@@ -7,6 +7,11 @@ export interface Funnel {
   stages: Stage[];
 }
 
+export interface StageSortConfig {
+  type: 'free' | 'urgency' | 'priority';
+  enabled: boolean;
+}
+
 export interface Stage {
   id: string;
   name: string;
@@ -99,7 +104,6 @@ export interface ScheduledAction {
     templateId?: string; // ID do template de tarefa padrão
     // Common fields
     description?: string;
-    templateId?: string;
     moveToNextStage?: boolean;
     nextStageId?: string;
     response?: {

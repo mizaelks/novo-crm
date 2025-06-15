@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Opportunity, Stage } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, Edit, Calendar, CheckCircle } from "lucide-react";
+import { Calendar, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
 import { OpportunityMultipleAlerts } from "./OpportunityMultipleAlerts";
@@ -95,19 +95,19 @@ const OpportunityCard = ({
               className="cursor-pointer hover:shadow-md transition-all duration-200 group overflow-hidden"
               onClick={handleCardClick}
             >
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-primary transition-colors">
+                    <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-primary transition-colors leading-tight">
                       {opportunity.title}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-1">{opportunity.client}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{opportunity.client}</p>
                     {opportunity.company && (
-                      <p className="text-xs text-gray-600 mt-1 truncate">{opportunity.company}</p>
+                      <p className="text-xs text-gray-600 mt-0.5 truncate">{opportunity.company}</p>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant="outline" className="text-xs px-2 py-0 font-medium" style={{ borderColor: stage.color }}>
+                    <Badge variant="outline" className="text-xs px-2 py-0 font-medium text-right" style={{ borderColor: stage.color }}>
                       {formatCurrency(opportunity.value)}
                     </Badge>
                     <OpportunityMigrationIndicator opportunity={opportunity} />
@@ -115,19 +115,19 @@ const OpportunityCard = ({
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0 pb-0">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+              <CardContent className="pt-0 pb-0 px-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Calendar className="h-3 w-3" />
                     <span>{format(opportunity.createdAt, "dd/MM")}</span>
                   </div>
                   
-                  {/* Botão de concluir tarefa */}
+                  {/* Botão de concluir tarefa - mais compacto */}
                   {firstPendingTask && (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-6 px-2 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      className="h-5 px-2 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                       onClick={handleCompleteTask}
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -136,7 +136,7 @@ const OpportunityCard = ({
                   )}
                 </div>
 
-                {/* Alertas múltiplos */}
+                {/* Alertas múltiplos - mais compactos */}
                 <OpportunityMultipleAlerts 
                   opportunity={opportunity}
                   stage={stage}
@@ -144,7 +144,7 @@ const OpportunityCard = ({
                 />
               </CardContent>
 
-              {/* Ações rápidas no rodapé */}
+              {/* Ações rápidas no rodapé - mais compacto */}
               <OpportunityQuickActions
                 opportunity={opportunity}
                 onAddTask={handleAddTask}

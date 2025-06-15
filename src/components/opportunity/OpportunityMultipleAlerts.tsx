@@ -2,7 +2,7 @@
 import { Opportunity, Stage, ScheduledAction } from '@/types';
 import { shouldShowAlert, getAlertMessage } from '@/utils/stageAlerts';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { DEFAULT_TASK_TEMPLATES } from '@/types/taskTemplates';
 
 interface OpportunityMultipleAlertsProps {
@@ -29,11 +29,11 @@ export const OpportunityMultipleAlerts = ({
   };
 
   return (
-    <div className="flex flex-col gap-1 mt-2">
+    <div className="flex flex-col gap-0.5 mb-1">
       {hasStageAlert && (
         <div className="flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3 text-red-500" />
-          <Badge variant="destructive" className="text-xs">
+          <AlertTriangle className="h-3 w-3 text-red-500 flex-shrink-0" />
+          <Badge variant="destructive" className="text-xs px-1.5 py-0 h-4">
             {getAlertMessage(opportunity, stage)}
           </Badge>
         </div>
@@ -41,8 +41,8 @@ export const OpportunityMultipleAlerts = ({
       
       {hasPendingTasks && (
         <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-orange-500" />
-          <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+          <Clock className="h-3 w-3 text-orange-500 flex-shrink-0" />
+          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-orange-100 text-orange-800 border-orange-200">
             {pendingTasks.length === 1 
               ? getTaskLabel(pendingTasks[0])
               : `${pendingTasks.length} tarefas`

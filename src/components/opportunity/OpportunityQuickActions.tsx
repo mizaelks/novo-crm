@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, FileText } from 'lucide-react';
+import { Calendar, FileText } from 'lucide-react';
 import { Opportunity } from '@/types';
 
 interface OpportunityQuickActionsProps {
@@ -15,11 +15,11 @@ export const OpportunityQuickActions = ({
   onAddField 
 }: OpportunityQuickActionsProps) => {
   return (
-    <div className="flex items-center justify-center gap-2 p-2 border-t bg-gray-50/50 text-xs">
+    <div className="flex items-center justify-center gap-2 py-1.5 px-2 border-t bg-gray-50/30 text-xs">
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+        className="h-5 px-2 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
         onClick={(e) => {
           e.stopPropagation();
           onAddTask();
@@ -34,7 +34,7 @@ export const OpportunityQuickActions = ({
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+        className="h-5 px-2 text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
         onClick={(e) => {
           e.stopPropagation();
           onAddField();
