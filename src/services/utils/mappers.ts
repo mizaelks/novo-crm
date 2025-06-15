@@ -1,4 +1,5 @@
-import { Funnel, Stage, Opportunity } from "@/types";
+
+import { Funnel, Stage, Opportunity, WebhookConfig, ScheduledAction } from "@/types";
 
 export const mapDbFunnelToFunnel = (dbFunnel: any): Omit<Funnel, 'stages'> => ({
   id: dbFunnel.id,
@@ -47,4 +48,21 @@ export const mapDbOpportunityToOpportunity = (dbOpportunity: any): Opportunity =
   userId: dbOpportunity.user_id || undefined,
   winReason: dbOpportunity.win_reason || undefined,
   lossReason: dbOpportunity.loss_reason || undefined
+});
+
+export const mapDbWebhookToWebhook = (dbWebhook: any): WebhookConfig => ({
+  id: dbWebhook.id,
+  targetType: dbWebhook.target_type,
+  targetId: dbWebhook.target_id,
+  url: dbWebhook.url,
+  event: dbWebhook.event
+});
+
+export const mapDbScheduledActionToScheduledAction = (dbAction: any): ScheduledAction => ({
+  id: dbAction.id,
+  opportunityId: dbAction.opportunity_id,
+  actionType: dbAction.action_type,
+  actionConfig: dbAction.action_config || {},
+  scheduledDateTime: new Date(dbAction.scheduled_datetime),
+  status: dbAction.status || 'pending'
 });

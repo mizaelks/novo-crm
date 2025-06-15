@@ -8,6 +8,7 @@ export const mockFunnels: Funnel[] = [
     name: 'Vendas B2B',
     description: 'Funil de vendas para clientes corporativos',
     order: 1,
+    funnelType: 'venda',
     stages: [],
   },
   {
@@ -15,6 +16,7 @@ export const mockFunnels: Funnel[] = [
     name: 'Marketing Lead',
     description: 'Funil de qualificação de leads de marketing',
     order: 2,
+    funnelType: 'relacionamento',
     stages: [],
   },
 ];
