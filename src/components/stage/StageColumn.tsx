@@ -63,7 +63,7 @@ const StageColumn = ({
     }
   };
 
-  const handleAddClick = () => {
+  const handleAddOpportunity = () => {
     setIsDialogOpen(true);
   };
   
@@ -84,13 +84,13 @@ const StageColumn = ({
                 stage={stage}
                 dragHandleProps={provided.dragHandleProps}
                 updateStage={onStageUpdated}
+                onAddOpportunity={handleAddOpportunity}
               />
               <CardContent className="p-3 flex-1 overflow-hidden">
                 <StageOpportunityList
                   stageId={stage.id}
                   opportunities={stage.opportunities}
                   stage={stage}
-                  onAddClick={handleAddClick}
                   onOpportunityClick={handleOpportunityClick}
                   onAddTask={handleAddTask}
                   onAddField={handleAddField}

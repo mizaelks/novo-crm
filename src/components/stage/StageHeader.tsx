@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Stage } from "@/types";
-import { EditIcon, BadgeCheck, XCircle } from "lucide-react";
+import { EditIcon, BadgeCheck, XCircle, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EditStageDialog from "./EditStageDialog";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,10 @@ interface StageHeaderProps {
   stage: Stage;
   dragHandleProps?: any;
   updateStage?: (updatedStage: Stage) => void;
+  onAddOpportunity?: () => void;
 }
 
-const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) => {
+const StageHeader = ({ stage, dragHandleProps, updateStage, onAddOpportunity }: StageHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Calculate text color based on stage color for optimal contrast
@@ -39,41 +40,63 @@ const StageHeader = ({ stage, dragHandleProps, updateStage }: StageHeaderProps) 
     setIsEditDialogOpen(true);
   };
 
+  const handleAddOpportunityClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAddOpportunity) {
+      onAddOpportunity();
+    }
+  };
+
   return (
     <div 
-      className="p-2 flex items-center justify-between rounded-t-md"
+      className="p-2 flex flex-col gap-2 rounded-t-md"
       style={{ backgroundColor: stageColor }}
       {...dragHandleProps}
     >
-      <div className="flex items-center">
-        <h3 className={`font-medium ${textColor}`}>{stage.name}</h3>
-        {stage.isWinStage && (
-          <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
-            <BadgeCheck className="h-3 w-3 mr-1" />
-            Vitória
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <h3 className={`font-medium ${textColor}`}>{stage.name}</h3>
+          {stage.isWinStage && (
+            <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+              <BadgeCheck className="h-3 w-3 mr-1" />
+              Vitória
+            </Badge>
+          )}
+          {stage.isLossStage && (
+            <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
+              <XCircle className="h-3 w-3 mr-1" />
+              Perda
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center">
+          <Badge variant="secondary" className={textColor}>
+            {stage.opportunities.length}
           </Badge>
-        )}
-        {stage.isLossStage && (
-          <Badge variant="secondary" className="ml-2 bg-red-100 text-red-800">
-            <XCircle className="h-3 w-3 mr-1" />
-            Perda
-          </Badge>
-        )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`ml-2 h-8 w-8 p-0 ${textColor} hover:bg-opacity-20 hover:bg-white`}
+            onClick={handleEditClick}
+          >
+            <EditIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
-      <div className="flex items-center">
-        <Badge variant="secondary" className={textColor}>
-          {stage.opportunities.length}
-        </Badge>
+      {onAddOpportunity && (
         <Button
           variant="ghost"
           size="sm"
-          className={`ml-2 h-8 w-8 p-0 ${textColor} hover:bg-opacity-20 hover:bg-white`}
-          onClick={handleEditClick}
+          className={`w-full text-xs ${textColor} hover:bg-opacity-20 hover:bg-white border border-opacity-30 border-white`}
+          onClick={handleAddOpportunityClick}
         >
-          <EditIcon className="h-4 w-4" />
+          <Plus className="h-3 w-3 mr-1" />
+          Nova oportunidade
         </Button>
-      </div>
+      )}
       
       {updateStage && (
         <EditStageDialog
