@@ -51,7 +51,7 @@ export const useInsightsData = (
   }, [funnels, selectedFunnel]);
 
   // Function to filter opportunities by additional criteria
-  const filterOpportunities = useCallback((opportunities: any[]) => {
+  const filterOpportunities = useCallback((opportunities: any[], stageId?: string) => {
     let filtered = opportunities;
 
     // Filter by date
@@ -62,18 +62,44 @@ export const useInsightsData = (
       filtered = filtered.filter(opp => opp.userId === selectedUser);
     }
 
-    // Filter by win reason
+    // Filter by win reason - only for opportunities in win stages
     if (selectedWinReason !== "all") {
-      filtered = filtered.filter(opp => opp.winReason === selectedWinReason);
+      filtered = filtered.filter(opp => {
+        // Find the stage this opportunity belongs to
+        const stage = filteredFunnels
+          .flatMap(f => f.stages)
+          .find(s => s.id === (stageId || opp.stageId));
+        
+        // Only filter by win reason if the opportunity is in a win stage
+        if (stage?.isWinStage) {
+          return opp.winReason === selectedWinReason;
+        }
+        
+        // If not in a win stage, don't filter by win reason
+        return true;
+      });
     }
 
-    // Filter by loss reason
+    // Filter by loss reason - only for opportunities in loss stages
     if (selectedLossReason !== "all") {
-      filtered = filtered.filter(opp => opp.lossReason === selectedLossReason);
+      filtered = filtered.filter(opp => {
+        // Find the stage this opportunity belongs to
+        const stage = filteredFunnels
+          .flatMap(f => f.stages)
+          .find(s => s.id === (stageId || opp.stageId));
+        
+        // Only filter by loss reason if the opportunity is in a loss stage
+        if (stage?.isLossStage) {
+          return opp.lossReason === selectedLossReason;
+        }
+        
+        // If not in a loss stage, don't filter by loss reason
+        return true;
+      });
     }
 
     return filtered;
-  }, [filterByDate, selectedUser, selectedWinReason, selectedLossReason]);
+  }, [filterByDate, selectedUser, selectedWinReason, selectedLossReason, filteredFunnels]);
 
   // Function to get previous period dates
   const getPreviousPeriodDates = useCallback(() => {
@@ -127,7 +153,7 @@ export const useInsightsData = (
             return oppDate >= fromDate && oppDate <= toDate;
           });
         } else {
-          opportunities = filterOpportunities(opportunities);
+          opportunities = filterOpportunities(opportunities, stage.id);
         }
         
         totalOpportunities += opportunities.length;
@@ -165,12 +191,12 @@ export const useInsightsData = (
           stageData[stage.name] = { total: 0, converted: 0 };
         }
         
-        const filteredOpportunities = filterOpportunities(stage.opportunities);
+        const filteredOpportunities = filterOpportunities(stage.opportunities, stage.id);
         stageData[stage.name].total += filteredOpportunities.length;
         
         if (index < funnel.stages.length - 1) {
           const nextStage = funnel.stages[index + 1];
-          const nextStageOpps = filterOpportunities(nextStage.opportunities);
+          const nextStageOpps = filterOpportunities(nextStage.opportunities, nextStage.id);
           stageData[stage.name].converted += nextStageOpps.length;
         }
       });
@@ -190,7 +216,7 @@ export const useInsightsData = (
     
     funnelsData.forEach(funnel => {
       funnel.stages.forEach(stage => {
-        const filteredOpportunities = filterOpportunities(stage.opportunities);
+        const filteredOpportunities = filterOpportunities(stage.opportunities, stage.id);
         if (!stageData[stage.name]) {
           stageData[stage.name] = 0;
         }
@@ -209,7 +235,7 @@ export const useInsightsData = (
     
     funnelsData.forEach(funnel => {
       funnel.stages.forEach(stage => {
-        const filteredOpportunities = filterOpportunities(stage.opportunities);
+        const filteredOpportunities = filterOpportunities(stage.opportunities, stage.id);
         filteredOpportunities.forEach(opp => {
           const month = new Date(opp.createdAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
           if (!monthData[month]) {
