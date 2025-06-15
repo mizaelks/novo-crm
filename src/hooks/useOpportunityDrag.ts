@@ -19,7 +19,7 @@ export const useOpportunityDrag = (
     destinationDroppableId: string,
     destinationIndex: number
   ) => {
-    console.log(`Processing opportunity drag:`, { draggableId, sourceDroppableId, destinationDroppableId, destinationIndex });
+    console.log(`Moving opportunity ${draggableId} from ${sourceDroppableId} to ${destinationDroppableId}`);
     
     // draggableId is just the opportunity ID, no prefix
     const opportunityId = draggableId;
@@ -27,11 +27,6 @@ export const useOpportunityDrag = (
     // Find source and destination stages
     const sourceStage = stages.find(stage => stage.id === sourceDroppableId);
     const destinationStage = stages.find(stage => stage.id === destinationDroppableId);
-    
-    console.log(`Found stages:`, { 
-      sourceStage: sourceStage ? { id: sourceStage.id, name: sourceStage.name } : null,
-      destinationStage: destinationStage ? { id: destinationStage.id, name: destinationStage.name } : null
-    });
     
     if (!sourceStage || !destinationStage) {
       console.error("Could not find source or destination stage");
@@ -43,12 +38,9 @@ export const useOpportunityDrag = (
     const opportunity = sourceStage.opportunities.find(opp => opp.id === opportunityId);
     if (!opportunity) {
       console.error("Could not find opportunity:", opportunityId);
-      console.log("Available opportunities in source stage:", sourceStage.opportunities.map(o => ({ id: o.id, title: o.title })));
       toast.error("Oportunidade não encontrada");
       return;
     }
-    
-    console.log(`Found opportunity:`, { id: opportunity.id, title: opportunity.title });
     
     // Check if destination stage has required fields
     const requiredFields = destinationStage.requiredFields || [];

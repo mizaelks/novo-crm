@@ -54,8 +54,8 @@ export const useKanbanDragHandler = ({
 
     console.log(`Drag completed: ${type} from ${source.droppableId}[${source.index}] to ${destination.droppableId}[${destination.index}]`);
 
-    // Handle opportunity drag between stages - check for both "OPPORTUNITY" and "DEFAULT" types
-    if (type === "OPPORTUNITY" || type === "DEFAULT") {
+    // Handle opportunity drag between stages
+    if (type === "OPPORTUNITY") {
       console.log("Handling opportunity drag");
       await handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
     }
