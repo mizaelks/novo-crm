@@ -13,10 +13,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { useUserRole } from "@/hooks/useUserRole";
 import { CreateUserDialog } from "./CreateUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Shield, Crown, Trash2, Edit, Plus } from "lucide-react";
+import { User, Shield, Crown, Trash2, Edit, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -24,6 +25,7 @@ interface User {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  role?: string;
 }
 
 interface UserManagementDialogProps {
@@ -38,30 +40,61 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { handleError } = useErrorHandler();
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAdmin) {
       loadUsers();
     }
-  }, [isOpen]);
+  }, [isOpen, isAdmin]);
+
+  // Só admins podem acessar este diálogo
+  if (!isAdmin) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Acesso Negado
+            </DialogTitle>
+            <DialogDescription>
+              Apenas administradores podem gerenciar usuários.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Buscar usuários com seus papéis
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name')
+        .select(`
+          id, 
+          email, 
+          first_name, 
+          last_name,
+          user_roles!inner(role)
+        `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
+      if (profilesError) {
+        throw profilesError;
       }
 
-      const mappedUsers: User[] = (data || []).map(user => ({
+      const mappedUsers: User[] = (profilesData || []).map(user => ({
         id: user.id,
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        role: (user.user_roles as any)?.[0]?.role || 'user',
       }));
 
       setUsers(mappedUsers);
@@ -75,6 +108,16 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
   const handleDeleteUser = async (userId: string) => {
     setDeletingUserId(userId);
     try {
+      // Primeiro remover papel do usuário
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (roleError) {
+        throw roleError;
+      }
+
       // Remover perfil do usuário
       const { error: profileError } = await supabase
         .from('profiles')
@@ -96,6 +139,39 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Crown className="h-4 w-4" />;
+      case 'manager':
+        return <Shield className="h-4 w-4" />;
+      default:
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'Administrador';
+      case 'manager':
+        return 'Gerente';
+      default:
+        return 'Usuário';
+    }
+  };
+
+  const getRoleVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive' as const;
+      case 'manager':
+        return 'default' as const;
+      default:
+        return 'secondary' as const;
+    }
   };
 
   return (
@@ -123,9 +199,12 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                   <div className="col-span-2">
                     <div className="font-medium">{user.firstName} {user.lastName}</div>
                     <div className="text-sm text-muted-foreground">{user.email}</div>
-                    <Badge variant="secondary" className="flex items-center gap-1 mt-1 w-fit">
-                      <User className="h-4 w-4" />
-                      Usuário
+                    <Badge 
+                      variant={getRoleVariant(user.role || 'user')} 
+                      className="flex items-center gap-1 mt-1 w-fit"
+                    >
+                      {getRoleIcon(user.role || 'user')}
+                      {getRoleLabel(user.role || 'user')}
                     </Badge>
                   </div>
                   <div className="flex justify-end gap-2">

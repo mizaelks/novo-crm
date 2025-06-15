@@ -74,6 +74,7 @@ export type Database = {
           description: string | null
           funnel_type: string
           id: string
+          is_shared: boolean | null
           name: string
           order: number | null
         }
@@ -82,6 +83,7 @@ export type Database = {
           description?: string | null
           funnel_type?: string
           id?: string
+          is_shared?: boolean | null
           name: string
           order?: number | null
         }
@@ -90,6 +92,7 @@ export type Database = {
           description?: string | null
           funnel_type?: string
           id?: string
+          is_shared?: boolean | null
           name?: string
           order?: number | null
         }
@@ -113,7 +116,7 @@ export type Database = {
           source_opportunity_id: string | null
           stage_id: string | null
           title: string
-          user_id: string | null
+          user_id: string
           value: number | null
           win_reason: string | null
         }
@@ -134,7 +137,7 @@ export type Database = {
           source_opportunity_id?: string | null
           stage_id?: string | null
           title: string
-          user_id?: string | null
+          user_id: string
           value?: number | null
           win_reason?: string | null
         }
@@ -155,7 +158,7 @@ export type Database = {
           source_opportunity_id?: string | null
           stage_id?: string | null
           title?: string
-          user_id?: string | null
+          user_id?: string
           value?: number | null
           win_reason?: string | null
         }
@@ -597,6 +600,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_opportunity: {
+        Args: {
+          opportunity_user_id: string
+          opportunity_funnel_id: string
+          current_user_id: string
+        }
+        Returns: boolean
+      }
       create_webhook_template: {
         Args: {
           p_name: string
@@ -660,6 +671,10 @@ export type Database = {
       }
       is_admin: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_funnel_shared: {
+        Args: { funnel_id: string }
         Returns: boolean
       }
       is_opportunity_owner: {

@@ -1,108 +1,135 @@
 
-import { Draggable } from "react-beautiful-dnd";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Opportunity, Stage } from "@/types";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Opportunity } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { Calendar, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
-import { OpportunityMigrationIndicator } from "./OpportunityMigrationIndicator";
-import { OpportunityMultipleAlerts } from "./OpportunityMultipleAlerts";
-import { usePendingTasks } from "@/hooks/usePendingTasks";
-import { toast } from "sonner";
+import { OpportunityOwnerBadge } from "./OpportunityOwnerBadge";
+import { OpportunityTasksBadge } from "./OpportunityTasksBadge";
+import { OpportunityAlertIndicator } from "./OpportunityAlertIndicator";
+import { 
+  MoreVertical, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  Archive,
+  RotateCcw
+} from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
-  index: number;
-  stage: Stage;
-  onClick?: (opportunity: Opportunity) => void;
+  onEdit?: (opportunity: Opportunity) => void;
+  onDelete?: (id: string) => void;
+  onView?: (opportunity: Opportunity) => void;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
+  funnelIsShared?: boolean;
 }
 
-const OpportunityCard = ({ 
+export const OpportunityCard = ({ 
   opportunity, 
-  index, 
-  stage,
-  onClick
+  onEdit, 
+  onDelete, 
+  onView, 
+  onArchive,
+  onUnarchive,
+  funnelIsShared = false 
 }: OpportunityCardProps) => {
-  const { pendingTasks, completeTask } = usePendingTasks(opportunity.id);
-  const firstPendingTask = pendingTasks[0];
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent opening details when clicking on buttons
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
-    if (onClick) {
-      onClick(opportunity);
-    }
-  };
-
-  const handleCompleteTask = async () => {
-    if (!firstPendingTask) return;
-    
-    const success = await completeTask(firstPendingTask.id);
-    if (success) {
-      toast.success("Tarefa concluída com sucesso!");
-    } else {
-      toast.error("Erro ao concluir tarefa");
-    }
-  };
+  const { user } = useAuth();
+  const { isAdmin, isManager } = useUserRole();
+  
+  const isOwner = user?.id === opportunity.userId;
+  const canEdit = isOwner || isAdmin || isManager;
+  const canDelete = isOwner || isAdmin;
 
   return (
-    <Draggable draggableId={opportunity.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`mb-3 ${snapshot.isDragging ? 'rotate-1 scale-105' : ''}`}
-        >
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-all duration-200 group overflow-hidden"
-            onClick={handleCardClick}
-          >
-            <CardHeader className="pb-2 pt-3 px-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-primary transition-colors leading-tight">
-                    {opportunity.title}
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-0.5">{opportunity.client}</p>
-                  {opportunity.company && (
-                    <p className="text-xs text-gray-600 mt-0.5 truncate">{opportunity.company}</p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <Badge variant="outline" className="text-xs px-2 py-0 font-medium text-right" style={{ borderColor: stage.color }}>
-                    {formatCurrency(opportunity.value)}
-                  </Badge>
-                  <OpportunityMigrationIndicator opportunity={opportunity} />
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="pt-0 pb-3 px-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar className="h-3 w-3" />
-                  <span>{format(opportunity.createdAt, "dd/MM")}</span>
-                </div>
-              </div>
-
-              {/* Alertas múltiplos com botão de concluir integrado */}
-              <OpportunityMultipleAlerts 
-                opportunity={opportunity}
-                stage={stage}
-                pendingTasks={pendingTasks}
-                onCompleteTask={firstPendingTask ? handleCompleteTask : undefined}
-              />
-            </CardContent>
-          </Card>
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 mb-1">{opportunity.title}</h3>
+          <p className="text-sm text-gray-600">{opportunity.client}</p>
+          {opportunity.company && (
+            <p className="text-xs text-gray-500">{opportunity.company}</p>
+          )}
         </div>
-      )}
-    </Draggable>
+        
+        <div className="flex items-center gap-2">
+          <OpportunityAlertIndicator opportunity={opportunity} />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onView && (
+                <DropdownMenuItem onClick={() => onView(opportunity)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver detalhes
+                </DropdownMenuItem>
+              )}
+              {canEdit && onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(opportunity)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+              )}
+              {canEdit && !opportunity.archived && onArchive && (
+                <DropdownMenuItem onClick={() => onArchive(opportunity.id)}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Arquivar
+                </DropdownMenuItem>
+              )}
+              {canEdit && opportunity.archived && onUnarchive && (
+                <DropdownMenuItem onClick={() => onUnarchive(opportunity.id)}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Desarquivar
+                </DropdownMenuItem>
+              )}
+              {canDelete && onDelete && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(opportunity.id)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {opportunity.value && opportunity.value > 0 && (
+          <div className="text-lg font-bold text-green-600">
+            {formatCurrency(opportunity.value)}
+          </div>
+        )}
+        
+        <div className="flex flex-wrap gap-2 items-center">
+          <OpportunityOwnerBadge 
+            userId={opportunity.userId} 
+            funnelIsShared={funnelIsShared}
+          />
+          <OpportunityTasksBadge opportunity={opportunity} />
+        </div>
+
+        {(opportunity.phone || opportunity.email) && (
+          <div className="text-xs text-gray-500 space-y-1">
+            {opportunity.phone && <div>📞 {opportunity.phone}</div>}
+            {opportunity.email && <div>✉️ {opportunity.email}</div>}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
-
-export default OpportunityCard;
