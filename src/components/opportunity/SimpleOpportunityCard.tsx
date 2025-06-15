@@ -24,7 +24,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { shouldShowAlert } from "@/utils/stageAlerts";
 
-interface OpportunityCardProps {
+interface SimpleOpportunityCardProps {
   opportunity: Opportunity;
   stage?: Stage;
   onEdit?: (opportunity: Opportunity) => void;
@@ -32,19 +32,17 @@ interface OpportunityCardProps {
   onView?: (opportunity: Opportunity) => void;
   onArchive?: (id: string) => void;
   onUnarchive?: (id: string) => void;
-  funnelIsShared?: boolean;
 }
 
-export const OpportunityCard = ({ 
+export const SimpleOpportunityCard = ({ 
   opportunity, 
   stage,
   onEdit, 
   onDelete, 
   onView, 
   onArchive,
-  onUnarchive,
-  funnelIsShared = false 
-}: OpportunityCardProps) => {
+  onUnarchive
+}: SimpleOpportunityCardProps) => {
   const { user } = useAuth();
   const { isAdmin, isManager } = useUserRole();
   
