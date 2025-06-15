@@ -1,8 +1,9 @@
 
 import { useState } from "react";
 import { opportunityAPI } from "@/services/api";
-import { Stage, Opportunity, RequiredField } from "@/types";
+import { Stage, Opportunity } from "@/types";
 import { toast } from "sonner";
+import { useDragOperationHandler } from "./useDragOperationHandler";
 
 export const useOpportunityDrag = (
   stages: Stage[],
@@ -12,6 +13,7 @@ export const useOpportunityDrag = (
   setCurrentDragOperation: (operation: any) => void
 ) => {
   const [isDragging, setIsDragging] = useState(false);
+  const { createDragOperation, hasRequirements } = useDragOperationHandler();
 
   const handleOpportunityDrag = async (
     draggableId: string,
@@ -21,7 +23,6 @@ export const useOpportunityDrag = (
   ) => {
     console.log(`Moving opportunity ${draggableId} from ${sourceDroppableId} to ${destinationDroppableId}`);
     
-    // draggableId is just the opportunity ID, no prefix
     const opportunityId = draggableId;
     
     // Find source and destination stages
@@ -42,39 +43,24 @@ export const useOpportunityDrag = (
       return;
     }
     
-    // Check if destination stage has required fields
-    const requiredFields = destinationStage.requiredFields || [];
+    // Create drag operation
+    const dragOperation = createDragOperation(
+      opportunity,
+      sourceDroppableId,
+      destinationStage,
+      destinationIndex
+    );
     
-    // Check if destination stage requires win/loss reasons
-    const needsWinReason = destinationStage.isWinStage && destinationStage.winReasonRequired;
-    const needsLossReason = destinationStage.isLossStage && destinationStage.lossReasonRequired;
+    console.log('Checking requirements:', dragOperation);
     
-    const hasRequiredFields = requiredFields.length > 0;
-    const hasReasonRequirements = needsWinReason || needsLossReason;
-    
-    console.log('Checking requirements:', { hasRequiredFields, hasReasonRequirements, needsWinReason, needsLossReason });
-    
-    if (hasRequiredFields || hasReasonRequirements) {
+    if (hasRequirements(dragOperation)) {
       console.log('Setting up drag operation for required fields/reasons');
-      // Set up the drag operation for required fields dialog
-      setCurrentDragOperation({
-        opportunity,
-        sourceStageId: sourceDroppableId,
-        destinationStageId: destinationDroppableId,
-        destinationIndex,
-        requiredFields,
-        needsWinReason,
-        needsLossReason,
-        availableWinReasons: destinationStage.winReasons || [],
-        availableLossReasons: destinationStage.lossReasons || []
-      });
-      
+      setCurrentDragOperation(dragOperation);
       setShowRequiredFieldsDialog(true);
       return;
     }
     
     console.log('No requirements, proceeding with direct move');
-    // No required fields or reasons, proceed with the move directly
     await completeOpportunityMove(opportunity, sourceDroppableId, destinationDroppableId, destinationIndex);
   };
 
@@ -137,9 +123,6 @@ export const useOpportunityDrag = (
     } catch (error) {
       console.error("Error moving opportunity:", error);
       toast.error("Erro ao mover oportunidade");
-      
-      // Revert optimistic update by refreshing stages
-      // This would need to be implemented in the parent component
     } finally {
       setIsDragging(false);
     }
