@@ -23,9 +23,10 @@ interface InsightsStatsProps {
       conversionRate: number;
     };
   };
+  funnelType?: 'venda' | 'relacionamento' | 'all';
 }
 
-const InsightsStats = ({ loading, stats }: InsightsStatsProps) => {
+const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProps) => {
   const { getFilterLabel } = useDateFilter();
 
   if (loading) {
@@ -50,6 +51,13 @@ const InsightsStats = ({ loading, stats }: InsightsStatsProps) => {
     return `${sign}${change.toFixed(1)}%`;
   };
 
+  // Determinar se deve mostrar valores monetários
+  const showMonetaryValues = funnelType === 'venda' || funnelType === 'all';
+  
+  // Label para vendas baseado no tipo
+  const salesLabel = funnelType === 'relacionamento' ? 'Oportunidades Ganhas' : 'Vendas Realizadas';
+  const salesValueLabel = funnelType === 'relacionamento' ? 'Oportunidades Convertidas' : 'Valor de Vendas';
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <StatsCard
@@ -59,42 +67,48 @@ const InsightsStats = ({ loading, stats }: InsightsStatsProps) => {
         icon={Target}
       />
       
-      <StatsCard
-        title="Valor Total"
-        value={formatCurrency(stats.totalValue)}
-        subtitle={getFilterLabel}
-        icon={DollarSign}
-        valueClassName="text-2xl font-bold text-primary"
-      />
+      {showMonetaryValues && (
+        <StatsCard
+          title="Valor Total"
+          value={formatCurrency(stats.totalValue)}
+          subtitle={getFilterLabel}
+          icon={DollarSign}
+          valueClassName="text-2xl font-bold text-primary"
+        />
+      )}
       
       <StatsCard
-        title="Vendas Realizadas"
+        title={salesLabel}
         value={stats.totalSales}
         subtitle={getFilterLabel}
         icon={TrendingUp}
         valueClassName="text-2xl font-bold text-green-600"
       />
       
-      <StatsCard
-        title="Valor de Vendas"
-        value={formatCurrency(stats.totalSalesValue)}
-        subtitle={getFilterLabel}
-        icon={Zap}
-        valueClassName="text-2xl font-bold text-green-600"
-      />
+      {showMonetaryValues && (
+        <StatsCard
+          title={salesValueLabel}
+          value={formatCurrency(stats.totalSalesValue)}
+          subtitle={getFilterLabel}
+          icon={Zap}
+          valueClassName="text-2xl font-bold text-green-600"
+        />
+      )}
       
-      <StatsCard
-        title="Ticket Médio"
-        value={formatCurrency(stats.averageTicket)}
-        subtitle={getFilterLabel}
-        icon={Calculator}
-        valueClassName="text-2xl font-bold text-blue-600"
-      />
+      {showMonetaryValues && (
+        <StatsCard
+          title="Ticket Médio"
+          value={formatCurrency(stats.averageTicket)}
+          subtitle={getFilterLabel}
+          icon={Calculator}
+          valueClassName="text-2xl font-bold text-blue-600"
+        />
+      )}
       
       <StatsCard
         title="Taxa de Conversão"
         value={`${stats.conversionRate.toFixed(1)}%`}
-        subtitle={getFilterLabel}
+        subtitle={`${stats.totalSales} de ${stats.totalOpportunities} oportunidades`}
         icon={Percent}
         valueClassName="text-2xl font-bold text-purple-600"
       />

@@ -39,6 +39,10 @@ const Insights = () => {
 
   const stats = getTotalStats();
 
+  // Determinar o tipo de funil selecionado para ajustar as estatísticas
+  const selectedFunnelData = funnels.find(f => f.id === selectedFunnel);
+  const funnelType = selectedFunnel === "all" ? "all" : selectedFunnelData?.funnelType || "venda";
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -59,7 +63,11 @@ const Insights = () => {
         </div>
       </div>
       
-      <InsightsStats loading={loading} stats={stats} />
+      <InsightsStats 
+        loading={loading} 
+        stats={stats} 
+        funnelType={funnelType}
+      />
       <InsightsCharts
         stageDistribution={stageDistribution}
         valueOverTime={valueOverTime}

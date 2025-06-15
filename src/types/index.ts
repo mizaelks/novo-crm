@@ -4,6 +4,7 @@ export interface Funnel {
   name: string;
   description: string;
   order: number;
+  funnelType: 'venda' | 'relacionamento';
   stages: Stage[];
 }
 
@@ -168,6 +169,7 @@ export interface NotificationConfig {
 export interface FunnelFormData {
   name: string;
   description: string;
+  funnelType: 'venda' | 'relacionamento';
 }
 
 export interface StageFormData {

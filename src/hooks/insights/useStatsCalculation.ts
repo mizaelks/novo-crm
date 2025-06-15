@@ -51,13 +51,9 @@ export const useStatsCalculation = (
     let totalValue = 0;
     let totalSales = 0;
     let totalSalesValue = 0;
-    let totalLeads = 0; // Oportunidades que entraram no funil (primeira etapa)
 
     funnelsData.forEach(funnel => {
-      // Ordenar etapas para garantir que a primeira seja considerada como entrada do funil
-      const sortedStages = [...funnel.stages].sort((a, b) => a.order - b.order);
-      
-      sortedStages.forEach((stage, stageIndex) => {
+      funnel.stages.forEach(stage => {
         let opportunities = stage.opportunities;
         
         // Filter by date range if provided
@@ -70,26 +66,31 @@ export const useStatsCalculation = (
           opportunities = filterOpportunities(opportunities, stage.id);
         }
         
-        // Contar leads apenas na primeira etapa (entrada do funil)
-        if (stageIndex === 0) {
-          totalLeads += opportunities.length;
-        }
-        
         totalOpportunities += opportunities.length;
         
         opportunities.forEach(opp => {
-          totalValue += opp.value;
-          if (stage.isWinStage) {
-            totalSales++;
-            totalSalesValue += opp.value;
+          // Para funis de venda, contabiliza valor sempre
+          // Para funis de relacionamento, não contabiliza valor nas vendas
+          if (funnel.funnelType === 'venda') {
+            totalValue += opp.value;
+            if (stage.isWinStage) {
+              totalSales++;
+              totalSalesValue += opp.value;
+            }
+          } else {
+            // Funil de relacionamento: não considera valor monetário
+            if (stage.isWinStage) {
+              totalSales++;
+              // Não adiciona valor para funis de relacionamento
+            }
           }
         });
       });
     });
 
-    const averageTicket = totalOpportunities > 0 ? totalValue / totalOpportunities : 0;
-    // Taxa de conversão correta: vendas dividido por leads que entraram no funil
-    const conversionRate = totalLeads > 0 ? (totalSales / totalLeads) * 100 : 0;
+    const averageTicket = totalSales > 0 ? totalSalesValue / totalSales : 0;
+    // Taxa de conversão corrigida: vendas dividido por total de oportunidades (%)
+    const conversionRate = totalOpportunities > 0 ? (totalSales / totalOpportunities) * 100 : 0;
 
     return {
       totalOpportunities,

@@ -10,11 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  description: z.string().optional()
+  description: z.string().optional(),
+  funnelType: z.enum(['venda', 'relacionamento'], {
+    required_error: "Selecione o tipo de funil"
+  })
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -32,7 +36,8 @@ const CreateFunnelDialog = ({ open, onOpenChange, onFunnelCreated }: CreateFunne
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      description: ""
+      description: "",
+      funnelType: "venda"
     }
   });
 
@@ -41,7 +46,8 @@ const CreateFunnelDialog = ({ open, onOpenChange, onFunnelCreated }: CreateFunne
       setIsSubmitting(true);
       const newFunnel = await funnelAPI.create({
         name: values.name,
-        description: values.description || ""
+        description: values.description || "",
+        funnelType: values.funnelType
       });
       
       toast.success("Funil criado com sucesso!");
@@ -73,6 +79,28 @@ const CreateFunnelDialog = ({ open, onOpenChange, onFunnelCreated }: CreateFunne
                   <FormControl>
                     <Input placeholder="Ex: Vendas B2B" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="funnelType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de funil</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="venda">Venda - Contabiliza vendas e valores</SelectItem>
+                      <SelectItem value="relacionamento">Relacionamento - Contabiliza oportunidades ganhas</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
