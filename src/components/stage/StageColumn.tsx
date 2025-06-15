@@ -27,7 +27,6 @@ const StageColumn = ({
   onOpportunityUpdated,
   onOpportunityDeleted
 }: StageColumnProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   
   const handleOpportunityClick = (opportunity: Opportunity) => {
@@ -49,10 +48,6 @@ const StageColumn = ({
     if (selectedOpportunityId === opportunityId) {
       setSelectedOpportunityId(null);
     }
-  };
-
-  const handleAddOpportunity = () => {
-    setIsDialogOpen(true);
   };
 
   const handleOpportunityCreatedWrapper = () => {
@@ -81,7 +76,6 @@ const StageColumn = ({
                 stage={stage}
                 dragHandleProps={provided.dragHandleProps}
                 updateStage={onStageUpdated}
-                onAddOpportunity={handleAddOpportunity}
               />
               <CardContent className="p-3 flex-1 overflow-hidden">
                 <StageOpportunityList
@@ -94,8 +88,6 @@ const StageColumn = ({
             </Card>
             
             <CreateOpportunityDialog
-              open={isDialogOpen}
-              onOpenChange={setIsDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
               onOpportunityCreated={handleOpportunityCreatedWrapper}
