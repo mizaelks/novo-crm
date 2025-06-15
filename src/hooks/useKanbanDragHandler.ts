@@ -54,9 +54,9 @@ export const useKanbanDragHandler = ({
 
     console.log(`Drag completed: ${type} from ${source.droppableId}[${source.index}] to ${destination.droppableId}[${destination.index}]`);
 
-    // Handle opportunity drag between stages - check for both "OPPORTUNITY" and "DEFAULT" types
-    if (type === "OPPORTUNITY" || type === "DEFAULT") {
-      console.log("Handling opportunity drag");
+    // Handle opportunity drag between stages - since we removed type prop, it will be "DEFAULT"
+    if (type === "DEFAULT") {
+      console.log("Handling opportunity drag (DEFAULT type)");
       await handleOpportunityDrag(draggableId, source.droppableId, destination.droppableId, destination.index);
     }
     
