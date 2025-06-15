@@ -1,7 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Funnel, FunnelFormData } from "@/types";
 import { mapDbFunnelToFunnel } from "./utils/mappers";
 import { stageAPI } from "./stageAPI";
+import { opportunityAPI } from "./opportunityAPI";
 import { triggerEntityWebhooks } from "./utils/webhook";
 
 export const funnelAPI = {
@@ -48,9 +50,31 @@ export const funnelAPI = {
           // Verificar se stages é válido
           const validStages = Array.isArray(stages) ? stages : [];
           
+          // Carregar oportunidades para cada etapa
+          const stagesWithOpportunities = await Promise.all(
+            validStages.map(async (stage) => {
+              try {
+                console.log(`🔄 Loading opportunities for stage ${stage.id} (${stage.name})`);
+                const opportunities = await opportunityAPI.getByStageId(stage.id, false); // false = exclude archived
+                console.log(`✅ Loaded ${opportunities.length} opportunities for stage ${stage.name}`);
+                
+                return {
+                  ...stage,
+                  opportunities: Array.isArray(opportunities) ? opportunities : []
+                };
+              } catch (opportunityError) {
+                console.error(`❌ Error loading opportunities for stage ${stage.id}:`, opportunityError);
+                return {
+                  ...stage,
+                  opportunities: []
+                };
+              }
+            })
+          );
+          
           funnels.push({
             ...funnelBase,
-            stages: validStages
+            stages: stagesWithOpportunities
           });
         } catch (stageError) {
           console.error(`❌ funnelAPI.getAll - Error loading stages for funnel ${funnelBase.id}:`, stageError);
@@ -62,7 +86,7 @@ export const funnelAPI = {
         }
       }
       
-      console.log('✅ funnelAPI.getAll - Final funnels with stages:', funnels);
+      console.log('✅ funnelAPI.getAll - Final funnels with stages and opportunities:', funnels);
       return funnels;
     } catch (error) {
       console.error('❌ funnelAPI.getAll - General error:', error);

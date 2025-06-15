@@ -12,7 +12,16 @@ interface FunnelCardProps {
 }
 
 const FunnelCard = ({ funnel }: FunnelCardProps) => {
-  console.log('🔍 FunnelCard - Rendering funnel:', funnel);
+  console.log('🔍 FunnelCard - Rendering funnel:', {
+    id: funnel.id,
+    name: funnel.name,
+    stagesCount: funnel.stages?.length || 0,
+    stages: funnel.stages?.map(stage => ({
+      id: stage.id,
+      name: stage.name,
+      opportunitiesCount: stage.opportunities?.length || 0
+    }))
+  });
   
   // Verificar se o funnel está válido
   if (!funnel || typeof funnel !== 'object') {
@@ -22,7 +31,7 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
 
   // Verificar se stages existe e é um array
   const stages = Array.isArray(funnel.stages) ? funnel.stages : [];
-  console.log('📊 FunnelCard - Stages:', stages);
+  console.log(`📊 FunnelCard - Processing ${stages.length} stages for funnel ${funnel.name}`);
 
   const getFunnelTypeBadge = () => {
     const funnelType = funnel.funnelType || 'venda';
@@ -60,10 +69,12 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
       console.warn('⚠️ FunnelCard - Invalid stage or opportunities:', stage);
       return acc;
     }
-    return acc + stage.opportunities.length;
+    const stageOppsCount = stage.opportunities.length;
+    console.log(`📈 Stage "${stage.name}": ${stageOppsCount} opportunities`);
+    return acc + stageOppsCount;
   }, 0);
 
-  console.log('📈 FunnelCard - Total opportunities:', totalOpportunities);
+  console.log(`📈 FunnelCard - Total opportunities for ${funnel.name}: ${totalOpportunities}`);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -116,7 +127,7 @@ const FunnelCard = ({ funnel }: FunnelCardProps) => {
           Ver detalhes
         </Link>
         <span className="text-xs text-muted-foreground">
-          {totalOpportunities} oportunidades
+          {totalOpportunities} oportunidade{totalOpportunities !== 1 ? 's' : ''}
         </span>
       </CardFooter>
     </Card>
