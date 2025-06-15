@@ -5,6 +5,8 @@ import { Stage, Opportunity } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import CreateOpportunityDialog from "../opportunity/CreateOpportunityDialog";
 import OpportunityDetailsDialog from "../opportunity/OpportunityDetailsDialog";
+import { AddTaskDialog } from "../opportunity/AddTaskDialog";
+import { AddFieldDialog } from "../opportunity/AddFieldDialog";
 import StageHeader from "./StageHeader";
 import StageOpportunityList from "./StageOpportunityList";
 
@@ -29,6 +31,9 @@ const StageColumn = ({
 }: StageColumnProps) => {
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
+  const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
+  const [selectedOpportunityForAction, setSelectedOpportunityForAction] = useState<Opportunity | null>(null);
   
   const handleOpportunityClick = (opportunity: Opportunity) => {
     setSelectedOpportunityId(opportunity.id);
@@ -56,15 +61,29 @@ const StageColumn = ({
   };
 
   const handleAddTask = (opportunity: Opportunity) => {
-    // Implementar lógica de adição de tarefa
-    console.log('Add task for opportunity:', opportunity.id);
-    // Aqui você pode abrir um dialog ou modal para adicionar tarefa
+    setSelectedOpportunityForAction(opportunity);
+    setIsAddTaskDialogOpen(true);
   };
 
   const handleAddField = (opportunity: Opportunity) => {
-    // Implementar lógica de adição de campo
-    console.log('Add field for opportunity:', opportunity.id);
-    // Aqui você pode abrir um dialog ou modal para adicionar campo
+    setSelectedOpportunityForAction(opportunity);
+    setIsAddFieldDialogOpen(true);
+  };
+
+  const handleTaskAdded = () => {
+    // Refresh the opportunity data or trigger a refetch
+    if (onOpportunityUpdated && selectedOpportunityForAction) {
+      // Trigger a refresh - you might want to implement a proper refresh mechanism
+      window.location.reload();
+    }
+  };
+
+  const handleFieldAdded = () => {
+    // Refresh the opportunity data or trigger a refetch
+    if (onOpportunityUpdated && selectedOpportunityForAction) {
+      // Trigger a refresh - you might want to implement a proper refresh mechanism
+      window.location.reload();
+    }
   };
 
   const handleOpportunityCreatedWrapper = () => {
@@ -126,6 +145,24 @@ const StageColumn = ({
                 onOpportunityUpdated={handleOpportunityUpdated}
                 onOpportunityDeleted={handleOpportunityDeleted}
               />
+            )}
+
+            {selectedOpportunityForAction && (
+              <>
+                <AddTaskDialog
+                  open={isAddTaskDialogOpen}
+                  onOpenChange={setIsAddTaskDialogOpen}
+                  opportunity={selectedOpportunityForAction}
+                  onTaskAdded={handleTaskAdded}
+                />
+                
+                <AddFieldDialog
+                  open={isAddFieldDialogOpen}
+                  onOpenChange={setIsAddFieldDialogOpen}
+                  opportunity={selectedOpportunityForAction}
+                  onFieldAdded={handleFieldAdded}
+                />
+              </>
             )}
           </div>
         );
