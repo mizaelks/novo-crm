@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { StageHistoryEntry, PassThroughRateData, StageVelocityData, FunnelPassThroughData } from "@/types/stageHistory";
 
@@ -175,7 +176,8 @@ export const stageHistoryAPI = {
         })
       );
 
-      const validStageRates = stageRates.filter(Boolean) as PassThroughRateData[];
+      // Add null check for stageRates
+      const validStageRates = (stageRates || []).filter(Boolean) as PassThroughRateData[];
 
       // Calcular taxa de conversão geral (primeira etapa para etapas de ganho)
       const firstStage = validStageRates[0];
@@ -251,7 +253,8 @@ export const stageHistoryAPI = {
       
       if (error) throw error;
 
-      if (!winEntries || winEntries.length === 0) return 0;
+      // Add null check for winEntries
+      if (!winEntries || !Array.isArray(winEntries) || winEntries.length === 0) return 0;
 
       // Para cada oportunidade vencedora, buscar a primeira entrada no funil
       const velocities = await Promise.all(
@@ -363,3 +366,4 @@ export const stageHistoryAPI = {
     }
   }
 };
+
