@@ -1,37 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { Opportunity, Funnel, Stage } from "@/types";
-import { opportunityAPI, funnelAPI, stageAPI } from "@/services/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { opportunityAPI, funnelAPI, stageAPI } from "@/services/opportunityAPI";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableHead, TableHeader } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from "@/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -40,24 +14,21 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { 
-  Trash2, 
-  Search, 
-  Filter, 
-  RefreshCw,
-  Users,
   Archive,
-  CalendarIcon,
+  RefreshCw,
   Settings,
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { pt } from "date-fns/locale";
-import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
-import { cn } from "@/lib/utils";
+import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { formatDateBRT } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
+import OpportunityMetricsCards from "@/components/opportunity/OpportunityMetricsCards";
+import OpportunityTableFilters from "@/components/opportunity/OpportunityTableFilters";
+import OpportunityTableRow from "@/components/opportunity/OpportunityTableRow";
 
 // Interface para configurações de arquivamento
 interface ArchiveSettings {
@@ -222,6 +193,19 @@ const OpportunityList = () => {
     return summary;
   }, [opportunities, archivedOpportunities, uniqueClients, showUniqueClients, showArchived, dateFilter, dateRange]);
 
+  // Função para verificar se uma oportunidade tem alerta
+  const getStageAlertStatus = (opportunity: Opportunity): boolean => {
+    const stage = stages.find(s => s.id === opportunity.stageId);
+    if (!stage?.alertConfig?.enabled) return false;
+    
+    const stageChangeDate = opportunity.lastStageChangeAt || opportunity.createdAt;
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - stageChangeDate.getTime());
+    const daysInStage = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return daysInStage >= stage.alertConfig.maxDaysInStage;
+  };
+
   // Função para arquivar/desarquivar oportunidades
   const archiveOpportunity = async (opportunity: Opportunity, archive: boolean) => {
     try {
@@ -255,7 +239,7 @@ const OpportunityList = () => {
     
     // Arquivar as oportunidades encontradas
     if (opportunitiesToArchive.length > 0) {
-      setOpportunities(ops => ops.filter(op => !opportunitiesToArchive.some(o => o.id === op.id)));
+      setOpportunities(ops => ops.filter(op => !opportunitiesToArchive.some(o => o.id === o.id)));
       setArchivedOpportunities(ops => [...ops, ...opportunitiesToArchive]);
       
       toast.success(`${opportunitiesToArchive.length} oportunidades arquivadas automaticamente`);
@@ -315,11 +299,6 @@ const OpportunityList = () => {
     loadData();
   }, []);
 
-  // Função de callback para o seletor de intervalo de datas
-  const handleDateRangeSelect = (range: DateRange | any) => {
-    setDateRange(range);
-  };
-
   const handleDeleteOpportunity = async (id: string) => {
     try {
       const success = await opportunityAPI.delete(id);
@@ -359,32 +338,11 @@ const OpportunityList = () => {
     const stage = stages.find(s => s.id === stageId);
     return stage ? stage.name : "Etapa não encontrada";
   };
-  
-  const getDateFilterLabel = () => {
-    switch (dateFilter) {
-      case DateFilterType.TODAY:
-        return "Hoje";
-      case DateFilterType.YESTERDAY:
-        return "Ontem";
-      case DateFilterType.THIS_WEEK:
-        return "Esta semana";
-      case DateFilterType.LAST_WEEK:
-        return "Semana passada";
-      case DateFilterType.THIS_MONTH:
-        return "Este mês";
-      case DateFilterType.CUSTOM:
-        return dateRange.from && dateRange.to
-          ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
-          : "Personalizado";
-      default:
-        return "Todas as datas";
-    }
-  };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Oportunidades</h1>
+        <h1 className="text-3xl font-bold">Relatório de Oportunidades</h1>
         <div className="animate-pulse bg-muted h-96 rounded-md"></div>
       </div>
     );
@@ -394,9 +352,9 @@ const OpportunityList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Oportunidades</h1>
+          <h1 className="text-3xl font-bold">Relatório de Oportunidades</h1>
           <p className="text-muted-foreground">
-            {showArchived ? "Oportunidades arquivadas" : "Oportunidades ativas"}
+            Visão completa e análise detalhada das suas oportunidades {showArchived ? "arquivadas" : "ativas"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -413,7 +371,19 @@ const OpportunityList = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={refreshData}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const data = await opportunityAPI.getAll();
+                setOpportunities(data);
+                toast.success("Dados atualizados com sucesso!");
+              } catch (error) {
+                console.error("Error refreshing data:", error);
+                toast.error("Erro ao atualizar dados");
+              } finally {
+                setLoading(false);
+              }
+            }}
             className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" /> 
@@ -492,159 +462,37 @@ const OpportunityList = () => {
           </Dialog>
         </div>
       </div>
+
+      <OpportunityMetricsCards 
+        opportunities={filteredOpportunities}
+        stages={stages}
+        showArchived={showArchived}
+      />
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar..." 
-                value={searchTerm} 
-                onChange={e => setSearchTerm(e.target.value)} 
-              />
-            </div>
-            
-            <div>
-              <Select value={filterFunnel} onValueChange={value => {
-                setFilterFunnel(value === "all" ? "" : value);
-                setFilterStage(""); // Reset stage filter when funnel changes
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecionar funil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os funis</SelectItem>
-                  {funnels.map(funnel => (
-                    <SelectItem key={funnel.id} value={funnel.id}>
-                      {funnel.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Select 
-                value={filterStage} 
-                onValueChange={value => setFilterStage(value === "all" ? "" : value)}
-                disabled={!filterFunnel}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecionar etapa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as etapas</SelectItem>
-                  {availableStages.map(stage => (
-                    <SelectItem key={stage.id} value={stage.id}>
-                      {stage.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Select value={filterClient} onValueChange={value => setFilterClient(value === "all" ? "" : value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecionar cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  {uniqueClients.map(client => (
-                    <SelectItem key={client} value={client}>
-                      {client}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {getDateFilterLabel()}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-3 border-b">
-                    <div className="space-y-2">
-                      {Object.values(DateFilterType).map((type) => (
-                        <Button
-                          key={type}
-                          variant={dateFilter === type ? "default" : "ghost"}
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => {
-                            setDateFilter(type);
-                            if (type !== DateFilterType.CUSTOM) {
-                              setDateRange({ from: undefined, to: undefined });
-                            }
-                          }}
-                        >
-                          {type === DateFilterType.ALL && "Todas as datas"}
-                          {type === DateFilterType.TODAY && "Hoje"}
-                          {type === DateFilterType.YESTERDAY && "Ontem"}
-                          {type === DateFilterType.THIS_WEEK && "Esta semana"}
-                          {type === DateFilterType.LAST_WEEK && "Semana passada"}
-                          {type === DateFilterType.THIS_MONTH && "Este mês"}
-                          {type === DateFilterType.CUSTOM && "Personalizado"}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  {dateFilter === DateFilterType.CUSTOM && (
-                    <div className="p-3">
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={handleDateRangeSelect}
-                        numberOfMonths={1}
-                        locale={pt}
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button 
-                variant={showUniqueClients ? "default" : "outline"}
-                onClick={() => setShowUniqueClients(!showUniqueClients)}
-                className="whitespace-nowrap"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                {showUniqueClients ? "Ver todas oportunidades" : "Ver clientes únicos"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {showUniqueClients ? "Clientes Únicos" : "Oportunidades"}
-          </CardTitle>
-          {showArchived && (
-            <CardDescription>
-              Oportunidades arquivadas
-            </CardDescription>
-          )}
+          <OpportunityTableFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterFunnel={filterFunnel}
+            setFilterFunnel={setFilterFunnel}
+            filterStage={filterStage}
+            setFilterStage={setFilterStage}
+            filterClient={filterClient}
+            setFilterClient={setFilterClient}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            showUniqueClients={showUniqueClients}
+            setShowUniqueClients={setShowUniqueClients}
+            funnels={funnels}
+            availableStages={availableStages}
+            uniqueClients={uniqueClients}
+          />
         </CardHeader>
         <CardContent>
           {showUniqueClients ? (
-            // Display unique clients view
             clientSummary && clientSummary.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -699,66 +547,45 @@ const OpportunityList = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredOpportunities.map((opp) => (
-                    <TableRow key={opp.id}>
-                      <TableCell>{opp.title}</TableCell>
-                      <TableCell>{opp.client}</TableCell>
-                      <TableCell>{formatCurrency(opp.value)}</TableCell>
-                      <TableCell>{formatDateBRT(opp.createdAt)}</TableCell>
-                      <TableCell>{getFunnelName(opp.funnelId)}</TableCell>
-                      <TableCell>{getStageName(opp.stageId)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {opp.scheduledActions?.some(
-                            action => action.status === 'pending'
-                          ) 
-                            ? "Com ações agendadas"
-                            : "Sem ações agendadas"
+                    <OpportunityTableRow
+                      key={opp.id}
+                      opportunity={opp}
+                      getFunnelName={getFunnelName}
+                      getStageName={getStageName}
+                      getStageAlertStatus={getStageAlertStatus}
+                      showArchived={showArchived}
+                      onArchive={(opportunity, archive) => {
+                        try {
+                          if (archive) {
+                            setOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
+                            setArchivedOpportunities(ops => [...ops, opportunity]);
+                            toast.success("Oportunidade arquivada com sucesso");
+                          } else {
+                            setArchivedOpportunities(ops => ops.filter(op => op.id !== opportunity.id));
+                            setOpportunities(ops => [...ops, opportunity]);
+                            toast.success("Oportunidade restaurada com sucesso");
                           }
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => archiveOpportunity(opp, !showArchived)}
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                className="h-8 w-8 p-0" 
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir oportunidade</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente a 
-                                  oportunidade "{opp.title}" do cliente {opp.client} e removerá 
-                                  todos os dados associados a ela.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteOpportunity(opp.id)}
-                                >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        } catch (error) {
+                          console.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade:`, error);
+                          toast.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade`);
+                        }
+                      }}
+                      onDelete={async (id) => {
+                        try {
+                          const success = await opportunityAPI.delete(id);
+                          if (success) {
+                            setOpportunities(opportunities.filter(opp => opp.id !== id));
+                            setArchivedOpportunities(archivedOpportunities.filter(opp => opp.id !== id));
+                            toast.success("Oportunidade excluída com sucesso!");
+                          } else {
+                            toast.error("Erro ao excluir oportunidade");
+                          }
+                        } catch (error) {
+                          console.error("Error deleting opportunity:", error);
+                          toast.error("Erro ao excluir oportunidade");
+                        }
+                      }}
+                    />
                   ))}
                 </TableBody>
               </Table>
