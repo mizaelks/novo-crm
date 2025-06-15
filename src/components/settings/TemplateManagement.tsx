@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Package, FileText, Hash, Calendar, CheckSquare, List } from "lucide-react";
 import { toast } from "sonner";
-import { FIELD_TEMPLATES, DEFAULT_TASK_TEMPLATES } from "@/types/taskTemplates";
+import { DEFAULT_TASK_TEMPLATES } from "@/types/taskTemplates";
+import { FIELD_TEMPLATES } from "@/components/customFields/CustomFieldTemplates";
 import type { FieldTemplate } from "@/components/customFields/CustomFieldTemplates";
 import type { TaskTemplate } from "@/types/taskTemplates";
 
@@ -372,7 +373,7 @@ const TaskTemplateForm = ({ template, onSave, onCancel }: TaskTemplateFormProps)
   const [formData, setFormData] = useState({
     name: template?.name || "",
     description: template?.description || "",
-    category: template?.category || "contact",
+    category: template?.category || ("contact" as const),
     defaultDuration: template?.defaultDuration || 1,
     icon: template?.icon || "clock",
     color: template?.color || "blue"
@@ -389,7 +390,7 @@ const TaskTemplateForm = ({ template, onSave, onCancel }: TaskTemplateFormProps)
       id: template?.id || crypto.randomUUID(),
       name: formData.name,
       description: formData.description,
-      category: formData.category as any,
+      category: formData.category,
       defaultDuration: formData.defaultDuration,
       icon: formData.icon,
       color: formData.color
@@ -422,7 +423,13 @@ const TaskTemplateForm = ({ template, onSave, onCancel }: TaskTemplateFormProps)
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="category">Categoria</Label>
-          <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+          <Select 
+            value={formData.category} 
+            onValueChange={(value) => setFormData(prev => ({ 
+              ...prev, 
+              category: value as TaskTemplate['category']
+            }))}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
