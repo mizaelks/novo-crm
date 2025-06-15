@@ -72,14 +72,25 @@ export const useStatsCalculation = (
     console.log('🧮 calculateStatsForPeriod - Iniciando cálculo para:', funnelsData.map(f => ({ name: f.name, type: f.funnelType })));
 
     funnelsData.forEach(funnel => {
+      if (!funnel || !funnel.stages) {
+        console.warn('⚠️ Funnel inválido:', funnel);
+        return;
+      }
+      
       console.log(`📊 Processando funil "${funnel.name}" (${funnel.funnelType})`);
       
       funnel.stages.forEach(stage => {
+        if (!stage || !stage.opportunities) {
+          console.warn('⚠️ Stage inválido:', stage);
+          return;
+        }
+        
         let opportunities = stage.opportunities;
         
         // Filter by date range if provided
         if (fromDate && toDate) {
           opportunities = opportunities.filter(opp => {
+            if (!opp || !opp.createdAt) return false;
             const oppDate = new Date(opp.createdAt);
             return oppDate >= fromDate && oppDate <= toDate;
           });
@@ -96,14 +107,17 @@ export const useStatsCalculation = (
           vendaOpportunities += opportunities.length;
           
           opportunities.forEach(opp => {
+            if (!opp) return;
+            
             // Sum values for venda funnels
-            totalValue += opp.value;
+            const value = Number(opp.value) || 0;
+            totalValue += value;
             
             // Count sales only for win stages in venda funnels
             if (stage.isWinStage) {
               totalSales++;
-              totalSalesValue += opp.value;
-              console.log(`💰 Venda registrada: R$ ${opp.value} no estágio "${stage.name}"`);
+              totalSalesValue += value;
+              console.log(`💰 Venda registrada: R$ ${value} no estágio "${stage.name}"`);
             }
           });
         } 
@@ -127,29 +141,20 @@ export const useStatsCalculation = (
     // Relationship conversion rate: relacionamentos / oportunidades de relacionamento (apenas funis de relacionamento)
     const relationshipConversionRate = relacionamentoOpportunities > 0 ? (totalRelationships / relacionamentoOpportunities) * 100 : 0;
 
-    console.log('✅ Stats calculation resultado final:', {
-      totalOpportunities,
-      vendaOpportunities,
-      relacionamentoOpportunities,
-      totalValue,
-      totalSales,
-      totalSalesValue,
-      totalRelationships,
-      conversionRate,
-      relationshipConversionRate,
-      averageTicket
-    });
-
-    return {
-      totalOpportunities,
-      totalValue,
-      totalSales,
-      totalSalesValue,
-      totalRelationships,
-      averageTicket,
-      conversionRate,
-      relationshipConversionRate
+    const result = {
+      totalOpportunities: Number(totalOpportunities) || 0,
+      totalValue: Number(totalValue) || 0,
+      totalSales: Number(totalSales) || 0,
+      totalSalesValue: Number(totalSalesValue) || 0,
+      totalRelationships: Number(totalRelationships) || 0,
+      averageTicket: Number(averageTicket) || 0,
+      conversionRate: Number(conversionRate) || 0,
+      relationshipConversionRate: Number(relationshipConversionRate) || 0
     };
+
+    console.log('✅ Stats calculation resultado final:', result);
+
+    return result;
   }, [filterOpportunities]);
 
   // Memoize stats calculation

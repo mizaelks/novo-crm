@@ -46,8 +46,20 @@ export const useDataProcessing = (
       funnelsData.map(f => ({ name: f.name, type: f.funnelType })));
     
     funnelsData.forEach(funnel => {
+      if (!funnel || !funnel.stages) {
+        console.warn('⚠️ Funnel sem stages válidos:', funnel);
+        return;
+      }
+      
       funnel.stages.forEach(stage => {
-        const filteredOpportunities = filterOpportunities(stage.opportunities, stage.id);
+        if (!stage || !stage.name) {
+          console.warn('⚠️ Stage inválido:', stage);
+          return;
+        }
+        
+        const opportunities = stage.opportunities || [];
+        const filteredOpportunities = filterOpportunities(opportunities, stage.id);
+        
         if (!stageData[stage.name]) {
           stageData[stage.name] = 0;
         }
@@ -60,25 +72,43 @@ export const useDataProcessing = (
     });
 
     const result = Object.entries(stageData)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ 
+        name: String(name), 
+        value: Number(value) 
+      }))
       .filter(item => item.value > 0);
       
     console.log('✅ processStageDistribution - Resultado final:', result);
     return result;
   }, [filterOpportunities]);
 
-  const processValueOverTime = useCallback((funnelsData: Funnel[]) => {
+  const processValueOverTime = useCallback((funnelsData: Funnel[]): ValueData[] => {
     const monthData: { [key: string]: number } = {};
     const funnelType = getFunnelType();
     
     console.log('⏰ processValueOverTime - Processando dados temporais para tipo:', funnelType);
     
     funnelsData.forEach(funnel => {
+      if (!funnel || !funnel.stages) {
+        console.warn('⚠️ Funnel sem stages válidos:', funnel);
+        return;
+      }
+      
       console.log(`📅 Processando funil "${funnel.name}" (${funnel.funnelType})`);
       
       funnel.stages.forEach(stage => {
+        if (!stage || !stage.opportunities) {
+          console.warn('⚠️ Stage sem opportunities:', stage);
+          return;
+        }
+        
         const filteredOpportunities = filterOpportunities(stage.opportunities, stage.id);
         filteredOpportunities.forEach(opp => {
+          if (!opp || !opp.createdAt) {
+            console.warn('⚠️ Opportunity inválida:', opp);
+            return;
+          }
+          
           const date = new Date(opp.createdAt);
           const month = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
           if (!monthData[month]) {
@@ -89,7 +119,7 @@ export const useDataProcessing = (
           if (funnelType === 'venda' || funnelType === 'mixed' || funnelType === 'all') {
             // Se é funil de venda, usar valor; se é relacionamento ou mixed, usar contagem
             if (funnel.funnelType === 'venda') {
-              monthData[month] += opp.value;
+              monthData[month] += Number(opp.value) || 0;
               console.log(`💰 Adicionando valor R$ ${opp.value} para ${month} (funil de venda)`);
             } else {
               monthData[month] += 1; // contagem para funis de relacionamento
@@ -106,7 +136,11 @@ export const useDataProcessing = (
 
     // Ordenar por data e pegar os últimos 6 meses
     const sortedData = Object.entries(monthData)
-      .map(([month, value]) => ({ month, value, date: new Date(month) }))
+      .map(([month, value]) => ({ 
+        month: String(month), 
+        value: Number(value), 
+        date: new Date(month) 
+      }))
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-6)
       .map(({ month, value }) => ({ month, value }));

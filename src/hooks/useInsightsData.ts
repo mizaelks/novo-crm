@@ -58,6 +58,7 @@ export const useInsightsData = (
       try {
         setLoading(true);
         const funnelsData = await funnelAPI.getAll();
+        console.log('🔍 useInsightsData - Loaded funnels:', funnelsData);
         setFunnels(funnelsData);
       } catch (error) {
         console.error("Error loading insights data:", error);
@@ -72,8 +73,27 @@ export const useInsightsData = (
   // Update processed data when dependencies change
   useEffect(() => {
     if (!loading) {
-      setStageDistribution(memoizedStageDistribution);
-      setValueOverTime(memoizedValueOverTime);
+      console.log('🔍 useInsightsData - Setting processed data:', {
+        stageDistribution: memoizedStageDistribution,
+        valueOverTime: memoizedValueOverTime,
+        funnelType
+      });
+      
+      // Ensure data is properly formatted before setting
+      const safeStageDistribution = Array.isArray(memoizedStageDistribution) 
+        ? memoizedStageDistribution.filter(item => 
+            item && typeof item === 'object' && 'name' in item && 'value' in item
+          )
+        : [];
+        
+      const safeValueOverTime = Array.isArray(memoizedValueOverTime) 
+        ? memoizedValueOverTime.filter(item => 
+            item && typeof item === 'object' && 'month' in item && 'value' in item
+          )
+        : [];
+      
+      setStageDistribution(safeStageDistribution);
+      setValueOverTime(safeValueOverTime);
     }
   }, [loading, memoizedStageDistribution, memoizedValueOverTime]);
 
