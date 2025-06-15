@@ -35,7 +35,7 @@ const FunnelList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Funis de Venda</h2>
+        <h2 className="text-2xl font-bold">Funis</h2>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Funil

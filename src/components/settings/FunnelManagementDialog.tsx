@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, DollarSign, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { funnelAPI } from "@/services/api";
 import { Funnel } from "@/types";
 import { toast } from "sonner";
@@ -65,6 +66,24 @@ const FunnelManagementDialog = ({ open, onOpenChange }: FunnelManagementDialogPr
     }
   };
 
+  const getFunnelTypeBadge = (funnelType: string) => {
+    if (funnelType === 'venda') {
+      return (
+        <Badge variant="default" className="bg-green-100 text-green-800 flex items-center gap-1">
+          <DollarSign className="h-3 w-3" />
+          Venda
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="secondary" className="bg-blue-100 text-blue-800 flex items-center gap-1">
+          <Users className="h-3 w-3" />
+          Relacionamento
+        </Badge>
+      );
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,7 +117,10 @@ const FunnelManagementDialog = ({ open, onOpenChange }: FunnelManagementDialogPr
                   return (
                     <Card key={funnel.id}>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">{funnel.name}</CardTitle>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{funnel.name}</CardTitle>
+                          {getFunnelTypeBadge(funnel.funnelType)}
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center justify-between">

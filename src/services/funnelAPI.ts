@@ -39,7 +39,11 @@ export const funnelAPI = {
 
   create: async (data: FunnelFormData): Promise<Funnel> => {
     const { data: created, error } = await supabase.from('funnels').insert([
-      { name: data.name, description: data.description }
+      { 
+        name: data.name, 
+        description: data.description,
+        funnel_type: data.funnelType || 'venda'
+      }
     ]).select().single();
     
     if (error || !created) throw error || new Error("Funnel create error");
@@ -55,7 +59,12 @@ export const funnelAPI = {
   },
 
   update: async (id: string, data: Partial<FunnelFormData>): Promise<Funnel | null> => {
-    const { data: updated, error } = await supabase.from('funnels').update(data).eq('id', id).select().single();
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.funnelType !== undefined) updateData.funnel_type = data.funnelType;
+
+    const { data: updated, error } = await supabase.from('funnels').update(updateData).eq('id', id).select().single();
     if (error || !updated) return null;
     
     await triggerEntityWebhooks('funnel', id, 'update', updated);
