@@ -55,6 +55,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
       
       console.log("Loading users...");
       
+      // Especificar qual relacionamento usar para evitar ambiguidade
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -64,7 +65,7 @@ const UserManagementDialog = ({ open, onOpenChange }: UserManagementDialogProps)
           last_name,
           avatar_url,
           created_at,
-          user_roles (
+          user_roles!user_roles_user_id_fkey (
             role
           )
         `)
