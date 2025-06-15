@@ -62,6 +62,10 @@ const StageColumn = ({
       setSelectedOpportunityId(null);
     }
   };
+
+  const handleAddClick = () => {
+    setIsDialogOpen(true);
+  };
   
   return (
     <Draggable draggableId={stage.id} index={index}>
@@ -86,7 +90,7 @@ const StageColumn = ({
                   stageId={stage.id}
                   opportunities={stage.opportunities}
                   stage={stage}
-                  onAddClick={() => setIsDialogOpen(true)}
+                  onAddClick={handleAddClick}
                   onOpportunityClick={handleOpportunityClick}
                   onAddTask={handleAddTask}
                   onAddField={handleAddField}
