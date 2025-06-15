@@ -44,23 +44,33 @@ export const useOpportunityDrag = (
     
     // Check if destination stage has required fields
     const requiredFields = destinationStage.requiredFields || [];
-    const hasRequiredFields = requiredFields.length > 0;
     
-    if (hasRequiredFields) {
+    // Check if destination stage requires win/loss reasons
+    const needsWinReason = destinationStage.isWinStage && destinationStage.winReasonRequired;
+    const needsLossReason = destinationStage.isLossStage && destinationStage.lossReasonRequired;
+    
+    const hasRequiredFields = requiredFields.length > 0;
+    const hasReasonRequirements = needsWinReason || needsLossReason;
+    
+    if (hasRequiredFields || hasReasonRequirements) {
       // Set up the drag operation for required fields dialog
       setCurrentDragOperation({
         opportunity,
         sourceStageId: sourceDroppableId,
         destinationStageId: destinationDroppableId,
         destinationIndex,
-        requiredFields
+        requiredFields,
+        needsWinReason,
+        needsLossReason,
+        availableWinReasons: destinationStage.winReasons || [],
+        availableLossReasons: destinationStage.lossReasons || []
       });
       
       setShowRequiredFieldsDialog(true);
       return;
     }
     
-    // No required fields, proceed with the move
+    // No required fields or reasons, proceed with the move
     await completeOpportunityMove(opportunity, sourceDroppableId, destinationDroppableId, destinationIndex);
   };
 
@@ -68,11 +78,15 @@ export const useOpportunityDrag = (
     opportunity: Opportunity,
     sourceStageId: string,
     destinationStageId: string,
-    destinationIndex: number
+    destinationIndex: number,
+    updatedOpportunity?: Partial<Opportunity>
   ) => {
     setIsDragging(true);
     
     try {
+      // Merge any updates (like win/loss reasons) with the opportunity
+      const opportunityToMove = updatedOpportunity ? { ...opportunity, ...updatedOpportunity } : opportunity;
+      
       // Optimistically update UI first
       const updatedStages = stages.map(stage => {
         // Remove from source stage
@@ -86,12 +100,12 @@ export const useOpportunityDrag = (
         // Add to destination stage
         if (stage.id === destinationStageId) {
           const newOpportunities = [...stage.opportunities];
-          const updatedOpportunity = {
-            ...opportunity,
+          const updatedOpp = {
+            ...opportunityToMove,
             stageId: destinationStageId,
             lastStageChangeAt: new Date()
           };
-          newOpportunities.splice(destinationIndex, 0, updatedOpportunity);
+          newOpportunities.splice(destinationIndex, 0, updatedOpp);
           return { ...stage, opportunities: newOpportunities };
         }
         
@@ -100,8 +114,15 @@ export const useOpportunityDrag = (
       
       setStages(updatedStages);
       
-      // Then update the database
-      await opportunityAPI.move(opportunity.id, destinationStageId);
+      // Then update the database with any reason updates
+      if (updatedOpportunity) {
+        await opportunityAPI.update(opportunity.id, {
+          stageId: destinationStageId,
+          ...updatedOpportunity
+        });
+      } else {
+        await opportunityAPI.move(opportunity.id, destinationStageId);
+      }
       
       toast.success("Oportunidade movida com sucesso");
     } catch (error) {
