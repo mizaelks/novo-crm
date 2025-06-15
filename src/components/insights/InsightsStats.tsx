@@ -1,5 +1,5 @@
 
-import { TrendingUp, DollarSign, Target, Zap, Calculator, Percent } from "lucide-react";
+import { TrendingUp, DollarSign, Target, Zap, Calculator, Percent, Heart } from "lucide-react";
 import { formatCurrency } from "@/services/utils/dateUtils";
 import { useDateFilter } from "@/hooks/useDateFilter";
 import StatsCard from "@/components/dashboard/StatsCard";
@@ -12,15 +12,19 @@ interface InsightsStatsProps {
     totalValue: number;
     totalSales: number;
     totalSalesValue: number;
+    totalRelationships: number;
     averageTicket: number;
     conversionRate: number;
+    relationshipConversionRate: number;
     previousPeriodStats?: {
       totalOpportunities: number;
       totalValue: number;
       totalSales: number;
       totalSalesValue: number;
+      totalRelationships: number;
       averageTicket: number;
       conversionRate: number;
+      relationshipConversionRate: number;
     };
   };
   funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
@@ -38,17 +42,14 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
   // Determinar se deve mostrar valores monetários e vendas
   const showMonetaryValues = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
   const showSalesMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  const showRelationshipMetrics = funnelType === 'relacionamento' || funnelType === 'all' || funnelType === 'mixed';
   
-  console.log('InsightsStats - showMonetaryValues:', showMonetaryValues, 'showSalesMetrics:', showSalesMetrics);
+  console.log('InsightsStats - showMonetaryValues:', showMonetaryValues, 'showSalesMetrics:', showSalesMetrics, 'showRelationshipMetrics:', showRelationshipMetrics);
   
-  // Labels baseados no tipo de funil
-  const salesLabel = 'Vendas Realizadas'; // Sempre vendas, pois só aparecem para funis de venda
-  const salesValueLabel = 'Valor de Vendas';
-
   // Calcular subtitle para taxa de conversão com base no tipo de funil
   const getConversionSubtitle = () => {
     if (funnelType === 'relacionamento') {
-      return 'Funis de relacionamento não têm vendas';
+      return `${stats.totalRelationships} relacionamentos de ${stats.totalOpportunities} oportunidades`;
     }
     
     if (!showSalesMetrics) {
@@ -62,7 +63,20 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
     return `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`;
   };
 
+  const getRelationshipConversionSubtitle = () => {
+    if (funnelType === 'venda') {
+      return 'Funis de venda não têm relacionamentos';
+    }
+    
+    if (funnelType === 'mixed') {
+      return `${stats.totalRelationships} relacionamentos de oportunidades em funis de relacionamento`;
+    }
+    
+    return `${stats.totalRelationships} relacionamentos de ${stats.totalOpportunities} oportunidades`;
+  };
+
   const conversionSubtitle = getConversionSubtitle();
+  const relationshipConversionSubtitle = getRelationshipConversionSubtitle();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -71,35 +85,50 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         value={stats.totalOpportunities}
         subtitle={getFilterLabel}
         icon={Target}
+        tooltip="Inclui todas as oportunidades independente do tipo de funil"
       />
       
       {showMonetaryValues && (
         <StatsCard
-          title="Valor Total"
+          title="Valor Total de Oportunidades"
           value={formatCurrency(stats.totalValue)}
           subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={DollarSign}
           valueClassName="text-2xl font-bold text-primary"
+          tooltip="Valores monetários apenas de oportunidades em funis de venda"
         />
       )}
       
       {showSalesMetrics && (
         <StatsCard
-          title={salesLabel}
+          title="Vendas Realizadas"
           value={stats.totalSales}
           subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={TrendingUp}
           valueClassName="text-2xl font-bold text-green-600"
+          tooltip="Vendas concluídas em estágios de vitória de funis de venda"
+        />
+      )}
+
+      {showRelationshipMetrics && (
+        <StatsCard
+          title="Relacionamentos Conquistados"
+          value={stats.totalRelationships}
+          subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de relacionamento)` : getFilterLabel}
+          icon={Heart}
+          valueClassName="text-2xl font-bold text-blue-600"
+          tooltip="Relacionamentos conquistados em estágios de vitória de funis de relacionamento"
         />
       )}
       
       {showSalesMetrics && showMonetaryValues && (
         <StatsCard
-          title={salesValueLabel}
+          title="Valor das Vendas Realizadas"
           value={formatCurrency(stats.totalSalesValue)}
           subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={Zap}
           valueClassName="text-2xl font-bold text-green-600"
+          tooltip="Valor total das vendas concluídas apenas de funis de venda"
         />
       )}
       
@@ -110,16 +139,29 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
           subtitle={funnelType === 'mixed' ? `${getFilterLabel} (apenas funis de venda)` : getFilterLabel}
           icon={Calculator}
           valueClassName="text-2xl font-bold text-blue-600"
+          tooltip="Valor médio por venda realizada em funis de venda"
         />
       )}
       
       {showSalesMetrics && (
         <StatsCard
-          title="Taxa de Conversão"
+          title="Taxa de Conversão (Vendas)"
           value={`${stats.conversionRate.toFixed(1)}%`}
           subtitle={conversionSubtitle}
           icon={Percent}
           valueClassName="text-2xl font-bold text-purple-600"
+          tooltip="Percentual de oportunidades convertidas em vendas (apenas funis de venda)"
+        />
+      )}
+
+      {showRelationshipMetrics && funnelType !== 'venda' && (
+        <StatsCard
+          title="Taxa de Conversão (Relacionamentos)"
+          value={`${stats.relationshipConversionRate.toFixed(1)}%`}
+          subtitle={relationshipConversionSubtitle}
+          icon={Percent}
+          valueClassName="text-2xl font-bold text-blue-600"
+          tooltip="Percentual de oportunidades convertidas em relacionamentos (apenas funis de relacionamento)"
         />
       )}
     </div>

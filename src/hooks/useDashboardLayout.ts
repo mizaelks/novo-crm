@@ -13,12 +13,13 @@ export interface DashboardWidget {
 
 const defaultWidgets: DashboardWidget[] = [
   { id: 'opportunities', type: 'stats', title: 'Total de Oportunidades', enabled: true, order: 0, size: 'small' },
-  { id: 'opportunity-value', type: 'stats', title: 'Valor Total de Oportunidades', enabled: true, order: 1, size: 'small' },
+  { id: 'opportunity-value', type: 'stats', title: 'Valor de Oportunidades de Venda', enabled: true, order: 1, size: 'small' },
   { id: 'sales', type: 'stats', title: 'Vendas Realizadas', enabled: true, order: 2, size: 'small' },
-  { id: 'funnels', type: 'stats', title: 'Funis Ativos', enabled: true, order: 3, size: 'small' },
-  { id: 'pending-tasks', type: 'pending-tasks', title: 'Tarefas Pendentes', enabled: true, order: 4, size: 'medium' },
-  { id: 'sales-value', type: 'sales-value', title: 'Valor das Vendas', enabled: true, order: 5, size: 'medium' },
-  { id: 'funnel-list', type: 'funnel-list', title: 'Lista de Funis', enabled: true, order: 6, size: 'full' },
+  { id: 'relationships', type: 'stats', title: 'Relacionamentos Conquistados', enabled: true, order: 3, size: 'small' },
+  { id: 'funnels', type: 'stats', title: 'Funis Ativos', enabled: true, order: 4, size: 'small' },
+  { id: 'pending-tasks', type: 'pending-tasks', title: 'Tarefas Pendentes', enabled: true, order: 5, size: 'medium' },
+  { id: 'sales-value', type: 'sales-value', title: 'Valor das Vendas', enabled: true, order: 6, size: 'medium' },
+  { id: 'funnel-list', type: 'funnel-list', title: 'Lista de Funis', enabled: true, order: 7, size: 'full' },
 ];
 
 export const useDashboardLayout = () => {

@@ -3,7 +3,21 @@ import { useCallback } from "react";
 import { Funnel } from "@/types";
 import { useDateFilter, DateFilterType } from "@/hooks/useDateFilter";
 import { subDays, subWeeks, subMonths } from "date-fns";
-import { StatsData, EnhancedStatsData } from "./types";
+
+export interface StatsData {
+  totalOpportunities: number;
+  totalValue: number;
+  totalSales: number;
+  totalSalesValue: number;
+  totalRelationships: number;
+  averageTicket: number;
+  conversionRate: number;
+  relationshipConversionRate: number;
+}
+
+export interface EnhancedStatsData extends StatsData {
+  previousPeriodStats?: StatsData;
+}
 
 export const useStatsCalculation = (
   filteredFunnels: Funnel[],
@@ -51,9 +65,15 @@ export const useStatsCalculation = (
     let totalValue = 0;
     let totalSales = 0;
     let totalSalesValue = 0;
+    let totalRelationships = 0;
     let vendaOpportunities = 0; // Contador específico para oportunidades de venda
+    let relacionamentoOpportunities = 0; // Contador específico para oportunidades de relacionamento
+
+    console.log('🧮 calculateStatsForPeriod - Iniciando cálculo para:', funnelsData.map(f => ({ name: f.name, type: f.funnelType })));
 
     funnelsData.forEach(funnel => {
+      console.log(`📊 Processando funil "${funnel.name}" (${funnel.funnelType})`);
+      
       funnel.stages.forEach(stage => {
         let opportunities = stage.opportunities;
         
@@ -83,26 +103,41 @@ export const useStatsCalculation = (
             if (stage.isWinStage) {
               totalSales++;
               totalSalesValue += opp.value;
+              console.log(`💰 Venda registrada: R$ ${opp.value} no estágio "${stage.name}"`);
             }
           });
+        } 
+        // For 'relacionamento' funnels
+        else if (funnel.funnelType === 'relacionamento') {
+          // Count opportunities from relacionamento funnels for conversion rate
+          relacionamentoOpportunities += opportunities.length;
+          
+          // Count relationships only for win stages in relacionamento funnels
+          if (stage.isWinStage) {
+            totalRelationships += opportunities.length;
+            console.log(`🤝 ${opportunities.length} relacionamento(s) conquistado(s) no estágio "${stage.name}"`);
+          }
         }
-        // For 'relacionamento' funnels, we don't count monetary values or sales
-        // They are already counted in totalOpportunities above
       });
     });
 
     const averageTicket = totalSales > 0 ? totalSalesValue / totalSales : 0;
     // Conversion rate: vendas / oportunidades de venda (apenas funis de venda)
     const conversionRate = vendaOpportunities > 0 ? (totalSales / vendaOpportunities) * 100 : 0;
+    // Relationship conversion rate: relacionamentos / oportunidades de relacionamento (apenas funis de relacionamento)
+    const relationshipConversionRate = relacionamentoOpportunities > 0 ? (totalRelationships / relacionamentoOpportunities) * 100 : 0;
 
-    console.log('Stats calculation detailed:', {
+    console.log('✅ Stats calculation resultado final:', {
       totalOpportunities,
       vendaOpportunities,
+      relacionamentoOpportunities,
       totalValue,
       totalSales,
       totalSalesValue,
+      totalRelationships,
       conversionRate,
-      funnelsAnalyzed: funnelsData.map(f => ({ name: f.name, type: f.funnelType }))
+      relationshipConversionRate,
+      averageTicket
     });
 
     return {
@@ -110,8 +145,10 @@ export const useStatsCalculation = (
       totalValue,
       totalSales,
       totalSalesValue,
+      totalRelationships,
       averageTicket,
-      conversionRate
+      conversionRate,
+      relationshipConversionRate
     };
   }, [filterOpportunities]);
 

@@ -9,8 +9,10 @@ export interface StatsData {
   totalValue: number;
   totalSales: number;
   totalSalesValue: number;
+  totalRelationships: number;
   averageTicket: number;
   conversionRate: number;
+  relationshipConversionRate: number;
 }
 
 export interface EnhancedStatsData extends StatsData {
