@@ -9,11 +9,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Share2, Database } from "lucide-react";
+import { Settings, Users, Share2, Database, ShieldCheck } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserManagementDialog } from "./UserManagementDialog";
 import { FunnelSharingSettings } from "./FunnelSharingSettings";
 import { SettingsAutomation } from "./SettingsAutomation";
+import { RolePermissionsManagement } from "./RolePermissionsManagement";
 
 interface SystemSettingsDialogProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -45,7 +46,7 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
           </DialogHeader>
 
           <Tabs defaultValue="sharing" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="sharing" className="flex items-center gap-2">
                 <Share2 className="h-4 w-4" />
                 Compartilhamento
@@ -56,6 +57,10 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
                   Usuários
                 </TabsTrigger>
               )}
+              <TabsTrigger value="permissions" className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Permissões
+              </TabsTrigger>
               <TabsTrigger value="automation" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Automação
@@ -79,6 +84,10 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
                 </div>
               </TabsContent>
             )}
+
+            <TabsContent value="permissions" className="space-y-4">
+              <RolePermissionsManagement />
+            </TabsContent>
 
             <TabsContent value="automation" className="space-y-4">
               <SettingsAutomation 
