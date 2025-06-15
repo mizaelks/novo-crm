@@ -2,130 +2,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { User, Shield, Crown, Check, X } from "lucide-react";
-
-interface Permission {
-  action: string;
-  description: string;
-  admin: boolean;
-  manager: boolean;
-  user: boolean;
-}
-
-const permissions: Permission[] = [
-  {
-    action: "Visualizar todas as oportunidades",
-    description: "Pode ver oportunidades de todos os usuários",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Visualizar próprias oportunidades",
-    description: "Pode ver apenas suas próprias oportunidades",
-    admin: true,
-    manager: true,
-    user: true
-  },
-  {
-    action: "Visualizar oportunidades em funis compartilhados",
-    description: "Pode ver oportunidades em funis marcados como compartilhados",
-    admin: true,
-    manager: true,
-    user: true
-  },
-  {
-    action: "Criar oportunidades",
-    description: "Pode criar novas oportunidades",
-    admin: true,
-    manager: true,
-    user: true
-  },
-  {
-    action: "Editar todas as oportunidades",
-    description: "Pode editar qualquer oportunidade do sistema",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Editar próprias oportunidades",
-    description: "Pode editar apenas suas próprias oportunidades",
-    admin: true,
-    manager: true,
-    user: true
-  },
-  {
-    action: "Excluir oportunidades",
-    description: "Pode excluir oportunidades (apenas próprias para usuários)",
-    admin: true,
-    manager: false,
-    user: true
-  },
-  {
-    action: "Gerenciar funis",
-    description: "Pode criar, editar e configurar funis",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Compartilhar funis",
-    description: "Pode marcar funis como compartilhados",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Gerenciar estágios",
-    description: "Pode criar, editar e configurar estágios dos funis",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Excluir funis",
-    description: "Pode excluir funis do sistema",
-    admin: true,
-    manager: false,
-    user: false
-  },
-  {
-    action: "Gerenciar usuários",
-    description: "Pode criar, editar e excluir usuários",
-    admin: true,
-    manager: false,
-    user: false
-  },
-  {
-    action: "Gerenciar roles",
-    description: "Pode alterar papéis de outros usuários",
-    admin: true,
-    manager: false,
-    user: false
-  },
-  {
-    action: "Configurações do sistema",
-    description: "Acesso às configurações avançadas do sistema",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Automação e arquivamento",
-    description: "Pode configurar automações e políticas de arquivamento",
-    admin: true,
-    manager: true,
-    user: false
-  },
-  {
-    action: "Visualizar relatórios e insights",
-    description: "Acesso aos relatórios e análises do sistema",
-    admin: true,
-    manager: true,
-    user: true
-  }
-];
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 const getRoleIcon = (role: string) => {
   switch (role) {
@@ -169,6 +48,16 @@ const PermissionIcon = ({ hasPermission }: { hasPermission: boolean }) => {
 };
 
 export const RolePermissionsManagement = () => {
+  const { permissions, isLoading } = useRolePermissions();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -198,7 +87,7 @@ export const RolePermissionsManagement = () => {
             <CardContent>
               <div className="text-sm">
                 <div className="font-medium text-green-600">
-                  {permissions.filter(p => p[role as keyof Permission] === true).length} permissões
+                  {permissions.filter(p => p[`${role}_access` as keyof typeof p] === true).length} permissões
                 </div>
                 <div className="text-muted-foreground">
                   de {permissions.length} totais
@@ -232,23 +121,23 @@ export const RolePermissionsManagement = () => {
             </div>
           </div>
           
-          {permissions.map((permission, index) => (
+          {permissions.map((permission) => (
             <div 
-              key={index} 
+              key={permission.permission_id} 
               className="px-4 py-3 grid grid-cols-[2fr,1fr,1fr,1fr] gap-4 border-t text-sm hover:bg-muted/30"
             >
               <div>
-                <div className="font-medium">{permission.action}</div>
+                <div className="font-medium">{permission.permission_name}</div>
                 <div className="text-xs text-muted-foreground">{permission.description}</div>
               </div>
               <div className="flex justify-center">
-                <PermissionIcon hasPermission={permission.admin} />
+                <PermissionIcon hasPermission={permission.admin_access} />
               </div>
               <div className="flex justify-center">
-                <PermissionIcon hasPermission={permission.manager} />
+                <PermissionIcon hasPermission={permission.manager_access} />
               </div>
               <div className="flex justify-center">
-                <PermissionIcon hasPermission={permission.user} />
+                <PermissionIcon hasPermission={permission.user_access} />
               </div>
             </div>
           ))}
@@ -256,7 +145,7 @@ export const RolePermissionsManagement = () => {
       </div>
 
       <div className="text-xs text-muted-foreground space-y-1">
-        <p><strong>Nota:</strong> As permissões são aplicadas através de Row Level Security (RLS) no banco de dados.</p>
+        <p><strong>Nota:</strong> As permissões são armazenadas no banco de dados e aplicadas em tempo real.</p>
         <p>Usuários com papel "user" só podem ver suas próprias oportunidades, exceto em funis compartilhados.</p>
         <p>Gerentes podem ver e editar todas as oportunidades, mas não podem gerenciar usuários.</p>
         <p>Administradores têm controle total sobre o sistema, incluindo gerenciamento de usuários e configurações.</p>

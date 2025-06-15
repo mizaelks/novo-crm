@@ -386,6 +386,42 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          admin_access: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          manager_access: boolean | null
+          permission_id: string
+          permission_name: string
+          updated_at: string | null
+          user_access: boolean | null
+        }
+        Insert: {
+          admin_access?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          manager_access?: boolean | null
+          permission_id: string
+          permission_name: string
+          updated_at?: string | null
+          user_access?: boolean | null
+        }
+        Update: {
+          admin_access?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          manager_access?: boolean | null
+          permission_id?: string
+          permission_name?: string
+          updated_at?: string | null
+          user_access?: boolean | null
+        }
+        Relationships: []
+      }
       scheduled_actions: {
         Row: {
           action_config: Json
