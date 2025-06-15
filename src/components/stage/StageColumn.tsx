@@ -54,6 +54,15 @@ const StageColumn = ({
   const handleAddOpportunity = () => {
     setIsDialogOpen(true);
   };
+
+  const handleOpportunityCreatedWrapper = () => {
+    // Trigger a refresh without needing the opportunity object
+    // The parent component will handle reloading the data
+    if (onOpportunityCreated) {
+      // Call with a dummy opportunity object or trigger a refresh
+      window.location.reload();
+    }
+  };
   
   return (
     <Draggable draggableId={stage.id} index={index}>
@@ -89,7 +98,7 @@ const StageColumn = ({
               onOpenChange={setIsDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
-              onOpportunityCreated={onOpportunityCreated}
+              onOpportunityCreated={handleOpportunityCreatedWrapper}
             />
             
             {selectedOpportunityId && (
