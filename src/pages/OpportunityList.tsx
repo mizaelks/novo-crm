@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { Opportunity, Funnel, Stage } from "@/types";
-import { opportunityAPI, funnelAPI, stageAPI } from "@/services/opportunityAPI";
+import { opportunityAPI } from "@/services/opportunityAPI";
+import { funnelAPI } from "@/services/funnelAPI";
+import { stageAPI } from "@/services/stageAPI";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableHead, TableHeader } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { 
@@ -23,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { formatDateBRT } from "@/lib/utils";
+import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
 import OpportunityMetricsCards from "@/components/opportunity/OpportunityMetricsCards";
