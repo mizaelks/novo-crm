@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { StageHistoryEntry, PassThroughRateData, StageVelocityData, FunnelPassThroughData } from "@/types/stageHistory";
-import { useDateFilter } from "@/hooks/useDateFilter";
 
 export const stageHistoryAPI = {
   // Registrar movimentação de etapa
@@ -154,8 +153,19 @@ export const stageHistoryAPI = {
 
       if (funnelError) throw funnelError;
 
+      // Check if stages exist and is an array
+      if (!funnelData.stages || !Array.isArray(funnelData.stages)) {
+        return {
+          funnelId,
+          funnelName: funnelData.name,
+          stages: [],
+          overallConversionRate: 0,
+          averageVelocity: 0
+        };
+      }
+
       // Ordenar etapas
-      const sortedStages = (funnelData.stages || []).sort((a: any, b: any) => a.order - b.order);
+      const sortedStages = funnelData.stages.sort((a: any, b: any) => a.order - b.order);
 
       // Calcular taxa de passagem para cada etapa
       const stageRates = await Promise.all(
