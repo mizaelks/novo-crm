@@ -7,7 +7,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Opportunity } from "@/types";
+import { Opportunity, Stage } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { OpportunityOwnerBadge } from "./OpportunityOwnerBadge";
 import { OpportunityTasksBadge } from "./OpportunityTasksBadge";
@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
+  stage?: Stage; // Make stage optional for backwards compatibility
   onEdit?: (opportunity: Opportunity) => void;
   onDelete?: (id: string) => void;
   onView?: (opportunity: Opportunity) => void;
@@ -35,6 +36,7 @@ interface OpportunityCardProps {
 
 export const OpportunityCard = ({ 
   opportunity, 
+  stage,
   onEdit, 
   onDelete, 
   onView, 
@@ -61,7 +63,7 @@ export const OpportunityCard = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <OpportunityAlertIndicator opportunity={opportunity} />
+          {stage && <OpportunityAlertIndicator opportunity={opportunity} stage={stage} />}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -117,10 +119,12 @@ export const OpportunityCard = ({
         
         <div className="flex flex-wrap gap-2 items-center">
           <OpportunityOwnerBadge 
-            userId={opportunity.userId} 
+            userId={opportunity.userId || ''} 
             funnelIsShared={funnelIsShared}
           />
-          <OpportunityTasksBadge opportunity={opportunity} />
+          <OpportunityTasksBadge 
+            pendingTasks={opportunity.scheduledActions?.filter(action => action.status === 'pending') || []} 
+          />
         </div>
 
         {(opportunity.phone || opportunity.email) && (

@@ -99,13 +99,14 @@ export const webhookAPI = {
       const customFields = payload.customFields || {};
       customFields.isFromWebhook = true;
       
-      // Create object with all possible fields from payload
+      // Create object with all possible fields from payload - FIXED: Added user_id and title
       const opportunityData = {
         title: payload.title,
         client: payload.client || 'External client',
         value: payload.value || 0,
         stage_id: payload.stageId,
         funnel_id: payload.funnelId,
+        user_id: payload.userId || null, // Add user_id - could be null for external webhooks
         // Additional contact information fields
         phone: payload.phone || null,
         email: payload.email || null,

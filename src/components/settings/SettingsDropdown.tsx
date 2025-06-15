@@ -12,7 +12,7 @@ import {
 import { Settings, Trash2, Database, Users, Webhook, Code } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import FunnelManagementDialog from "./FunnelManagementDialog";
-import SystemSettingsDialog from "./SystemSettingsDialog";
+import { SystemSettingsDialog } from "./SystemSettingsDialog";
 import { UserManagementDialog } from "./UserManagementDialog";
 
 const SettingsDropdown = () => {
@@ -62,8 +62,8 @@ const SettingsDropdown = () => {
         onOpenChange={setFunnelDialogOpen} 
       />
       <SystemSettingsDialog 
-        open={systemDialogOpen} 
-        onOpenChange={setSystemDialogOpen} 
+        isOpen={systemDialogOpen} 
+        setIsOpen={setSystemDialogOpen} 
       />
       <UserManagementDialog 
         isOpen={userDialogOpen} 

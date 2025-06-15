@@ -2,7 +2,7 @@
 import React from 'react';
 import { Droppable } from "react-beautiful-dnd";
 import { Opportunity, Stage } from "@/types";
-import OpportunityCard from "../opportunity/OpportunityCard";
+import { OpportunityCard } from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StageOpportunityListProps {
@@ -64,9 +64,8 @@ const StageOpportunityList = ({
                 <OpportunityCard
                   key={opportunity.id}
                   opportunity={opportunity}
-                  index={index}
                   stage={stage}
-                  onClick={onOpportunityClick}
+                  onView={onOpportunityClick}
                 />
               ))}
               {provided.placeholder}

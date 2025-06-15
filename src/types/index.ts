@@ -6,6 +6,7 @@ export interface Funnel {
   order: number;
   funnelType: 'venda' | 'relacionamento';
   stages: Stage[];
+  is_shared?: boolean; // Add shared funnel support
 }
 
 export interface StageSortConfig {
@@ -84,6 +85,8 @@ export interface Opportunity {
   userId?: string; // ID of the user who created this opportunity
   winReason?: string; // Reason for winning
   lossReason?: string; // Reason for losing
+  archived?: boolean; // Add archived property
+  archivedAt?: Date; // Add archived timestamp
 }
 
 export interface WebhookConfig {
