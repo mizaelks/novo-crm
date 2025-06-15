@@ -155,10 +155,10 @@ export const stageHistoryAPI = {
       if (funnelError) throw funnelError;
 
       // Check if stages exist and is an array
-      if (!funnelData.stages || !Array.isArray(funnelData.stages)) {
+      if (!funnelData?.stages || !Array.isArray(funnelData.stages)) {
         return {
           funnelId,
-          funnelName: funnelData.name,
+          funnelName: funnelData?.name || '',
           stages: [],
           overallConversionRate: 0,
           averageVelocity: 0
@@ -177,7 +177,7 @@ export const stageHistoryAPI = {
       );
 
       // Add null check for stageRates
-      const validStageRates = (stageRates || []).filter(Boolean) as PassThroughRateData[];
+      const validStageRates = (stageRates || []).filter((rate): rate is PassThroughRateData => rate !== null);
 
       // Calcular taxa de conversão geral (primeira etapa para etapas de ganho)
       const firstStage = validStageRates[0];
@@ -276,7 +276,7 @@ export const stageHistoryAPI = {
         })
       );
 
-      const validVelocities = velocities.filter(v => v !== null && v > 0) as number[];
+      const validVelocities = velocities.filter((v): v is number => v !== null && v > 0);
       
       if (validVelocities.length === 0) return 0;
       
