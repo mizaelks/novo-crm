@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -8,9 +7,7 @@ import InsightsFilters from "@/components/insights/InsightsFilters";
 import InsightsStats from "@/components/insights/InsightsStats";
 import InsightsCharts from "@/components/insights/InsightsCharts";
 import InsightsAdvancedSettings from "@/components/insights/InsightsAdvancedSettings";
-
-// Define the FunnelType type locally to match what the components expect
-type FunnelType = 'venda' | 'relacionamento' | 'all' | 'mixed';
+import { FunnelType } from "@/types/funnels";
 
 const Insights = () => {
   // All hooks must be called before any conditional returns

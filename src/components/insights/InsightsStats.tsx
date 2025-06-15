@@ -1,9 +1,9 @@
-
 import { TrendingUp, DollarSign, Target, Zap, Calculator, Percent, Heart } from "lucide-react";
 import { formatCurrency } from "@/services/utils/dateUtils";
 import { useDateFilter } from "@/hooks/useDateFilter";
 import StatsCard from "@/components/dashboard/StatsCard";
 import InsightsStatsSkeleton from "./InsightsStatsSkeleton";
+import { FunnelType } from "@/types/funnels";
 
 interface InsightsStatsProps {
   loading: boolean;
@@ -27,7 +27,7 @@ interface InsightsStatsProps {
       relationshipConversionRate: number;
     };
   };
-  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
+  funnelType?: FunnelType;
 }
 
 const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProps) => {
