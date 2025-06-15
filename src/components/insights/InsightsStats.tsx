@@ -1,3 +1,4 @@
+
 import { TrendingUp, DollarSign, Target, Zap, Calculator, Percent, Heart } from "lucide-react";
 import { formatCurrency } from "@/services/utils/dateUtils";
 import { useDateFilter } from "@/hooks/useDateFilter";
@@ -154,7 +155,29 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
         />
       )}
 
-      {showRelationshipMetrics && funnelType !== 'venda' && (
+      {showRelationshipMetrics && funnelType === 'relacionamento' && (
+        <StatsCard
+          title="Taxa de Conversão (Relacionamentos)"
+          value={`${stats.relationshipConversionRate.toFixed(1)}%`}
+          subtitle={relationshipConversionSubtitle}
+          icon={Percent}
+          valueClassName="text-2xl font-bold text-blue-600"
+          tooltip="Percentual de oportunidades convertidas em relacionamentos (apenas funis de relacionamento)"
+        />
+      )}
+
+      {showRelationshipMetrics && funnelType === 'all' && (
+        <StatsCard
+          title="Taxa de Conversão (Relacionamentos)"
+          value={`${stats.relationshipConversionRate.toFixed(1)}%`}
+          subtitle={relationshipConversionSubtitle}
+          icon={Percent}
+          valueClassName="text-2xl font-bold text-blue-600"
+          tooltip="Percentual de oportunidades convertidas em relacionamentos (apenas funis de relacionamento)"
+        />
+      )}
+
+      {showRelationshipMetrics && funnelType === 'mixed' && (
         <StatsCard
           title="Taxa de Conversão (Relacionamentos)"
           value={`${stats.relationshipConversionRate.toFixed(1)}%`}
