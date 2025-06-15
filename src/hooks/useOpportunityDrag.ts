@@ -51,7 +51,16 @@ export const useOpportunityDrag = (
       destinationIndex
     );
     
-    console.log('Checking requirements:', dragOperation);
+    console.log('Drag operation created:', dragOperation);
+    console.log('Destination stage details:', {
+      id: destinationStage.id,
+      name: destinationStage.name,
+      isWinStage: destinationStage.isWinStage,
+      isLossStage: destinationStage.isLossStage,
+      winReasonRequired: destinationStage.winReasonRequired,
+      lossReasonRequired: destinationStage.lossReasonRequired,
+      requiredFields: destinationStage.requiredFields
+    });
     
     if (hasRequirements(dragOperation)) {
       console.log('Setting up drag operation for required fields/reasons');

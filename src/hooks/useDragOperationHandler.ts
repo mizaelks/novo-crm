@@ -24,6 +24,17 @@ export const useDragOperationHandler = () => {
     const needsWinReason = destinationStage.isWinStage && destinationStage.winReasonRequired;
     const needsLossReason = destinationStage.isLossStage && destinationStage.lossReasonRequired;
     
+    console.log('Creating drag operation:', {
+      destinationStageId: destinationStage.id,
+      isWinStage: destinationStage.isWinStage,
+      isLossStage: destinationStage.isLossStage,
+      winReasonRequired: destinationStage.winReasonRequired,
+      lossReasonRequired: destinationStage.lossReasonRequired,
+      needsWinReason,
+      needsLossReason,
+      requiredFieldsCount: requiredFields.length
+    });
+    
     return {
       opportunity,
       sourceStageId,
@@ -40,6 +51,13 @@ export const useDragOperationHandler = () => {
   const hasRequirements = (operation: DragOperation): boolean => {
     const hasRequiredFields = operation.requiredFields.length > 0;
     const hasReasonRequirements = operation.needsWinReason || operation.needsLossReason;
+    
+    console.log('Checking requirements:', {
+      hasRequiredFields,
+      hasReasonRequirements,
+      totalRequirements: hasRequiredFields || hasReasonRequirements
+    });
+    
     return hasRequiredFields || hasReasonRequirements;
   };
 

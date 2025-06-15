@@ -34,11 +34,11 @@ export const useKanbanDialogs = () => {
       const needsReasons = currentDragOperation.needsWinReason || currentDragOperation.needsLossReason;
       const hasRequiredFields = currentDragOperation.requiredFields?.length > 0;
       
-      console.log('Dialog logic:', { needsReasons, hasRequiredFields });
+      console.log('Dialog logic:', { needsReasons, hasRequiredFields, requiredFields: currentDragOperation.requiredFields });
       
       // Se só precisa de motivos (sem campos obrigatórios), vai direto para o diálogo de motivos
       if (needsReasons && !hasRequiredFields) {
-        console.log('Showing reason dialog directly');
+        console.log('Showing reason dialog directly - no required fields');
         setShowReasonDialog(true);
         return;
       }
