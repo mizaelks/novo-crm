@@ -91,8 +91,8 @@ const OpportunityDetailsDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="pr-12">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pr-12 flex-shrink-0">
             <div className="flex items-center justify-between pr-8">
               <DialogTitle className="flex-1">
                 {loading ? "Carregando..." : opportunity?.title}
@@ -116,24 +116,26 @@ const OpportunityDetailsDialog = ({
             </div>
           </DialogHeader>
           
-          {loading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              <div className="h-6 bg-muted animate-pulse rounded-md" />
-              <div className="h-6 bg-muted animate-pulse rounded-md" />
-              <div className="h-6 bg-muted animate-pulse rounded-md" />
-            </div>
-          ) : opportunity ? (
-            <OpportunityDetailsTabs 
-              opportunity={opportunity} 
-              currentStage={currentStage}
-              onOpportunityUpdated={handleOpportunityUpdated}
-            />
-          ) : (
-            <div className="text-center py-6">
-              <p>Oportunidade não encontrada</p>
-            </div>
-          )}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {loading ? (
+              // Loading skeleton
+              <div className="space-y-4 p-6">
+                <div className="h-6 bg-muted animate-pulse rounded-md" />
+                <div className="h-6 bg-muted animate-pulse rounded-md" />
+                <div className="h-6 bg-muted animate-pulse rounded-md" />
+              </div>
+            ) : opportunity ? (
+              <OpportunityDetailsTabs 
+                opportunity={opportunity} 
+                currentStage={currentStage}
+                onOpportunityUpdated={handleOpportunityUpdated}
+              />
+            ) : (
+              <div className="text-center py-6">
+                <p>Oportunidade não encontrada</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       
