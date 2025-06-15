@@ -1,10 +1,4 @@
 
-export interface ConversionData {
-  stageName: string;
-  opportunities: number;
-  conversionRate: number;
-}
-
 export interface ValueData {
   month: string;
   value: number;

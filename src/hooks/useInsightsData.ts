@@ -6,7 +6,7 @@ import { useDateFilter } from "@/hooks/useDateFilter";
 import { useInsightsFilter } from "./insights/useInsightsFilter";
 import { useStatsCalculation } from "./insights/useStatsCalculation";
 import { useDataProcessing } from "./insights/useDataProcessing";
-import { ConversionData, ValueData } from "./insights/types";
+import { ValueData } from "./insights/types";
 
 export const useInsightsData = (
   selectedFunnel: string, 
@@ -16,7 +16,6 @@ export const useInsightsData = (
 ) => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [conversionData, setConversionData] = useState<ConversionData[]>([]);
   const [stageDistribution, setStageDistribution] = useState<any[]>([]);
   const [valueOverTime, setValueOverTime] = useState<ValueData[]>([]);
   
@@ -42,7 +41,6 @@ export const useInsightsData = (
 
   // Use the data processing hook
   const {
-    memoizedConversionData,
     memoizedStageDistribution,
     memoizedValueOverTime
   } = useDataProcessing(
@@ -73,16 +71,14 @@ export const useInsightsData = (
   // Update processed data when dependencies change
   useEffect(() => {
     if (!loading) {
-      setConversionData(memoizedConversionData);
       setStageDistribution(memoizedStageDistribution);
       setValueOverTime(memoizedValueOverTime);
     }
-  }, [loading, memoizedConversionData, memoizedStageDistribution, memoizedValueOverTime]);
+  }, [loading, memoizedStageDistribution, memoizedValueOverTime]);
 
   return {
     funnels,
     loading,
-    conversionData,
     stageDistribution,
     valueOverTime,
     getTotalStats

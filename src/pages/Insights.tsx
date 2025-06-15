@@ -19,7 +19,6 @@ const Insights = () => {
   const {
     funnels,
     loading,
-    conversionData,
     stageDistribution,
     valueOverTime,
     getTotalStats
@@ -62,7 +61,6 @@ const Insights = () => {
       
       <InsightsStats loading={loading} stats={stats} />
       <InsightsCharts
-        conversionData={conversionData}
         stageDistribution={stageDistribution}
         valueOverTime={valueOverTime}
       />
