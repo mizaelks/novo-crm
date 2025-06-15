@@ -95,7 +95,7 @@ export const useStatsCalculation = (
     const conversionRate = totalOpportunities > 0 ? (totalSales / totalOpportunities) * 100 : 0;
 
     return {
-      totalOpportunidades,
+      totalOpportunities,
       totalValue,
       totalSales,
       totalSalesValue,
