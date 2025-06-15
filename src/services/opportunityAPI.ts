@@ -1,9 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, OpportunityFormData } from "@/types";
 import { mapDbOpportunityToOpportunity } from "./utils/mappers";
 import { triggerEntityWebhooks } from "./utils/webhook";
 import { checkAndMigrateOpportunity } from "./utils/opportunityMigration";
 import { stageAPI } from "./stageAPI";
+import { stageHistoryAPI } from "./stageHistoryAPI";
 
 export const opportunityAPI = {
   getAll: async (): Promise<Opportunity[]> => {
@@ -39,13 +41,22 @@ export const opportunityAPI = {
       company: data.company,
       custom_fields: data.customFields || {},
       last_stage_change_at: currentTime,
-      source_opportunity_id: data.sourceOpportunityId
+      source_opportunity_id: data.sourceOpportunityId,
+      user_id: data.userId
     }]).select().single();
     
     if (error || !created) {
       console.error("Error creating opportunity:", error);
       throw error || new Error('Opportunity create error');
     }
+    
+    // Registrar entrada inicial no funil
+    await stageHistoryAPI.recordStageMove(
+      created.id,
+      null, // from_stage_id é null para entrada inicial
+      data.stageId,
+      data.userId
+    );
     
     await triggerEntityWebhooks('opportunity', created.id, 'create', created);
     
@@ -90,6 +101,20 @@ export const opportunityAPI = {
   move: async (id: string, newStageId: string): Promise<Opportunity | null> => {
     console.log(`Moving opportunity ${id} to stage ${newStageId}`);
     
+    // Buscar etapa atual antes da movimentação
+    const { data: currentOpp, error: currentError } = await supabase
+      .from('opportunities')
+      .select('stage_id, user_id')
+      .eq('id', id)
+      .single();
+    
+    if (currentError) {
+      console.error("Error fetching current opportunity:", currentError);
+      throw currentError;
+    }
+    
+    const currentStageId = currentOpp.stage_id;
+    
     const currentTime = new Date().toISOString();
     const { data: updated, error } = await supabase
       .from('opportunities')
@@ -111,6 +136,14 @@ export const opportunityAPI = {
       throw new Error("Failed to move opportunity");
     }
     
+    // Registrar movimentação no histórico
+    await stageHistoryAPI.recordStageMove(
+      id,
+      currentStageId,
+      newStageId,
+      currentOpp.user_id
+    );
+    
     const opportunity = mapDbOpportunityToOpportunity(updated);
     
     // Check if the destination stage has migration configured
@@ -126,7 +159,7 @@ export const opportunityAPI = {
     
     await triggerEntityWebhooks('opportunity', id, 'move', {
       ...updated,
-      previousStageId: undefined, // We don't track the previous stage in this simple implementation
+      previousStageId: currentStageId,
       newStageId: newStageId
     });
     

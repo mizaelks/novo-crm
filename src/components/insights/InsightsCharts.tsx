@@ -1,96 +1,96 @@
-
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { formatCurrency } from "@/services/utils/dateUtils";
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B', '#4ECDC4', '#95E1D3'];
-
-interface ValueData {
-  month: string;
-  value: number;
-}
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ValueData } from "@/hooks/insights/types";
+import PassThroughRatesChart from "./PassThroughRatesChart";
+import StageVelocityChart from "./StageVelocityChart";
+import { usePassThroughRates } from "@/hooks/usePassThroughRates";
 
 interface InsightsChartsProps {
   stageDistribution: any[];
   valueOverTime: ValueData[];
+  selectedFunnel?: string;
 }
 
-const InsightsCharts = ({ stageDistribution, valueOverTime }: InsightsChartsProps) => {
+const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel }: InsightsChartsProps) => {
+  const { 
+    passThroughRates, 
+    stageVelocities, 
+    loading: passThroughLoading 
+  } = usePassThroughRates(selectedFunnel !== "all" ? selectedFunnel : null);
+
+  const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+
   return (
-    <Tabs defaultValue="distribution" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="distribution">Distribuição por Etapa</TabsTrigger>
-        <TabsTrigger value="timeline">Valor ao Longo do Tempo</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="distribution">
+    <div className="grid grid-cols-1 gap-6">
+      {/* Existing charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição de Oportunidades por Etapa</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Quantidade total de oportunidades em cada etapa do funil
-            </p>
+            <CardTitle>Distribuição por Etapa</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={stageDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent, value }) => 
-                    percent > 5 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : ''
-                  }
-                  outerRadius={120}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {stageDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [value, 'Oportunidades']} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stageDistribution}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {stageDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [value, "Oportunidades"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
-      </TabsContent>
-      
-      <TabsContent value="timeline">
+
         <Card>
           <CardHeader>
-            <CardTitle>Valor de Oportunidades ao Longo do Tempo</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Evolução do valor total das oportunidades nos últimos meses
-            </p>
+            <CardTitle>Valor ao Longo do Tempo</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={valueOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip 
-                  formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
-                  labelStyle={{ color: '#000' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#8884d8" 
-                  strokeWidth={3}
-                  dot={{ fill: '#8884d8', r: 6 }}
-                  activeDot={{ r: 8, fill: '#8884d8' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={valueOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, "Valor"]} />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
-      </TabsContent>
-    </Tabs>
+      </div>
+
+      {/* New pass-through and velocity charts */}
+      {selectedFunnel && selectedFunnel !== "all" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PassThroughRatesChart 
+            data={passThroughRates} 
+            loading={passThroughLoading}
+          />
+          
+          <StageVelocityChart 
+            data={stageVelocities} 
+            loading={passThroughLoading}
+          />
+        </div>
+      )}
+    </div>
   );
-};
+});
+
+InsightsCharts.displayName = "InsightsCharts";
 
 export default InsightsCharts;

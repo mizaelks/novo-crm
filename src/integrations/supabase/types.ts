@@ -174,6 +174,55 @@ export type Database = {
           },
         ]
       }
+      opportunity_stage_history: {
+        Row: {
+          from_stage_id: string | null
+          id: string
+          moved_at: string
+          opportunity_id: string
+          to_stage_id: string
+          user_id: string | null
+        }
+        Insert: {
+          from_stage_id?: string | null
+          id?: string
+          moved_at?: string
+          opportunity_id: string
+          to_stage_id: string
+          user_id?: string | null
+        }
+        Update: {
+          from_stage_id?: string | null
+          id?: string
+          moved_at?: string
+          opportunity_id?: string
+          to_stage_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_stage_history_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_stage_history_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_stage_history_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
