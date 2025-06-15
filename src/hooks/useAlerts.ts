@@ -19,6 +19,8 @@ export interface Alert {
   createdAt: Date;
   isRead: boolean;
   route: string; // Rota para navegar quando clicado
+  priority: number; // Novo campo para ordenação: 1 = atrasada, 2 = hoje, 3 = outros
+  scheduledDate?: Date; // Novo campo para ajudar na ordenação
 }
 
 export const useAlerts = () => {
@@ -72,7 +74,8 @@ export const useAlerts = () => {
                   funnelId: funnel.id,
                   createdAt: new Date(),
                   isRead: false,
-                  route: `/funnels/${funnel.id}`
+                  route: `/funnels/${funnel.id}`,
+                  priority: 3 // Alertas de oportunidades têm prioridade baixa
                 };
                 
                 console.log(`Stage alert created with route: ${alert.route}`);
@@ -87,6 +90,8 @@ export const useAlerts = () => {
     // Alertas de tarefas agendadas pendentes e atrasadas
     if (scheduledActions && funnels) {
       const now = new Date();
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Final do dia atual
       
       scheduledActions.forEach(action => {
         // Gerar alertas para ações pendentes (incluindo as que ainda não venceram e as atrasadas)
@@ -112,6 +117,15 @@ export const useAlerts = () => {
           if (targetFunnel && targetOpportunity) {
             const scheduledDate = new Date(action.scheduledDateTime);
             const isOverdue = scheduledDate <= now;
+            const isToday = scheduledDate <= today && scheduledDate >= new Date(today.getTime() - 24 * 60 * 60 * 1000);
+            
+            // Determinar prioridade
+            let priority = 3; // padrão
+            if (isOverdue) {
+              priority = 1; // alta prioridade para atrasadas
+            } else if (isToday) {
+              priority = 2; // média prioridade para hoje
+            }
             
             const alert: Alert = {
               id: `scheduled-${action.id}`,
@@ -125,7 +139,9 @@ export const useAlerts = () => {
               scheduledActionId: action.id,
               createdAt: new Date(),
               isRead: false,
-              route: `/funnels/${targetFunnel.id}`
+              route: `/funnels/${targetFunnel.id}`,
+              priority,
+              scheduledDate
             };
             
             console.log(`Scheduled task alert created:`, alert);
@@ -135,8 +151,24 @@ export const useAlerts = () => {
       });
     }
 
-    console.log('Generated alerts:', generatedAlerts);
-    setAlerts(generatedAlerts);
+    // Ordenar alertas por prioridade e depois por data
+    const sortedAlerts = generatedAlerts.sort((a, b) => {
+      // Primeiro por prioridade (1 = alta, 2 = média, 3 = baixa)
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+      
+      // Se mesma prioridade, ordenar por data agendada (mais antigo primeiro)
+      if (a.scheduledDate && b.scheduledDate) {
+        return a.scheduledDate.getTime() - b.scheduledDate.getTime();
+      }
+      
+      // Se não tem data agendada, ordenar por data de criação
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    console.log('Generated alerts (sorted):', sortedAlerts);
+    setAlerts(sortedAlerts);
   }, [funnels, scheduledActions]);
 
   const markAsRead = (alertId: string) => {
