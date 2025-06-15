@@ -72,7 +72,7 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
       return `${stats.totalRelationships} relacionamentos de oportunidades em funis de relacionamento`;
     }
     
-    return `${stats.totalRelationships} relacionamentos de ${stats.totalOpportunidades} oportunidades`;
+    return `${stats.totalRelationships} relacionamentos de ${stats.totalOpportunities} oportunidades`;
   };
 
   const conversionSubtitle = getConversionSubtitle();
