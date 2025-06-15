@@ -55,6 +55,18 @@ const StageColumn = ({
     setIsCreateDialogOpen(true);
   };
 
+  const handleAddTask = (opportunity: Opportunity) => {
+    // Implementar lógica de adição de tarefa
+    console.log('Add task for opportunity:', opportunity.id);
+    // Aqui você pode abrir um dialog ou modal para adicionar tarefa
+  };
+
+  const handleAddField = (opportunity: Opportunity) => {
+    // Implementar lógica de adição de campo
+    console.log('Add field for opportunity:', opportunity.id);
+    // Aqui você pode abrir um dialog ou modal para adicionar campo
+  };
+
   const handleOpportunityCreatedWrapper = () => {
     // Trigger a refresh without needing the opportunity object
     // The parent component will handle reloading the data
@@ -90,6 +102,8 @@ const StageColumn = ({
                   opportunities={stage.opportunities}
                   stage={stage}
                   onOpportunityClick={handleOpportunityClick}
+                  onAddTask={handleAddTask}
+                  onAddField={handleAddField}
                 />
               </CardContent>
             </Card>

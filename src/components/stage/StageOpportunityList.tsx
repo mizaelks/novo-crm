@@ -10,13 +10,17 @@ interface StageOpportunityListProps {
   opportunities: Opportunity[];
   stage: Stage;
   onOpportunityClick: (opportunity: Opportunity) => void;
+  onAddTask?: (opportunity: Opportunity) => void;
+  onAddField?: (opportunity: Opportunity) => void;
 }
 
 const StageOpportunityList = ({ 
   stageId, 
   opportunities, 
   stage, 
-  onOpportunityClick
+  onOpportunityClick,
+  onAddTask,
+  onAddField
 }: StageOpportunityListProps) => {
   // Aplicar ordenação baseada na configuração da etapa
   const getSortedOpportunities = () => {
@@ -66,6 +70,8 @@ const StageOpportunityList = ({
                   opportunity={opportunity}
                   stage={stage}
                   onView={onOpportunityClick}
+                  onAddTask={onAddTask}
+                  onAddField={onAddField}
                 />
               ))}
               {provided.placeholder}
