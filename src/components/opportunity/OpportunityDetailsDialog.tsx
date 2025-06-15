@@ -143,7 +143,7 @@ const OpportunityDetailsDialog = ({
         <EditOpportunityDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          opportunityId={opportunity.id}
+          opportunity={opportunity}
           onOpportunityUpdated={handleOpportunityUpdated}
         />
       )}
