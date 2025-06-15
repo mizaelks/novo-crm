@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -58,6 +59,9 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
   today.setHours(today.getHours() + 1);
   const formattedDate = today.toISOString().split('T')[0];
   const formattedTime = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+
+  // Get today's date for min validation (allow today)
+  const todayForMin = new Date().toISOString().split('T')[0];
 
   // Buscar o próximo estágio disponível
   useEffect(() => {
@@ -131,9 +135,9 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
       // Combine date and time into a single Date object
       const scheduledDateTime = new Date(`${values.scheduledDate}T${values.scheduledTime}:00`);
       
-      // Verify the date is in the future
+      // Verify the date is not in the past (but allow today)
       const now = new Date();
-      if (scheduledDateTime <= now) {
+      if (scheduledDateTime < now) {
         toast.error("A data e hora agendadas devem ser no futuro");
         setIsSubmitting(false);
         return;
@@ -343,7 +347,7 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
                 <FormItem>
                   <FormLabel>Data</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} min={new Date().toISOString().split('T')[0]} />
+                    <Input type="date" {...field} min={todayForMin} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
