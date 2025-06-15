@@ -53,21 +53,29 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     funnelId,
     setStages,
     setShowRequiredFieldsDialog: (show) => {
-      if (currentDragOperation) {
+      console.log('setShowRequiredFieldsDialog called with:', show);
+      if (show && currentDragOperation) {
         // Check if we need to show reason dialog instead of or after required fields
         const needsReasons = currentDragOperation.needsWinReason || currentDragOperation.needsLossReason;
         const hasRequiredFields = currentDragOperation.requiredFields?.length > 0;
         
+        console.log('Dialog logic:', { needsReasons, hasRequiredFields });
+        
         if (needsReasons && !hasRequiredFields) {
+          console.log('Showing reason dialog directly');
           setShowReasonDialog(true);
         } else {
+          console.log('Showing required fields dialog');
           setShowRequiredFieldsDialog(show);
         }
       } else {
         setShowRequiredFieldsDialog(show);
       }
     },
-    setCurrentDragOperation
+    setCurrentDragOperation: (operation) => {
+      console.log('setCurrentDragOperation called with:', operation);
+      setCurrentDragOperation(operation);
+    }
   });
 
   // Wrap the original drag handler to add confetti for win stages
@@ -148,20 +156,25 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
   };
   
   const handleRequiredFieldsComplete = (success: boolean, updatedOpportunity?: any) => {
+    console.log('handleRequiredFieldsComplete:', { success, updatedOpportunity, currentDragOperation });
+    
     if (success && currentDragOperation) {
       // Check if we still need to collect win/loss reasons
       const needsReasons = currentDragOperation.needsWinReason || currentDragOperation.needsLossReason;
       
       if (needsReasons) {
+        console.log('Still need reasons, showing reason dialog');
         // Update the current drag operation with the updated opportunity
         setCurrentDragOperation({
           ...currentDragOperation,
           opportunity: updatedOpportunity || currentDragOperation.opportunity
         });
+        setShowRequiredFieldsDialog(false);
         setShowReasonDialog(true);
         return;
       }
       
+      console.log('No more requirements, completing move');
       // No reasons needed, complete the move
       completeOpportunityMove(
         currentDragOperation.opportunity,
@@ -174,11 +187,15 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
     
     // Reset the state if not successful or no reasons needed
     if (!success || !currentDragOperation || !(currentDragOperation.needsWinReason || currentDragOperation.needsLossReason)) {
+      console.log('Resetting current drag operation');
       setCurrentDragOperation(null);
+      setShowRequiredFieldsDialog(false);
     }
   };
 
   const handleReasonComplete = (success: boolean, updatedOpportunity?: any) => {
+    console.log('handleReasonComplete:', { success, updatedOpportunity, currentDragOperation });
+    
     if (success && currentDragOperation) {
       // Check if moving to a win stage and fire confetti
       const destinationStage = stages.find(stage => stage.id === currentDragOperation.destinationStageId);
@@ -245,7 +262,13 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       {currentDragOperation && showRequiredFieldsDialog && (
         <RequiredFieldsDialog
           open={showRequiredFieldsDialog}
-          onOpenChange={setShowRequiredFieldsDialog}
+          onOpenChange={(open) => {
+            console.log('RequiredFieldsDialog onOpenChange:', open);
+            setShowRequiredFieldsDialog(open);
+            if (!open) {
+              setCurrentDragOperation(null);
+            }
+          }}
           opportunity={currentDragOperation.opportunity}
           requiredFields={currentDragOperation.requiredFields}
           onComplete={handleRequiredFieldsComplete}
@@ -257,7 +280,13 @@ const KanbanBoard = ({ funnelId }: KanbanBoardProps) => {
       {currentDragOperation && showReasonDialog && (
         <OpportunityReasonDialog
           open={showReasonDialog}
-          onOpenChange={setShowReasonDialog}
+          onOpenChange={(open) => {
+            console.log('OpportunityReasonDialog onOpenChange:', open);
+            setShowReasonDialog(open);
+            if (!open) {
+              setCurrentDragOperation(null);
+            }
+          }}
           opportunity={currentDragOperation.opportunity}
           needsWinReason={currentDragOperation.needsWinReason}
           needsLossReason={currentDragOperation.needsLossReason}

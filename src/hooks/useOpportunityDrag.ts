@@ -52,7 +52,10 @@ export const useOpportunityDrag = (
     const hasRequiredFields = requiredFields.length > 0;
     const hasReasonRequirements = needsWinReason || needsLossReason;
     
+    console.log('Checking requirements:', { hasRequiredFields, hasReasonRequirements, needsWinReason, needsLossReason });
+    
     if (hasRequiredFields || hasReasonRequirements) {
+      console.log('Setting up drag operation for required fields/reasons');
       // Set up the drag operation for required fields dialog
       setCurrentDragOperation({
         opportunity,
@@ -70,7 +73,8 @@ export const useOpportunityDrag = (
       return;
     }
     
-    // No required fields or reasons, proceed with the move
+    console.log('No requirements, proceeding with direct move');
+    // No required fields or reasons, proceed with the move directly
     await completeOpportunityMove(opportunity, sourceDroppableId, destinationDroppableId, destinationIndex);
   };
 
@@ -81,6 +85,7 @@ export const useOpportunityDrag = (
     destinationIndex: number,
     updatedOpportunity?: Partial<Opportunity>
   ) => {
+    console.log('Starting completeOpportunityMove:', { opportunityId: opportunity.id, sourceStageId, destinationStageId });
     setIsDragging(true);
     
     try {
@@ -112,18 +117,22 @@ export const useOpportunityDrag = (
         return stage;
       });
       
+      console.log('Updating UI optimistically');
       setStages(updatedStages);
       
       // Then update the database with any reason updates
       if (updatedOpportunity) {
+        console.log('Updating opportunity with additional data:', updatedOpportunity);
         await opportunityAPI.update(opportunity.id, {
           stageId: destinationStageId,
           ...updatedOpportunity
         });
       } else {
+        console.log('Moving opportunity via API');
         await opportunityAPI.move(opportunity.id, destinationStageId);
       }
       
+      console.log('Move completed successfully');
       toast.success("Oportunidade movida com sucesso");
     } catch (error) {
       console.error("Error moving opportunity:", error);
