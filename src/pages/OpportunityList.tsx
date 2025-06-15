@@ -5,40 +5,16 @@ import { opportunityAPI } from "@/services/opportunityAPI";
 import { funnelAPI } from "@/services/funnelAPI";
 import { stageAPI } from "@/services/stageAPI";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { 
-  Archive,
-  RefreshCw,
-  Settings,
-  Clock,
-} from "lucide-react";
 import { toast } from "sonner";
 import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
+import { useArchiveSettings } from "@/hooks/useArchiveSettings";
+import { useOpportunityOperations } from "@/hooks/useOpportunityOperations";
 import OpportunityMetricsCards from "@/components/opportunity/OpportunityMetricsCards";
 import OpportunityTableFilters from "@/components/opportunity/OpportunityTableFilters";
-import OpportunityTableRow from "@/components/opportunity/OpportunityTableRow";
-
-// Interface para configurações de arquivamento
-interface ArchiveSettings {
-  enabled: boolean;
-  period: number; // em dias
-  lastRun: string | null;
-}
+import OpportunityListHeader from "@/components/opportunity/OpportunityListHeader";
+import ClientSummaryTable from "@/components/opportunity/ClientSummaryTable";
+import OpportunitiesTable from "@/components/opportunity/OpportunitiesTable";
 
 const OpportunityList = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -58,12 +34,8 @@ const OpportunityList = () => {
   const [showUniqueClients, setShowUniqueClients] = useState(false);
   const [isArchiveSettingsOpen, setIsArchiveSettingsOpen] = useState(false);
   
-  // Configurações de arquivamento (salvas no localStorage)
-  const [archiveSettings, setArchiveSettings] = useLocalStorage<ArchiveSettings>("archiveSettings", {
-    enabled: false,
-    period: 30, // 30 dias padrão
-    lastRun: null,
-  });
+  const { archiveSettings, setArchiveSettings, processAutoArchive } = useArchiveSettings();
+  const { loading: opsLoading, archiveOpportunity, handleDeleteOpportunity, refreshData } = useOpportunityOperations();
 
   // Get unique clients
   const uniqueClients = useMemo(() => {
@@ -202,61 +174,6 @@ const OpportunityList = () => {
     return daysInStage >= stage.alertConfig.maxDaysInStage;
   };
 
-  // Função para arquivar/desarquivar oportunidades
-  const archiveOpportunity = async (opportunity: Opportunity, archive: boolean) => {
-    try {
-      const success = archive 
-        ? await opportunityAPI.archive(opportunity.id)
-        : await opportunityAPI.unarchive(opportunity.id);
-      
-      if (success) {
-        // Reload data to get updated list
-        await loadOpportunities();
-        toast.success(archive ? "Oportunidade arquivada com sucesso" : "Oportunidade restaurada com sucesso");
-      } else {
-        toast.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade`);
-      }
-    } catch (error) {
-      console.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade:`, error);
-      toast.error(`Erro ao ${archive ? 'arquivar' : 'restaurar'} oportunidade`);
-    }
-  };
-
-  // Função para arquivar oportunidades automaticamente
-  const processAutoArchive = async () => {
-    if (!archiveSettings.enabled) return;
-    
-    try {
-      // Get all active opportunities
-      const allOpportunities = await opportunityAPI.getAll(false);
-      const cutoffDate = subDays(new Date(), archiveSettings.period);
-      
-      // Find opportunities to archive
-      const opportunitiesToArchive = allOpportunities.filter(
-        opp => new Date(opp.createdAt) < cutoffDate
-      );
-      
-      // Archive them
-      for (const opp of opportunitiesToArchive) {
-        await opportunityAPI.archive(opp.id);
-      }
-      
-      if (opportunitiesToArchive.length > 0) {
-        await loadOpportunities(); // Reload data
-        toast.success(`${opportunitiesToArchive.length} oportunidades arquivadas automaticamente`);
-      }
-      
-      // Update last run
-      setArchiveSettings({
-        ...archiveSettings,
-        lastRun: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Erro no arquivamento automático:", error);
-      toast.error("Erro no arquivamento automático");
-    }
-  };
-
   // Load opportunities based on archive view
   const loadOpportunities = async () => {
     try {
@@ -269,20 +186,6 @@ const OpportunityList = () => {
       toast.error("Erro ao carregar oportunidades");
     }
   };
-
-  // Verificar arquivamento automático na inicialização
-  useEffect(() => {
-    if (archiveSettings.enabled) {
-      const lastRun = archiveSettings.lastRun 
-        ? new Date(archiveSettings.lastRun) 
-        : null;
-      
-      // Se nunca foi executado ou a última execução foi há mais de um dia
-      if (!lastRun || (new Date().getTime() - lastRun.getTime() > 24 * 60 * 60 * 1000)) {
-        processAutoArchive();
-      }
-    }
-  }, [archiveSettings.enabled]);
 
   // Load opportunities when archive view changes
   useEffect(() => {
@@ -319,32 +222,24 @@ const OpportunityList = () => {
     loadData();
   }, []);
 
-  const handleDeleteOpportunity = async (id: string) => {
-    try {
-      const success = await opportunityAPI.delete(id);
-      if (success) {
-        await loadOpportunities(); // Reload data
-        toast.success("Oportunidade excluída com sucesso!");
-      } else {
-        toast.error("Erro ao excluir oportunidade");
-      }
-    } catch (error) {
-      console.error("Error deleting opportunity:", error);
-      toast.error("Erro ao excluir oportunidade");
+  const handleArchive = async (opportunity: Opportunity, archive: boolean) => {
+    const success = await archiveOpportunity(opportunity, archive);
+    if (success) {
+      await loadOpportunities();
     }
+    return success;
   };
 
-  const refreshData = async () => {
-    try {
-      setLoading(true);
+  const handleDelete = async (id: string) => {
+    const success = await handleDeleteOpportunity(id);
+    if (success) {
       await loadOpportunities();
-      toast.success("Dados atualizados com sucesso!");
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast.error("Erro ao atualizar dados");
-    } finally {
-      setLoading(false);
     }
+    return success;
+  };
+
+  const handleRefresh = () => {
+    refreshData(loadOpportunities);
   };
 
   const getFunnelName = (funnelId: string): string => {
@@ -368,107 +263,17 @@ const OpportunityList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Relatório de Oportunidades</h1>
-          <p className="text-muted-foreground">
-            Visão completa e análise detalhada das suas oportunidades {showArchived ? "arquivadas" : "ativas"}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2"
-          >
-            <Archive className="h-4 w-4" /> 
-            {showArchived ? "Ver ativas" : "Ver arquivadas"}
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={refreshData}
-            className="flex items-center gap-2"
-            disabled={loading}
-          >
-            <RefreshCw className="h-4 w-4" /> 
-            Atualizar
-          </Button>
-          
-          <Dialog open={isArchiveSettingsOpen} onOpenChange={setIsArchiveSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Settings className="h-4 w-4" /> 
-                Configurar arquivamento
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Configurações de arquivamento automático</DialogTitle>
-                <DialogDescription>
-                  Configure quando oportunidades devem ser arquivadas automaticamente.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <label className="text-sm font-medium">Ativar arquivamento automático</label>
-                    <p className="text-sm text-muted-foreground">
-                      Arquiva automaticamente oportunidades antigas
-                    </p>
-                  </div>
-                  <Switch
-                    checked={archiveSettings.enabled}
-                    onCheckedChange={(checked) => setArchiveSettings({
-                      ...archiveSettings,
-                      enabled: checked
-                    })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Arquivar oportunidades mais antigas que
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      type="number" 
-                      min="1"
-                      value={archiveSettings.period} 
-                      onChange={(e) => setArchiveSettings({
-                        ...archiveSettings,
-                        period: parseInt(e.target.value) || 30
-                      })}
-                      className="w-20"
-                    />
-                    <span>dias</span>
-                  </div>
-                </div>
-                
-                {archiveSettings.lastRun && (
-                  <div className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>
-                      Última execução: {formatDateBRT(new Date(archiveSettings.lastRun))}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button onClick={processAutoArchive} disabled={!archiveSettings.enabled}>
-                  Executar agora
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+      <OpportunityListHeader
+        showArchived={showArchived}
+        setShowArchived={setShowArchived}
+        refreshData={handleRefresh}
+        loading={loading || opsLoading}
+        archiveSettings={archiveSettings}
+        setArchiveSettings={setArchiveSettings}
+        processAutoArchive={processAutoArchive}
+        isArchiveSettingsOpen={isArchiveSettingsOpen}
+        setIsArchiveSettingsOpen={setIsArchiveSettingsOpen}
+      />
 
       <OpportunityMetricsCards 
         opportunities={filteredOpportunities}
@@ -500,79 +305,21 @@ const OpportunityList = () => {
         </CardHeader>
         <CardContent>
           {showUniqueClients ? (
-            clientSummary && clientSummary.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>N° de Oportunidades</TableHead>
-                    <TableHead>Valor Total</TableHead>
-                    <TableHead>Última Oportunidade</TableHead>
-                    <TableHead>Funil</TableHead>
-                    <TableHead>Etapa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clientSummary.map(summary => (
-                    <TableRow key={summary.client}>
-                      <TableCell>{summary.client}</TableCell>
-                      <TableCell>{summary.opportunityCount}</TableCell>
-                      <TableCell>{formatCurrency(summary.totalValue)}</TableCell>
-                      <TableCell>
-                        {summary.mostRecentDate ? formatDateBRT(summary.mostRecentDate) : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {summary.funnelId ? getFunnelName(summary.funnelId) : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {summary.stageId ? getStageName(summary.stageId) : "N/A"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum cliente encontrado com os filtros atuais
-              </div>
-            )
+            <ClientSummaryTable
+              clientSummary={clientSummary || []}
+              getFunnelName={getFunnelName}
+              getStageName={getStageName}
+            />
           ) : (
-            // Display normal opportunities view
-            filteredOpportunities.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Data de Criação</TableHead>
-                    {showArchived && <TableHead>Data de Arquivamento</TableHead>}
-                    <TableHead>Funil</TableHead>
-                    <TableHead>Etapa</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOpportunities.map((opp) => (
-                    <OpportunityTableRow
-                      key={opp.id}
-                      opportunity={opp}
-                      getFunnelName={getFunnelName}
-                      getStageName={getStageName}
-                      getStageAlertStatus={getStageAlertStatus}
-                      showArchived={showArchived}
-                      onArchive={archiveOpportunity}
-                      onDelete={handleDeleteOpportunity}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma oportunidade encontrada com os filtros atuais
-              </div>
-            )
+            <OpportunitiesTable
+              opportunities={filteredOpportunities}
+              getFunnelName={getFunnelName}
+              getStageName={getStageName}
+              getStageAlertStatus={getStageAlertStatus}
+              showArchived={showArchived}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+            />
           )}
         </CardContent>
       </Card>
