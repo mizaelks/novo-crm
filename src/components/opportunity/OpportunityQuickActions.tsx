@@ -5,8 +5,8 @@ import { Opportunity } from '@/types';
 
 interface OpportunityQuickActionsProps {
   opportunity: Opportunity;
-  onAddTask: () => void;
-  onAddField: () => void;
+  onAddTask?: () => void;
+  onAddField?: () => void;
 }
 
 export const OpportunityQuickActions = ({ 
@@ -14,6 +14,10 @@ export const OpportunityQuickActions = ({
   onAddTask, 
   onAddField 
 }: OpportunityQuickActionsProps) => {
+  if (!onAddTask || !onAddField) {
+    return null;
+  }
+
   return (
     <div className="flex items-center justify-center gap-2 py-1.5 px-2 border-t bg-gray-50/30 text-xs">
       <Button
