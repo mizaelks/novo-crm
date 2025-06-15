@@ -4,6 +4,7 @@ import { RequiredTask } from "@/types";
 import { DEFAULT_TASK_TEMPLATES } from "@/types/taskTemplates";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Phone, MessageCircle, Mail, FileText, Calendar } from "lucide-react";
+import { translateTaskCategory } from "@/components/settings/templateManagement/utils/translations";
 
 interface TaskTemplateSelectorProps {
   requiredTasks: RequiredTask[];
@@ -73,7 +74,7 @@ export const TaskTemplateSelector = ({
                     <Clock className="h-3 w-3" />
                     {template.defaultDuration}h
                     <Badge variant="secondary" className="text-xs ml-1">
-                      {template.category}
+                      {translateTaskCategory(template.category)}
                     </Badge>
                   </div>
                 </div>

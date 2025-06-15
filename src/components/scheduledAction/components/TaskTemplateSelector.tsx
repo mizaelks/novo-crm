@@ -5,6 +5,7 @@ import { Control } from "react-hook-form";
 import { DEFAULT_TASK_TEMPLATES, TaskTemplate } from "@/types/taskTemplates";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Phone, FileText, Mail, Folder, MessageCircle, Clock, FileCheck } from "lucide-react";
+import { translateTaskCategory } from "@/components/settings/templateManagement/utils/translations";
 
 interface TaskTemplateSelectorProps {
   control: Control<any>;
@@ -75,12 +76,17 @@ export const TaskTemplateSelector = ({ control, onTemplateSelect }: TaskTemplate
                       <span className="font-medium">{template.name}</span>
                       <span className="text-xs text-muted-foreground">{template.description}</span>
                     </div>
-                    <Badge 
-                      variant="outline" 
-                      className={`ml-2 text-xs ${getColorClass(template.color)}`}
-                    >
-                      {template.defaultDuration}h
-                    </Badge>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${getColorClass(template.color)}`}
+                      >
+                        {template.defaultDuration}h
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {translateTaskCategory(template.category)}
+                      </Badge>
+                    </div>
                   </div>
                 </SelectItem>
               ))}
