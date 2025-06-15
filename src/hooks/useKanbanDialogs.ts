@@ -28,8 +28,16 @@ export const useKanbanDialogs = () => {
     setCurrentDragOperation(operation);
   };
 
-  const handleShowRequiredFieldsDialog = (show: boolean) => {
-    console.log('setShowRequiredFieldsDialog called with:', show);
+  const handleShowRequiredFieldsDialog = (show: boolean | string) => {
+    console.log('handleShowRequiredFieldsDialog called with:', show);
+    
+    if (show === 'reason') {
+      // Vai direto para o diálogo de motivos
+      console.log('Going directly to reason dialog');
+      setShowReasonDialog(true);
+      return;
+    }
+    
     if (show && currentDragOperation) {
       const needsReasons = currentDragOperation.needsWinReason || currentDragOperation.needsLossReason;
       const hasRequiredFields = currentDragOperation.requiredFields?.length > 0;
@@ -53,7 +61,7 @@ export const useKanbanDialogs = () => {
       // Se não tem nem campos obrigatórios nem motivos, algo está errado
       console.log('No requirements found, this should not happen');
     } else {
-      setShowRequiredFieldsDialog(show);
+      setShowRequiredFieldsDialog(show as boolean);
     }
   };
 

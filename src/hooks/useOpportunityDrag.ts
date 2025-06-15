@@ -13,7 +13,7 @@ export const useOpportunityDrag = (
   setCurrentDragOperation: (operation: any) => void
 ) => {
   const [isDragging, setIsDragging] = useState(false);
-  const { createDragOperation, hasRequirements } = useDragOperationHandler();
+  const { createDragOperation, hasRequirements, requiresOnlyReasons } = useDragOperationHandler();
 
   const handleOpportunityDrag = async (
     draggableId: string,
@@ -63,8 +63,18 @@ export const useOpportunityDrag = (
     });
     
     if (hasRequirements(dragOperation)) {
-      console.log('Setting up drag operation for required fields/reasons');
+      console.log('Has requirements - setting up drag operation');
       setCurrentDragOperation(dragOperation);
+      
+      // Se só precisa de motivos, vai direto para diálogo de motivos
+      if (requiresOnlyReasons(dragOperation)) {
+        console.log('Only needs reasons - showing reason dialog directly');
+        // Sinaliza que deve mostrar diálogo de motivos
+        setShowRequiredFieldsDialog('reason');
+        return;
+      }
+      
+      console.log('Has required fields - showing required fields dialog');
       setShowRequiredFieldsDialog(true);
       return;
     }
