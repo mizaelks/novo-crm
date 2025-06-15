@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, Clock, Trophy, X } from "lucide-react";
+import { Settings, Clock, Trophy, X, Calendar } from "lucide-react";
 import { formatDateBRT } from "@/services/utils/dateUtils";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ interface ArchiveSettings {
   lastRun: string | null;
   archiveWonOpportunities: boolean;
   archiveLostOpportunities: boolean;
+  monthlySchedule: boolean;
 }
 
 interface ArchiveSettingsDialogProps {
@@ -61,7 +62,7 @@ const ArchiveSettingsDialog = ({
         <DialogHeader>
           <DialogTitle>Configurações de arquivamento automático</DialogTitle>
           <DialogDescription>
-            Configure quando oportunidades devem ser arquivadas automaticamente (execução mensal).
+            Configure quando oportunidades devem ser arquivadas automaticamente.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -69,7 +70,7 @@ const ArchiveSettingsDialog = ({
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Ativar arquivamento automático</label>
               <p className="text-sm text-muted-foreground">
-                Executa automaticamente a cada mês
+                Ativa o arquivamento automático de oportunidades
               </p>
             </div>
             <Switch
@@ -78,6 +79,23 @@ const ArchiveSettingsDialog = ({
                 ...archiveSettings,
                 enabled: checked
               })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Execução mensal</label>
+              <p className="text-sm text-muted-foreground">
+                Executa todo dia 1º do mês às 00h
+              </p>
+            </div>
+            <Switch
+              checked={archiveSettings.monthlySchedule}
+              onCheckedChange={(checked) => setArchiveSettings({
+                ...archiveSettings,
+                monthlySchedule: checked
+              })}
+              disabled={!archiveSettings.enabled}
             />
           </div>
           
@@ -140,6 +158,15 @@ const ArchiveSettingsDialog = ({
               <Clock className="h-3 w-3" />
               <span>
                 Última execução: {formatDateBRT(new Date(archiveSettings.lastRun))}
+              </span>
+            </div>
+          )}
+
+          {archiveSettings.monthlySchedule && (
+            <div className="text-sm text-muted-foreground flex items-center gap-1 bg-blue-50 p-2 rounded">
+              <Calendar className="h-3 w-3" />
+              <span>
+                Próxima execução: dia 1º do próximo mês às 00h
               </span>
             </div>
           )}

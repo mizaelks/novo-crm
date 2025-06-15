@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -16,8 +17,9 @@ import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CreateUserDialog } from "./CreateUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
+import { UserRoleManagement } from "./UserRoleManagement";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Shield, Crown, Trash2, Edit, Plus, AlertTriangle } from "lucide-react";
+import { User, Shield, Crown, Trash2, Edit, Plus, AlertTriangle, Users, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -198,73 +200,103 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Gerenciar Usuários
           </DialogTitle>
           <DialogDescription>
-            Crie, edite, remova e gerencie os usuários do sistema.
+            Crie, edite, remova e gerencie os usuários e suas permissões no sistema.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="h-[400px] space-y-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {users.map((user) => (
-                <div key={user.id} className="grid grid-cols-4 gap-4 py-4 items-center">
-                  <div className="col-span-2">
-                    <div className="font-medium">{user.firstName} {user.lastName}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
-                    <Badge 
-                      variant={getRoleVariant(user.role || 'user')} 
-                      className="flex items-center gap-1 mt-1 w-fit"
-                    >
-                      {getRoleIcon(user.role || 'user')}
-                      {getRoleLabel(user.role || 'user')}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditUser(user)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                      disabled={deletingUserId === user.id}
-                    >
-                      {deletingUserId === user.id ? (
-                        <LoadingSpinner size="sm" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Permissões
+            </TabsTrigger>
+          </TabsList>
 
-        <DialogFooter>
-          <Button
-            type="button"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Criar Usuário
-          </Button>
-        </DialogFooter>
+          <TabsContent value="users" className="space-y-4">
+            <ScrollArea className="h-[400px] space-y-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingSpinner size="lg" />
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {users.map((user) => (
+                    <div key={user.id} className="grid grid-cols-4 gap-4 py-4 items-center">
+                      <div className="col-span-2">
+                        <div className="font-medium">{user.firstName} {user.lastName}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <Badge 
+                          variant={getRoleVariant(user.role || 'user')} 
+                          className="flex items-center gap-1 mt-1 w-fit"
+                        >
+                          {getRoleIcon(user.role || 'user')}
+                          {getRoleLabel(user.role || 'user')}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={deletingUserId === user.id}
+                        >
+                          {deletingUserId === user.id ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            <div className="flex justify-end pt-6">
+              <Button
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Usuário
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="permissions" className="space-y-4">
+            <ScrollArea className="h-[400px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingSpinner size="lg" />
+                </div>
+              ) : (
+                <UserRoleManagement 
+                  users={users}
+                  onUserUpdated={loadUsers}
+                />
+              )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
 
       <CreateUserDialog

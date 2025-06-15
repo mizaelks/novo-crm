@@ -11,18 +11,49 @@ interface ArchiveSettings {
   enabled: boolean;
   period: number; // em dias
   lastRun: string | null;
-  archiveWonOpportunities: boolean; // Toggle para oportunidades ganhas
-  archiveLostOpportunities: boolean; // Toggle para oportunidades perdidas
+  archiveWonOpportunities: boolean;
+  archiveLostOpportunities: boolean;
+  monthlySchedule: boolean; // Novo: execução no dia 1º às 00h
 }
 
 export const useArchiveSettings = () => {
   const [archiveSettings, setArchiveSettings] = useLocalStorage<ArchiveSettings>("archiveSettings", {
     enabled: false,
-    period: 30, // 30 dias padrão
+    period: 30,
     lastRun: null,
     archiveWonOpportunities: true,
     archiveLostOpportunities: true,
+    monthlySchedule: true, // Padrão: execução mensal
   });
+
+  // Função para verificar se deve executar o arquivamento automático
+  const shouldRunAutoArchive = (): boolean => {
+    if (!archiveSettings.enabled || !archiveSettings.monthlySchedule) return false;
+    
+    const now = new Date();
+    const lastRun = archiveSettings.lastRun ? new Date(archiveSettings.lastRun) : null;
+    
+    // Verificar se é dia 1º do mês
+    const isFirstDayOfMonth = now.getDate() === 1;
+    
+    // Se nunca executou e é dia 1º, executar
+    if (!lastRun && isFirstDayOfMonth) return true;
+    
+    // Se já executou, verificar se é um novo mês
+    if (lastRun) {
+      const lastRunMonth = lastRun.getMonth();
+      const lastRunYear = lastRun.getFullYear();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      // Se é dia 1º e é um mês/ano diferente da última execução
+      if (isFirstDayOfMonth && (currentMonth !== lastRunMonth || currentYear !== lastRunYear)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
 
   // Função para arquivar oportunidades automaticamente
   const processAutoArchive = async () => {
@@ -91,23 +122,17 @@ export const useArchiveSettings = () => {
     }
   };
 
-  // Verificar arquivamento automático na inicialização (mensal)
+  // Verificar arquivamento automático na inicialização
   useEffect(() => {
-    if (archiveSettings.enabled) {
-      const lastRun = archiveSettings.lastRun 
-        ? new Date(archiveSettings.lastRun) 
-        : null;
-      
-      // Se nunca foi executado ou a última execução foi há mais de um mês (30 dias)
-      if (!lastRun || (new Date().getTime() - lastRun.getTime() > 30 * 24 * 60 * 60 * 1000)) {
-        processAutoArchive();
-      }
+    if (shouldRunAutoArchive()) {
+      processAutoArchive();
     }
-  }, [archiveSettings.enabled]);
+  }, [archiveSettings.enabled, archiveSettings.monthlySchedule]);
 
   return {
     archiveSettings,
     setArchiveSettings,
-    processAutoArchive
+    processAutoArchive,
+    shouldRunAutoArchive
   };
 };
