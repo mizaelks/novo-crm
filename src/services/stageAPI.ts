@@ -25,7 +25,7 @@ export const stageAPI = {
   create: async (data: StageFormData): Promise<Stage> => {
     console.log("Creating stage with data:", data);
     
-    const { data: created, error } = await supabase.from('stages').insert({
+    const insertData = {
       name: data.name,
       description: data.description,
       funnel_id: data.funnelId,
@@ -39,7 +39,13 @@ export const stageAPI = {
       loss_reason_required: data.lossReasonRequired || false,
       win_reasons: data.winReasons || [],
       loss_reasons: data.lossReasons || []
-    }).select().single();
+    } as any;
+    
+    const { data: created, error } = await supabase
+      .from('stages')
+      .insert(insertData)
+      .select()
+      .single();
     
     if (error || !created) {
       console.error("Error creating stage:", error);
