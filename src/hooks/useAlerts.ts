@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { stageAPI } from '@/services/api';
 import { funnelAPI } from '@/services/api';
-import { scheduledActionAPI } from '@/services/api';
+import { scheduledActionAPI } from '@/services/scheduledActionAPI';
 import { Opportunity, Stage, ScheduledAction } from '@/types';
 import { shouldShowAlert, calculateDaysInStage } from '@/utils/stageAlerts';
 
@@ -34,6 +34,7 @@ export const useAlerts = () => {
   const { data: scheduledActions } = useQuery({
     queryKey: ['scheduled-actions'],
     queryFn: scheduledActionAPI.getAll,
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
   // Gerar alertas baseados nas configurações de etapas e ações agendadas
@@ -83,13 +84,13 @@ export const useAlerts = () => {
       });
     }
 
-    // Alertas de tarefas agendadas
+    // Alertas de tarefas agendadas pendentes e atrasadas
     if (scheduledActions && funnels) {
       const now = new Date();
       
       scheduledActions.forEach(action => {
-        // Só gerar alertas para ações pendentes que já passaram da data agendada
-        if (action.status === 'pending' && new Date(action.scheduledDateTime) <= now) {
+        // Gerar alertas para ações pendentes (incluindo as que ainda não venceram e as atrasadas)
+        if (action.status === 'pending') {
           console.log(`Processing scheduled action: ${action.id}`);
           
           // Encontrar o funil da oportunidade
@@ -109,11 +110,16 @@ export const useAlerts = () => {
           }
           
           if (targetFunnel && targetOpportunity) {
+            const scheduledDate = new Date(action.scheduledDateTime);
+            const isOverdue = scheduledDate <= now;
+            
             const alert: Alert = {
               id: `scheduled-${action.id}`,
               type: 'scheduled_task',
-              title: getScheduledActionTitle(action),
-              description: `Tarefa agendada para "${targetOpportunity.title}" está pendente desde ${new Date(action.scheduledDateTime).toLocaleDateString()}`,
+              title: isOverdue ? getOverdueTaskTitle(action) : getScheduledActionTitle(action),
+              description: isOverdue 
+                ? `Tarefa atrasada para "${targetOpportunity.title}" desde ${scheduledDate.toLocaleDateString()}`
+                : `Tarefa agendada para "${targetOpportunity.title}" em ${scheduledDate.toLocaleDateString()}`,
               opportunityId: action.opportunityId,
               funnelId: targetFunnel.id,
               scheduledActionId: action.id,
@@ -155,12 +161,26 @@ export const useAlerts = () => {
 const getScheduledActionTitle = (action: ScheduledAction): string => {
   switch (action.actionType) {
     case 'email':
-      return '📧 Email pendente';
+      return '📧 Email agendado';
     case 'webhook':
-      return '🔗 Webhook pendente';
+      return '🔗 Webhook agendado';
     case 'task':
-      return '📋 Tarefa pendente';
+      return '📋 Tarefa agendada';
     default:
-      return '⚠️ Ação pendente';
+      return '⚠️ Ação agendada';
+  }
+};
+
+// Função auxiliar para gerar título de ação atrasada
+const getOverdueTaskTitle = (action: ScheduledAction): string => {
+  switch (action.actionType) {
+    case 'email':
+      return '📧 Email atrasado';
+    case 'webhook':
+      return '🔗 Webhook atrasado';
+    case 'task':
+      return '📋 Tarefa atrasada';
+    default:
+      return '⚠️ Ação atrasada';
   }
 };

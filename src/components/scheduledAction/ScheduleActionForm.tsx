@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,13 +74,12 @@ const ScheduleActionForm = ({ opportunityId, funnelId, stageId, onActionSchedule
       // Combine date and time into a single Date object
       const scheduledDateTime = new Date(`${values.scheduledDate}T${values.scheduledTime}:00`);
       
-      // Verify the date is not in the past (allow today)
+      // Verify the date is not in the past (allow same day but check if time has passed)
       const now = new Date();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Start of today
       
-      if (scheduledDateTime < today) {
-        toast.error("A data agendada não pode ser no passado");
+      // Only prevent if the scheduled time is in the past
+      if (scheduledDateTime < now) {
+        toast.error("A data e hora agendada não pode ser no passado");
         setIsSubmitting(false);
         return;
       }

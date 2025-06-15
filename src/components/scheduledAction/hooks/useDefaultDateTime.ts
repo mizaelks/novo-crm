@@ -6,7 +6,7 @@ export const useDefaultDateTime = () => {
   const formattedDate = today.toISOString().split('T')[0];
   const formattedTime = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
 
-  // Get today's date for min validation (allow today)
+  // Get today's date for min validation (allow today and future dates)
   const todayForMin = new Date().toISOString().split('T')[0];
 
   return {
