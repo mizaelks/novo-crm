@@ -54,7 +54,10 @@ export const useStatsCalculation = (
     let totalLeads = 0; // Oportunidades que entraram no funil (primeira etapa)
 
     funnelsData.forEach(funnel => {
-      funnel.stages.forEach((stage, stageIndex) => {
+      // Ordenar etapas para garantir que a primeira seja considerada como entrada do funil
+      const sortedStages = [...funnel.stages].sort((a, b) => a.order - b.order);
+      
+      sortedStages.forEach((stage, stageIndex) => {
         let opportunities = stage.opportunities;
         
         // Filter by date range if provided
@@ -67,7 +70,7 @@ export const useStatsCalculation = (
           opportunities = filterOpportunities(opportunities, stage.id);
         }
         
-        // Contar leads (primeira etapa do funil)
+        // Contar leads apenas na primeira etapa (entrada do funil)
         if (stageIndex === 0) {
           totalLeads += opportunities.length;
         }
@@ -85,7 +88,7 @@ export const useStatsCalculation = (
     });
 
     const averageTicket = totalOpportunities > 0 ? totalValue / totalOpportunities : 0;
-    // Taxa de conversão baseada em leads que se tornaram vendas
+    // Taxa de conversão correta: vendas dividido por leads que entraram no funil
     const conversionRate = totalLeads > 0 ? (totalSales / totalLeads) * 100 : 0;
 
     return {
