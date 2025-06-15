@@ -58,6 +58,18 @@ const StageOpportunityList = ({
 
   return (
     <div className="h-full flex flex-col">
+      <div className="mb-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-muted-foreground hover:text-foreground border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40"
+          onClick={onAddClick}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nova oportunidade
+        </Button>
+      </div>
+      
       <Droppable droppableId={stageId}>
         {(provided, snapshot) => (
           <div className="flex-1 min-h-0">
@@ -86,18 +98,6 @@ const StageOpportunityList = ({
           </div>
         )}
       </Droppable>
-      
-      <div className="mt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full text-muted-foreground hover:text-foreground border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40"
-          onClick={onAddClick}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nova oportunidade
-        </Button>
-      </div>
     </div>
   );
 };
