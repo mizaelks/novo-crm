@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { AlertCircle, Download } from "lucide-react";
 
 interface ExportDataDialogProps {
   open: boolean;
@@ -23,17 +23,16 @@ interface ExportDataDialogProps {
 }
 
 const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: ExportDataDialogProps) => {
-  const [exportFormat, setExportFormat] = useState("csv");
-  const [includeCharts, setIncludeCharts] = useState(false);
+  const [includeOpportunities, setIncludeOpportunities] = useState(true);
   const [includeMetrics, setIncludeMetrics] = useState(true);
-  const [includeConversion, setIncludeConversion] = useState(true);
-  const [includeDistribution, setIncludeDistribution] = useState(true);
-  const [includeTimeSeries, setIncludeTimeSeries] = useState(true);
-  const [includeMonetaryData, setIncludeMonetaryData] = useState(true);
+  const [includeValues, setIncludeValues] = useState(true);
+  const [includeSales, setIncludeSales] = useState(true);
+  const [exportFormat, setExportFormat] = useState("csv");
+  const [dateRange, setDateRange] = useState("current");
 
-  // Determinar disponibilidade de dados baseado no tipo de funil
-  const shouldShowMonetaryData = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
-  const shouldShowSalesData = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  // Determinar disponibilidade baseada no tipo de funil
+  const hasMonetaryData = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  const hasSalesData = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
 
   const getFunnelTypeBadge = () => {
     switch (funnelType) {
@@ -49,65 +48,31 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
     }
   };
 
-  const getTimeSeriesLabel = () => {
+  const getExportDescription = () => {
     switch (funnelType) {
       case 'venda':
-        return 'Série Temporal (Valores)';
+        return "Dados incluem valores monetários e métricas de vendas";
       case 'relacionamento':
-        return 'Série Temporal (Oportunidades)';
+        return "Dados focam em oportunidades e relacionamentos (sem valores monetários)";
       case 'mixed':
-        return 'Série Temporal (Métricas Mistas)';
+        return "Dados incluem valores monetários apenas para funis de venda";
       case 'all':
       default:
-        return 'Série Temporal (Métricas)';
+        return "Dados combinam métricas de todos os tipos de funil disponíveis";
     }
-  };
-
-  const getConversionDataDescription = () => {
-    if (funnelType === 'relacionamento') {
-      return 'Funis de relacionamento não têm dados de conversão';
-    }
-    if (funnelType === 'mixed') {
-      return 'Dados de conversão apenas dos funis de venda';
-    }
-    return 'Dados de conversão disponíveis';
-  };
-
-  const getMonetaryDataDescription = () => {
-    if (funnelType === 'relacionamento') {
-      return 'Funis de relacionamento não têm dados monetários';
-    }
-    if (funnelType === 'mixed') {
-      return 'Dados monetários apenas dos funis de venda';
-    }
-    return 'Dados monetários disponíveis';
   };
 
   const handleExport = () => {
-    const exportData = {
-      format: exportFormat,
-      includeCharts,
+    console.log("Exportando dados:", {
+      includeOpportunities,
+      includeMetrics,
+      includeValues: hasMonetaryData ? includeValues : false,
+      includeSales: hasSalesData ? includeSales : false,
+      exportFormat,
+      dateRange,
       funnelType,
-      selectedFunnel,
-      data: {
-        metrics: includeMetrics,
-        conversion: includeConversion && shouldShowSalesData,
-        distribution: includeDistribution,
-        timeSeries: includeTimeSeries,
-        monetaryData: includeMonetaryData && shouldShowMonetaryData
-      }
-    };
-
-    console.log("Iniciando exportação:", exportData);
-    
-    // Simular download do arquivo
-    const timestamp = new Date().toISOString().split('T')[0];
-    const funnelSuffix = selectedFunnel === "all" ? "todos-funis" : "funil-especifico";
-    const filename = `insights-export-${funnelSuffix}-${timestamp}.${exportFormat}`;
-    
-    // Aqui seria implementada a lógica real de exportação
-    alert(`Arquivo ${filename} será baixado em breve!`);
-    
+      selectedFunnel
+    });
     onOpenChange(false);
   };
 
@@ -117,15 +82,76 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
         <DialogHeader>
           <DialogTitle>Exportar Dados</DialogTitle>
           <DialogDescription>
-            Escolha o formato e os dados que deseja exportar.
+            Selecione quais dados incluir na exportação.
           </DialogDescription>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-sm text-muted-foreground">Contexto atual:</span>
+            <span className="text-sm text-muted-foreground">Contexto:</span>
             {getFunnelTypeBadge()}
           </div>
+          <p className="text-xs text-muted-foreground">{getExportDescription()}</p>
         </DialogHeader>
         
         <div className="space-y-6">
+          <div className="space-y-4">
+            <Label className="text-sm font-medium">Dados para Exportar</Label>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="export-opportunities" className="text-sm">Lista de Oportunidades</Label>
+              <Switch
+                id="export-opportunities"
+                checked={includeOpportunities}
+                onCheckedChange={setIncludeOpportunities}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="export-metrics" className="text-sm">Métricas Gerais</Label>
+              <Switch
+                id="export-metrics"
+                checked={includeMetrics}
+                onCheckedChange={setIncludeMetrics}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="export-values" className="text-sm">Valores Monetários</Label>
+                {!hasMonetaryData && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Indisponível para funis de relacionamento
+                  </p>
+                )}
+              </div>
+              <Switch
+                id="export-values"
+                checked={includeValues}
+                onCheckedChange={setIncludeValues}
+                disabled={!hasMonetaryData}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="export-sales" className="text-sm">Dados de Vendas</Label>
+                {!hasSalesData && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Apenas funis de venda geram vendas
+                  </p>
+                )}
+              </div>
+              <Switch
+                id="export-sales"
+                checked={includeSales}
+                onCheckedChange={setIncludeSales}
+                disabled={!hasSalesData}
+              />
+            </div>
+          </div>
+
+          <Separator />
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Formato de Exportação</Label>
@@ -134,104 +160,26 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
                   <SelectValue placeholder="Selecione o formato" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="csv">
-                    <div className="flex items-center">
-                      <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      CSV (Excel)
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="json">
-                    <div className="flex items-center">
-                      <FileText className="mr-2 h-4 w-4" />
-                      JSON
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="pdf">
-                    <div className="flex items-center">
-                      <FileText className="mr-2 h-4 w-4" />
-                      PDF (Relatório)
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="pdf">PDF (Relatório)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <Label className="text-sm font-medium">Dados para Exportar</Label>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="metrics"
-                  checked={includeMetrics}
-                  onCheckedChange={(checked) => setIncludeMetrics(checked as boolean)}
-                />
-                <Label htmlFor="metrics" className="text-sm">Métricas Principais</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="conversion"
-                  checked={includeConversion}
-                  onCheckedChange={(checked) => setIncludeConversion(checked as boolean)}
-                  disabled={!shouldShowSalesData}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="conversion" className="text-sm">Dados de Conversão</Label>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {getConversionDataDescription()}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="distribution"
-                  checked={includeDistribution}
-                  onCheckedChange={(checked) => setIncludeDistribution(checked as boolean)}
-                />
-                <Label htmlFor="distribution" className="text-sm">Distribuição por Estágios</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="timeseries"
-                  checked={includeTimeSeries}
-                  onCheckedChange={(checked) => setIncludeTimeSeries(checked as boolean)}
-                />
-                <Label htmlFor="timeseries" className="text-sm">{getTimeSeriesLabel()}</Label>
-              </div>
-
-              {shouldShowMonetaryData && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="monetary"
-                    checked={includeMonetaryData}
-                    onCheckedChange={(checked) => setIncludeMonetaryData(checked as boolean)}
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor="monetary" className="text-sm">Dados Monetários</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {getMonetaryDataDescription()}
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {exportFormat === "pdf" && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="charts"
-                    checked={includeCharts}
-                    onCheckedChange={(checked) => setIncludeCharts(checked as boolean)}
-                  />
-                  <Label htmlFor="charts" className="text-sm">Incluir Gráficos</Label>
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Período dos Dados</Label>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Período Atual</SelectItem>
+                  <SelectItem value="all">Todos os Dados</SelectItem>
+                  <SelectItem value="custom">Período Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -242,7 +190,7 @@ const ExportDataDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: Ex
           </Button>
           <Button onClick={handleExport} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Exportar
+            Exportar Dados
           </Button>
         </div>
       </DialogContent>
