@@ -13,18 +13,51 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface ChartSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedFunnel: string;
+  funnelType: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
-const ChartSettingsDialog = ({ open, onOpenChange }: ChartSettingsDialogProps) => {
+const ChartSettingsDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: ChartSettingsDialogProps) => {
   const [showConversionChart, setShowConversionChart] = useState(true);
   const [showDistributionChart, setShowDistributionChart] = useState(true);
   const [showValueChart, setShowValueChart] = useState(true);
   const [chartTheme, setChartTheme] = useState("default");
   const [animationSpeed, setAnimationSpeed] = useState("normal");
+
+  // Determinar labels e disponibilidade baseado no tipo de funil
+  const getTimeSeriesLabel = () => {
+    switch (funnelType) {
+      case 'venda':
+        return 'Valor ao Longo do Tempo';
+      case 'relacionamento':
+        return 'Oportunidades ao Longo do Tempo';
+      case 'mixed':
+      case 'all':
+      default:
+        return 'Métricas ao Longo do Tempo';
+    }
+  };
+
+  const getFunnelTypeBadge = () => {
+    switch (funnelType) {
+      case 'venda':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Funil de Venda</Badge>;
+      case 'relacionamento':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Funil de Relacionamento</Badge>;
+      case 'mixed':
+        return <Badge variant="outline">Funis Mistos</Badge>;
+      case 'all':
+      default:
+        return <Badge variant="outline">Todos os Funis</Badge>;
+    }
+  };
+
+  const shouldShowPassThroughCharts = selectedFunnel !== "all";
 
   const handleSave = () => {
     console.log("Salvando configurações de gráficos:", {
@@ -32,7 +65,9 @@ const ChartSettingsDialog = ({ open, onOpenChange }: ChartSettingsDialogProps) =
       showDistributionChart,
       showValueChart,
       chartTheme,
-      animationSpeed
+      animationSpeed,
+      funnelType,
+      selectedFunnel
     });
     onOpenChange(false);
   };
@@ -45,20 +80,26 @@ const ChartSettingsDialog = ({ open, onOpenChange }: ChartSettingsDialogProps) =
           <DialogDescription>
             Personalize a exibição dos gráficos nos insights.
           </DialogDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-sm text-muted-foreground">Contexto atual:</span>
+            {getFunnelTypeBadge()}
+          </div>
         </DialogHeader>
         
         <div className="space-y-6">
           <div className="space-y-4">
             <Label className="text-sm font-medium">Gráficos Visíveis</Label>
             
-            <div className="flex items-center justify-between">
-              <Label htmlFor="conversion-chart" className="text-sm">Gráfico de Conversão</Label>
-              <Switch
-                id="conversion-chart"
-                checked={showConversionChart}
-                onCheckedChange={setShowConversionChart}
-              />
-            </div>
+            {shouldShowPassThroughCharts && (
+              <div className="flex items-center justify-between">
+                <Label htmlFor="conversion-chart" className="text-sm">Gráfico de Conversão</Label>
+                <Switch
+                  id="conversion-chart"
+                  checked={showConversionChart}
+                  onCheckedChange={setShowConversionChart}
+                />
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <Label htmlFor="distribution-chart" className="text-sm">Distribuição por Estágios</Label>
@@ -70,7 +111,19 @@ const ChartSettingsDialog = ({ open, onOpenChange }: ChartSettingsDialogProps) =
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="value-chart" className="text-sm">Valor ao Longo do Tempo</Label>
+              <div className="space-y-1">
+                <Label htmlFor="value-chart" className="text-sm">{getTimeSeriesLabel()}</Label>
+                {funnelType === 'relacionamento' && (
+                  <p className="text-xs text-muted-foreground">
+                    Mostra contagem de oportunidades para funis de relacionamento
+                  </p>
+                )}
+                {funnelType === 'venda' && (
+                  <p className="text-xs text-muted-foreground">
+                    Mostra valores monetários para funis de venda
+                  </p>
+                )}
+              </div>
               <Switch
                 id="value-chart"
                 checked={showValueChart}

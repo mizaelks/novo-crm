@@ -21,7 +21,8 @@ const Insights = () => {
     loading,
     stageDistribution,
     valueOverTime,
-    getTotalStats
+    getTotalStats,
+    funnelType
   } = useInsightsData(selectedFunnel, selectedUser, selectedWinReason, selectedLossReason);
 
   // Now we can do conditional returns after all hooks are called
@@ -41,7 +42,7 @@ const Insights = () => {
 
   // Determinar o tipo de funil selecionado para ajustar as estatísticas
   const selectedFunnelData = funnels.find(f => f.id === selectedFunnel);
-  const funnelType = selectedFunnel === "all" ? "all" : selectedFunnelData?.funnelType || "venda";
+  const displayFunnelType = selectedFunnel === "all" ? funnelType : selectedFunnelData?.funnelType || "venda";
 
   return (
     <div className="space-y-6 p-6">
@@ -59,19 +60,23 @@ const Insights = () => {
             selectedLossReason={selectedLossReason}
             onLossReasonChange={setSelectedLossReason}
           />
-          <InsightsAdvancedSettings />
+          <InsightsAdvancedSettings 
+            selectedFunnel={selectedFunnel}
+            funnelType={displayFunnelType}
+          />
         </div>
       </div>
       
       <InsightsStats 
         loading={loading} 
         stats={stats} 
-        funnelType={funnelType}
+        funnelType={displayFunnelType}
       />
       <InsightsCharts
         stageDistribution={stageDistribution}
         valueOverTime={valueOverTime}
         selectedFunnel={selectedFunnel}
+        funnelType={displayFunnelType}
       />
     </div>
   );

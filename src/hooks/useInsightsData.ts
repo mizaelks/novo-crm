@@ -42,7 +42,8 @@ export const useInsightsData = (
   // Use the data processing hook
   const {
     memoizedStageDistribution,
-    memoizedValueOverTime
+    memoizedValueOverTime,
+    funnelType
   } = useDataProcessing(
     filteredFunnels,
     filterOpportunities,
@@ -81,6 +82,7 @@ export const useInsightsData = (
     loading,
     stageDistribution,
     valueOverTime,
-    getTotalStats
+    getTotalStats,
+    funnelType
   };
 };

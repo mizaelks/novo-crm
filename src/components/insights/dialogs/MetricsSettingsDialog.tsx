@@ -12,13 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle } from "lucide-react";
 
 interface MetricsSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedFunnel: string;
+  funnelType: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
-const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProps) => {
+const MetricsSettingsDialog = ({ open, onOpenChange, selectedFunnel, funnelType }: MetricsSettingsDialogProps) => {
   const [showTotalOpportunities, setShowTotalOpportunities] = useState(true);
   const [showTotalValue, setShowTotalValue] = useState(true);
   const [showTotalSales, setShowTotalSales] = useState(true);
@@ -27,6 +31,24 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
   const [showConversionRate, setShowConversionRate] = useState(true);
   const [currency, setCurrency] = useState("BRL");
   const [numberFormat, setNumberFormat] = useState("default");
+
+  // Determinar quais métricas são aplicáveis baseado no tipo de funil
+  const shouldShowMonetaryMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  const shouldShowSalesMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+
+  const getFunnelTypeBadge = () => {
+    switch (funnelType) {
+      case 'venda':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Funil de Venda</Badge>;
+      case 'relacionamento':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Funil de Relacionamento</Badge>;
+      case 'mixed':
+        return <Badge variant="outline">Funis Mistos</Badge>;
+      case 'all':
+      default:
+        return <Badge variant="outline">Todos os Funis</Badge>;
+    }
+  };
 
   const handleSave = () => {
     console.log("Salvando configurações de métricas:", {
@@ -37,7 +59,9 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
       showAverageTicket,
       showConversionRate,
       currency,
-      numberFormat
+      numberFormat,
+      funnelType,
+      selectedFunnel
     });
     onOpenChange(false);
   };
@@ -50,6 +74,10 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
           <DialogDescription>
             Personalize quais métricas são exibidas e como são formatadas.
           </DialogDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-sm text-muted-foreground">Contexto atual:</span>
+            {getFunnelTypeBadge()}
+          </div>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -66,47 +94,92 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="total-value" className="text-sm">Valor Total</Label>
+              <div className="space-y-1">
+                <Label htmlFor="total-value" className="text-sm">Valor Total</Label>
+                {!shouldShowMonetaryMetrics && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Indisponível para funis de relacionamento
+                  </p>
+                )}
+              </div>
               <Switch
                 id="total-value"
                 checked={showTotalValue}
                 onCheckedChange={setShowTotalValue}
+                disabled={!shouldShowMonetaryMetrics}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="total-sales" className="text-sm">Vendas Realizadas</Label>
+              <div className="space-y-1">
+                <Label htmlFor="total-sales" className="text-sm">Vendas Realizadas</Label>
+                {!shouldShowSalesMetrics && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Apenas funis de venda geram vendas
+                  </p>
+                )}
+              </div>
               <Switch
                 id="total-sales"
                 checked={showTotalSales}
                 onCheckedChange={setShowTotalSales}
+                disabled={!shouldShowSalesMetrics}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="sales-value" className="text-sm">Valor de Vendas</Label>
+              <div className="space-y-1">
+                <Label htmlFor="sales-value" className="text-sm">Valor de Vendas</Label>
+                {!shouldShowSalesMetrics && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Apenas funis de venda geram vendas
+                  </p>
+                )}
+              </div>
               <Switch
                 id="sales-value"
                 checked={showSalesValue}
                 onCheckedChange={setShowSalesValue}
+                disabled={!shouldShowSalesMetrics || !shouldShowMonetaryMetrics}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="avg-ticket" className="text-sm">Ticket Médio</Label>
+              <div className="space-y-1">
+                <Label htmlFor="avg-ticket" className="text-sm">Ticket Médio</Label>
+                {!shouldShowSalesMetrics && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Apenas funis de venda geram vendas
+                  </p>
+                )}
+              </div>
               <Switch
                 id="avg-ticket"
                 checked={showAverageTicket}
                 onCheckedChange={setShowAverageTicket}
+                disabled={!shouldShowSalesMetrics || !shouldShowMonetaryMetrics}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <Label htmlFor="conversion" className="text-sm">Taxa de Conversão</Label>
+              <div className="space-y-1">
+                <Label htmlFor="conversion" className="text-sm">Taxa de Conversão</Label>
+                {!shouldShowSalesMetrics && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Apenas funis de venda têm conversão
+                  </p>
+                )}
+              </div>
               <Switch
                 id="conversion"
                 checked={showConversionRate}
                 onCheckedChange={setShowConversionRate}
+                disabled={!shouldShowSalesMetrics}
               />
             </div>
           </div>
@@ -116,7 +189,11 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Moeda</Label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select 
+                value={currency} 
+                onValueChange={setCurrency} 
+                disabled={!shouldShowMonetaryMetrics}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a moeda" />
                 </SelectTrigger>
@@ -126,6 +203,11 @@ const MetricsSettingsDialog = ({ open, onOpenChange }: MetricsSettingsDialogProp
                   <SelectItem value="EUR">Euro (€)</SelectItem>
                 </SelectContent>
               </Select>
+              {!shouldShowMonetaryMetrics && (
+                <p className="text-xs text-muted-foreground">
+                  Configurações de moeda não se aplicam a funis de relacionamento
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

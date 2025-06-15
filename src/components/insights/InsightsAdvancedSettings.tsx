@@ -15,7 +15,12 @@ import MetricsSettingsDialog from "./dialogs/MetricsSettingsDialog";
 import DatePresetsDialog from "./dialogs/DatePresetsDialog";
 import ExportDataDialog from "./dialogs/ExportDataDialog";
 
-const InsightsAdvancedSettings = () => {
+interface InsightsAdvancedSettingsProps {
+  selectedFunnel: string;
+  funnelType: 'venda' | 'relacionamento' | 'all' | 'mixed';
+}
+
+const InsightsAdvancedSettings = ({ selectedFunnel, funnelType }: InsightsAdvancedSettingsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [chartSettingsOpen, setChartSettingsOpen] = useState(false);
   const [metricsSettingsOpen, setMetricsSettingsOpen] = useState(false);
@@ -76,11 +81,15 @@ const InsightsAdvancedSettings = () => {
       <ChartSettingsDialog
         open={chartSettingsOpen}
         onOpenChange={setChartSettingsOpen}
+        selectedFunnel={selectedFunnel}
+        funnelType={funnelType}
       />
       
       <MetricsSettingsDialog
         open={metricsSettingsOpen}
         onOpenChange={setMetricsSettingsOpen}
+        selectedFunnel={selectedFunnel}
+        funnelType={funnelType}
       />
       
       <DatePresetsDialog
@@ -91,6 +100,8 @@ const InsightsAdvancedSettings = () => {
       <ExportDataDialog
         open={exportDataOpen}
         onOpenChange={setExportDataOpen}
+        selectedFunnel={selectedFunnel}
+        funnelType={funnelType}
       />
     </>
   );

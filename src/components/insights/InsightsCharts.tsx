@@ -1,3 +1,4 @@
+
 import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -5,14 +6,16 @@ import { ValueData } from "@/hooks/insights/types";
 import PassThroughRatesChart from "./PassThroughRatesChart";
 import StageVelocityChart from "./StageVelocityChart";
 import { usePassThroughRates } from "@/hooks/usePassThroughRates";
+import { formatCurrency } from "@/services/utils/dateUtils";
 
 interface InsightsChartsProps {
   stageDistribution: any[];
   valueOverTime: ValueData[];
   selectedFunnel?: string;
+  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
-const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel }: InsightsChartsProps) => {
+const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel, funnelType = 'all' }: InsightsChartsProps) => {
   const { 
     passThroughRates, 
     stageVelocities, 
@@ -20,6 +23,34 @@ const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel 
   } = usePassThroughRates(selectedFunnel !== "all" ? selectedFunnel : null);
 
   const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+
+  // Determinar título e formatação do segundo gráfico baseado no tipo de funil
+  const getTimeSeriesConfig = () => {
+    switch (funnelType) {
+      case 'venda':
+        return {
+          title: 'Valor ao Longo do Tempo',
+          tooltipFormatter: (value: any) => [formatCurrency(Number(value)), "Valor"],
+          yAxisFormatter: (value: any) => `R$ ${Number(value).toLocaleString('pt-BR')}`
+        };
+      case 'relacionamento':
+        return {
+          title: 'Oportunidades ao Longo do Tempo',
+          tooltipFormatter: (value: any) => [value, "Oportunidades"],
+          yAxisFormatter: (value: any) => value.toString()
+        };
+      case 'mixed':
+      case 'all':
+      default:
+        return {
+          title: 'Métricas ao Longo do Tempo',
+          tooltipFormatter: (value: any) => [value, "Valor/Oportunidades"],
+          yAxisFormatter: (value: any) => value.toString()
+        };
+    }
+  };
+
+  const timeSeriesConfig = getTimeSeriesConfig();
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -55,7 +86,7 @@ const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel 
 
         <Card>
           <CardHeader>
-            <CardTitle>Valor ao Longo do Tempo</CardTitle>
+            <CardTitle>{timeSeriesConfig.title}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -63,8 +94,8 @@ const InsightsCharts = memo(({ stageDistribution, valueOverTime, selectedFunnel 
                 <LineChart data={valueOverTime}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, "Valor"]} />
+                  <YAxis tickFormatter={timeSeriesConfig.yAxisFormatter} />
+                  <Tooltip formatter={timeSeriesConfig.tooltipFormatter} />
                   <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
