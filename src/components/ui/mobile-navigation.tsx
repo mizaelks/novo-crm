@@ -1,0 +1,50 @@
+
+import { useState } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+
+const navItems = [
+  { path: "/", label: "Dashboard" },
+  { path: "/funnels", label: "Funis" },
+  { path: "/opportunities", label: "Oportunidades" },
+  { path: "/insights", label: "Insights" },
+];
+
+export const MobileNavigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="md:hidden">
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64">
+          <div className="flex flex-col space-y-4 mt-8">
+            {navItems.map((item) => (
+              <Button
+                key={item.path}
+                variant={location.pathname === item.path ? "default" : "ghost"}
+                className="justify-start"
+                onClick={() => handleNavigation(item.path)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+};

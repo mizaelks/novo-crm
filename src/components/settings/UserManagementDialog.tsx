@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,6 @@ import { toast } from "sonner";
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'manager' | 'user';
   firstName: string | null;
   lastName: string | null;
 }
@@ -48,7 +48,7 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, role, first_name, last_name')
+        .select('id, email, first_name, last_name')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -58,7 +58,6 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
       const mappedUsers: User[] = (data || []).map(user => ({
         id: user.id,
         email: user.email,
-        role: user.role,
         firstName: user.first_name,
         lastName: user.last_name,
       }));
@@ -74,12 +73,6 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
   const handleDeleteUser = async (userId: string) => {
     setDeletingUserId(userId);
     try {
-      // Remover usuário do auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        throw authError;
-      }
-
       // Remover perfil do usuário
       const { error: profileError } = await supabase
         .from('profiles')
@@ -96,39 +89,6 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
       handleError(error, "Erro ao remover usuário");
     } finally {
       setDeletingUserId(null);
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-4 w-4" />;
-      case 'manager':
-        return <Shield className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
-    }
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'Administrador';
-      case 'manager':
-        return 'Gerente';
-      default:
-        return 'Usuário';
-    }
-  };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive';
-      case 'manager':
-        return 'default';
-      default:
-        return 'secondary';
     }
   };
 
@@ -157,9 +117,9 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                   <div className="col-span-2">
                     <div className="font-medium">{user.firstName} {user.lastName}</div>
                     <div className="text-sm text-muted-foreground">{user.email}</div>
-                    <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center gap-1 mt-1 w-fit">
-                      {getRoleIcon(user.role)}
-                      {getRoleLabel(user.role)}
+                    <Badge variant="secondary" className="flex items-center gap-1 mt-1 w-fit">
+                      <User className="h-4 w-4" />
+                      Usuário
                     </Badge>
                   </div>
                   <div className="flex justify-end">
@@ -172,9 +132,11 @@ export const UserManagementDialog = ({ isOpen, setIsOpen }: UserManagementDialog
                       {deletingUserId === user.id ? (
                         <LoadingSpinner size="sm" />
                       ) : (
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remover
+                        </>
                       )}
-                      Remover
                     </Button>
                   </div>
                 </div>

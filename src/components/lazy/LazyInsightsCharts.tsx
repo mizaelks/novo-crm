@@ -19,7 +19,10 @@ const InsightsChartsSkeleton = () => (
 );
 
 interface LazyInsightsChartsProps {
-  [key: string]: any;
+  stageDistribution: any[];
+  valueOverTime: any[];
+  selectedFunnel?: string;
+  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
 }
 
 export const LazyInsightsCharts = (props: LazyInsightsChartsProps) => {

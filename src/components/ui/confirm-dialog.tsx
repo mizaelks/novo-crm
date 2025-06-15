@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -47,7 +48,14 @@ export const ConfirmDialog = ({
             className={variant === "destructive" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
             disabled={loading}
           >
-            {loading ? "Processando..." : confirmText}
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Processando...
+              </>
+            ) : (
+              confirmText
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

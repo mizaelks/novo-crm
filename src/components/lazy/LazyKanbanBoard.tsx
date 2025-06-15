@@ -1,6 +1,6 @@
 
 import { lazy, Suspense } from 'react';
-import { KanbanSkeleton } from '@/components/kanban/KanbanSkeleton';
+import KanbanSkeleton from '@/components/kanban/KanbanSkeleton';
 
 const KanbanBoard = lazy(() => import('@/components/kanban/KanbanBoard'));
 

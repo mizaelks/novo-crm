@@ -24,7 +24,7 @@ export const useClientSummary = ({
       );
       
       const totalValue = clientOpportunities.reduce((sum, opp) => sum + opp.value, 0);
-      const opportunityCount = clientOpportunities.length;
+      const totalOpportunities = clientOpportunities.length;
       
       const mostRecent = clientOpportunities.reduce((latest, current) => {
         if (!latest) return current;
@@ -33,11 +33,10 @@ export const useClientSummary = ({
       
       return {
         client,
-        opportunityCount,
+        totalOpportunities,
         totalValue,
-        mostRecentDate: mostRecent ? mostRecent.createdAt.toString() : null,
-        funnelId: mostRecent ? mostRecent.funnelId : null,
-        stageId: mostRecent ? mostRecent.stageId : null
+        funnelId: mostRecent ? mostRecent.funnelId : "",
+        stageId: mostRecent ? mostRecent.stageId : ""
       };
     });
     

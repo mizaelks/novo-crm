@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,6 +13,7 @@ import UserProfile from "./pages/UserProfile";
 import WebhookManager from "./pages/webhook/WebhookManager";
 import ApiDocs from "./pages/api/ApiDocs";
 import ApiTokenManager from "./pages/ApiTokenManager";
+import Settings from "./pages/Settings";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute />}>
               <Route index element={<Index />} />
               <Route path="/profile" element={<UserProfile />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/webhooks" element={<WebhookManager />} />
               <Route path="/api" element={<ApiDocs />} />
               <Route path="/api/tokens" element={<ApiTokenManager />} />
