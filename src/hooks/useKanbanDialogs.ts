@@ -36,13 +36,22 @@ export const useKanbanDialogs = () => {
       
       console.log('Dialog logic:', { needsReasons, hasRequiredFields });
       
+      // Se só precisa de motivos (sem campos obrigatórios), vai direto para o diálogo de motivos
       if (needsReasons && !hasRequiredFields) {
         console.log('Showing reason dialog directly');
         setShowReasonDialog(true);
-      } else {
-        console.log('Showing required fields dialog');
-        setShowRequiredFieldsDialog(show);
+        return;
       }
+      
+      // Se tem campos obrigatórios, mostra o diálogo de campos primeiro
+      if (hasRequiredFields) {
+        console.log('Showing required fields dialog');
+        setShowRequiredFieldsDialog(true);
+        return;
+      }
+      
+      // Se não tem nem campos obrigatórios nem motivos, algo está errado
+      console.log('No requirements found, this should not happen');
     } else {
       setShowRequiredFieldsDialog(show);
     }
