@@ -29,7 +29,12 @@ interface EnhancedStatsData extends StatsData {
   previousPeriodStats?: StatsData;
 }
 
-export const useInsightsData = (selectedFunnel: string) => {
+export const useInsightsData = (
+  selectedFunnel: string, 
+  selectedUser: string = "all",
+  selectedWinReason: string = "all",
+  selectedLossReason: string = "all"
+) => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [conversionData, setConversionData] = useState<ConversionData[]>([]);
@@ -44,6 +49,31 @@ export const useInsightsData = (selectedFunnel: string) => {
       ? funnels 
       : funnels.filter(f => f.id === selectedFunnel);
   }, [funnels, selectedFunnel]);
+
+  // Function to filter opportunities by additional criteria
+  const filterOpportunities = useCallback((opportunities: any[]) => {
+    let filtered = opportunities;
+
+    // Filter by date
+    filtered = filterByDate(filtered, 'createdAt');
+
+    // Filter by user
+    if (selectedUser !== "all") {
+      filtered = filtered.filter(opp => opp.userId === selectedUser);
+    }
+
+    // Filter by win reason
+    if (selectedWinReason !== "all") {
+      filtered = filtered.filter(opp => opp.winReason === selectedWinReason);
+    }
+
+    // Filter by loss reason
+    if (selectedLossReason !== "all") {
+      filtered = filtered.filter(opp => opp.lossReason === selectedLossReason);
+    }
+
+    return filtered;
+  }, [filterByDate, selectedUser, selectedWinReason, selectedLossReason]);
 
   // Function to get previous period dates
   const getPreviousPeriodDates = useCallback(() => {
@@ -97,7 +127,7 @@ export const useInsightsData = (selectedFunnel: string) => {
             return oppDate >= fromDate && oppDate <= toDate;
           });
         } else {
-          opportunities = filterByDate(opportunities, 'createdAt');
+          opportunities = filterOpportunities(opportunities);
         }
         
         totalOpportunities += opportunities.length;
@@ -123,7 +153,7 @@ export const useInsightsData = (selectedFunnel: string) => {
       averageTicket,
       conversionRate
     };
-  }, [filterByDate]);
+  }, [filterOpportunities]);
 
   // Memoize data processing functions
   const processConversionData = useCallback((funnelsData: Funnel[]) => {
@@ -135,12 +165,12 @@ export const useInsightsData = (selectedFunnel: string) => {
           stageData[stage.name] = { total: 0, converted: 0 };
         }
         
-        const filteredOpportunities = filterByDate(stage.opportunities, 'createdAt');
+        const filteredOpportunities = filterOpportunities(stage.opportunities);
         stageData[stage.name].total += filteredOpportunities.length;
         
         if (index < funnel.stages.length - 1) {
           const nextStage = funnel.stages[index + 1];
-          const nextStageOpps = filterByDate(nextStage.opportunities, 'createdAt');
+          const nextStageOpps = filterOpportunities(nextStage.opportunities);
           stageData[stage.name].converted += nextStageOpps.length;
         }
       });
@@ -153,14 +183,14 @@ export const useInsightsData = (selectedFunnel: string) => {
     }));
 
     return conversionArray;
-  }, [filterByDate]);
+  }, [filterOpportunities]);
 
   const processStageDistribution = useCallback((funnelsData: Funnel[]) => {
     const stageData: { [key: string]: number } = {};
     
     funnelsData.forEach(funnel => {
       funnel.stages.forEach(stage => {
-        const filteredOpportunities = filterByDate(stage.opportunities, 'createdAt');
+        const filteredOpportunities = filterOpportunities(stage.opportunities);
         if (!stageData[stage.name]) {
           stageData[stage.name] = 0;
         }
@@ -172,14 +202,15 @@ export const useInsightsData = (selectedFunnel: string) => {
       name,
       value
     }));
-  }, [filterByDate]);
+  }, [filterOpportunities]);
 
   const processValueOverTime = useCallback((funnelsData: Funnel[]) => {
     const monthData: { [key: string]: number } = {};
     
     funnelsData.forEach(funnel => {
       funnel.stages.forEach(stage => {
-        stage.opportunities.forEach(opp => {
+        const filteredOpportunities = filterOpportunities(stage.opportunities);
+        filteredOpportunities.forEach(opp => {
           const month = new Date(opp.createdAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
           if (!monthData[month]) {
             monthData[month] = 0;
@@ -192,7 +223,7 @@ export const useInsightsData = (selectedFunnel: string) => {
     return Object.entries(monthData)
       .map(([month, value]) => ({ month, value }))
       .slice(-6);
-  }, []);
+  }, [filterOpportunities]);
 
   // Memoize stats calculation
   const getTotalStats = useCallback((): EnhancedStatsData => {
@@ -218,17 +249,17 @@ export const useInsightsData = (selectedFunnel: string) => {
   // Memoize processed data to prevent unnecessary recalculations
   const memoizedConversionData = useMemo(() => 
     processConversionData(filteredFunnels), 
-    [processConversionData, filteredFunnels, filter]
+    [processConversionData, filteredFunnels, filter, selectedUser, selectedWinReason, selectedLossReason]
   );
 
   const memoizedStageDistribution = useMemo(() => 
     processStageDistribution(filteredFunnels), 
-    [processStageDistribution, filteredFunnels, filter]
+    [processStageDistribution, filteredFunnels, filter, selectedUser, selectedWinReason, selectedLossReason]
   );
 
   const memoizedValueOverTime = useMemo(() => 
     processValueOverTime(filteredFunnels), 
-    [processValueOverTime, filteredFunnels]
+    [processValueOverTime, filteredFunnels, selectedUser, selectedWinReason, selectedLossReason]
   );
 
   useEffect(() => {

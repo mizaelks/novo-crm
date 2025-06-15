@@ -157,7 +157,11 @@ export const stageAPI = {
         enabled: data.migrateConfig.enabled,
         target_funnel_id: data.migrateConfig.targetFunnelId,
         target_stage_id: data.migrateConfig.targetStageId
-      } : null
+      } : null,
+      win_reason_required: data.winReasonRequired || false,
+      loss_reason_required: data.lossReasonRequired || false,
+      win_reasons: data.winReasons || [],
+      loss_reasons: data.lossReasons || []
     }]).select().single();
     
     if (error || !created) {
@@ -250,6 +254,12 @@ export const stageAPI = {
         dbData.migrate_config = null;
       }
     }
+
+    // Handle reason fields
+    if (data.winReasonRequired !== undefined) dbData.win_reason_required = data.winReasonRequired;
+    if (data.lossReasonRequired !== undefined) dbData.loss_reason_required = data.lossReasonRequired;
+    if (data.winReasons !== undefined) dbData.win_reasons = data.winReasons;
+    if (data.lossReasons !== undefined) dbData.loss_reasons = data.lossReasons;
     
     console.log("Dados para o banco:", dbData);
     

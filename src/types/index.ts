@@ -27,6 +27,10 @@ export interface Stage {
   alertConfig?: StageAlertConfig; // Alert configuration for this stage
   migrateConfig?: StageMigrateConfig; // Migration configuration for this stage
   sortConfig?: StageSortConfig; // Sorting configuration for this stage
+  winReasonRequired?: boolean; // Whether win reason is required
+  lossReasonRequired?: boolean; // Whether loss reason is required
+  winReasons?: string[]; // Available win reasons
+  lossReasons?: string[]; // Available loss reasons
 }
 
 export interface StageAlertConfig {
@@ -76,6 +80,9 @@ export interface Opportunity {
   lastStageChangeAt?: Date; // Track when opportunity was moved to current stage
   sourceOpportunityId?: string; // ID of the original opportunity when this was created by migration
   requiredTasksCompleted?: string[]; // Array of required task IDs that have been completed
+  userId?: string; // ID of the user who created this opportunity
+  winReason?: string; // Reason for winning
+  lossReason?: string; // Reason for losing
 }
 
 export interface WebhookConfig {
@@ -176,6 +183,10 @@ export interface StageFormData {
   alertConfig?: StageAlertConfig;
   migrateConfig?: StageMigrateConfig;
   sortConfig?: StageSortConfig;
+  winReasonRequired?: boolean;
+  lossReasonRequired?: boolean;
+  winReasons?: string[];
+  lossReasons?: string[];
 }
 
 export interface RequiredFieldFormData {
@@ -205,6 +216,9 @@ export interface OpportunityFormData {
   email?: string;
   company?: string;
   customFields?: Record<string, any>;
+  userId?: string;
+  winReason?: string;
+  lossReason?: string;
 }
 
 export interface WebhookFormData {

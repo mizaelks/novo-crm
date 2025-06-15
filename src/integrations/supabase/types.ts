@@ -102,12 +102,15 @@ export type Database = {
           funnel_id: string | null
           id: string
           last_stage_change_at: string | null
+          loss_reason: string | null
           phone: string | null
           required_tasks_completed: Json | null
           source_opportunity_id: string | null
           stage_id: string | null
           title: string
+          user_id: string | null
           value: number | null
+          win_reason: string | null
         }
         Insert: {
           client?: string | null
@@ -118,12 +121,15 @@ export type Database = {
           funnel_id?: string | null
           id?: string
           last_stage_change_at?: string | null
+          loss_reason?: string | null
           phone?: string | null
           required_tasks_completed?: Json | null
           source_opportunity_id?: string | null
           stage_id?: string | null
           title: string
+          user_id?: string | null
           value?: number | null
+          win_reason?: string | null
         }
         Update: {
           client?: string | null
@@ -134,12 +140,15 @@ export type Database = {
           funnel_id?: string | null
           id?: string
           last_stage_change_at?: string | null
+          loss_reason?: string | null
           phone?: string | null
           required_tasks_completed?: Json | null
           source_opportunity_id?: string | null
           stage_id?: string | null
           title?: string
+          user_id?: string | null
           value?: number | null
+          win_reason?: string | null
         }
         Relationships: [
           {
@@ -338,9 +347,13 @@ export type Database = {
           id: string
           is_loss_stage: boolean | null
           is_win_stage: boolean | null
+          loss_reason_required: boolean | null
+          loss_reasons: string[] | null
           migrate_config: Json | null
           name: string
           order: number | null
+          win_reason_required: boolean | null
+          win_reasons: string[] | null
         }
         Insert: {
           alert_config?: Json | null
@@ -351,9 +364,13 @@ export type Database = {
           id?: string
           is_loss_stage?: boolean | null
           is_win_stage?: boolean | null
+          loss_reason_required?: boolean | null
+          loss_reasons?: string[] | null
           migrate_config?: Json | null
           name: string
           order?: number | null
+          win_reason_required?: boolean | null
+          win_reasons?: string[] | null
         }
         Update: {
           alert_config?: Json | null
@@ -364,9 +381,13 @@ export type Database = {
           id?: string
           is_loss_stage?: boolean | null
           is_win_stage?: boolean | null
+          loss_reason_required?: boolean | null
+          loss_reasons?: string[] | null
           migrate_config?: Json | null
           name?: string
           order?: number | null
+          win_reason_required?: boolean | null
+          win_reasons?: string[] | null
         }
         Relationships: [
           {

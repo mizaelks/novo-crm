@@ -24,6 +24,7 @@ import { StageMigrateConfigComponent } from "./StageMigrateConfig";
 import { StageBasicForm } from "./StageBasicForm";
 import { StageTypeToggles } from "./StageTypeToggles";
 import { StageSortingConfig } from "./StageSortingConfig";
+import { StageReasonConfig } from "./StageReasonConfig";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -67,6 +68,12 @@ const EditStageDialog = ({
     enabled: false
   });
 
+  // New state for reason configuration
+  const [winReasonRequired, setWinReasonRequired] = useState(false);
+  const [lossReasonRequired, setLossReasonRequired] = useState(false);
+  const [winReasons, setWinReasons] = useState<string[]>([]);
+  const [lossReasons, setLossReasons] = useState<string[]>([]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,6 +115,12 @@ const EditStageDialog = ({
             // Handle sort config
             const sortConf = stageData.sortConfig || { type: 'free' as SortingOption, enabled: false };
             setSortConfig(sortConf);
+
+            // Handle reason config
+            setWinReasonRequired(stageData.winReasonRequired || false);
+            setLossReasonRequired(stageData.lossReasonRequired || false);
+            setWinReasons(stageData.winReasons || []);
+            setLossReasons(stageData.lossReasons || []);
             
             form.reset({
               name: stageData.name,
@@ -144,6 +157,7 @@ const EditStageDialog = ({
       console.log("Sort config:", sortConfig);
       console.log("Required fields:", requiredFields);
       console.log("Required tasks:", requiredTasks);
+      console.log("Reason config:", { winReasonRequired, lossReasonRequired, winReasons, lossReasons });
       
       setIsSubmitting(true);
       
@@ -158,7 +172,11 @@ const EditStageDialog = ({
         requiredTasks: requiredTasks,
         alertConfig: alertConfig.enabled ? alertConfig : undefined,
         migrateConfig: migrateConfig.enabled ? migrateConfig : undefined,
-        sortConfig: sortConfig.enabled ? sortConfig : undefined
+        sortConfig: sortConfig.enabled ? sortConfig : undefined,
+        winReasonRequired: winReasonRequired,
+        lossReasonRequired: lossReasonRequired,
+        winReasons: winReasons,
+        lossReasons: lossReasons
       };
       
       console.log("Dados para atualização:", updateData);
@@ -208,6 +226,21 @@ const EditStageDialog = ({
                 <StageBasicForm form={form} />
                 
                 <StageTypeToggles form={form} />
+                
+                <Separator className="my-4" />
+                
+                <StageReasonConfig
+                  winReasonRequired={winReasonRequired}
+                  lossReasonRequired={lossReasonRequired}
+                  winReasons={winReasons}
+                  lossReasons={lossReasons}
+                  onWinReasonRequiredChange={setWinReasonRequired}
+                  onLossReasonRequiredChange={setLossReasonRequired}
+                  onWinReasonsChange={setWinReasons}
+                  onLossReasonsChange={setLossReasons}
+                  isWinStage={form.watch('isWinStage')}
+                  isLossStage={form.watch('isLossStage')}
+                />
                 
                 <Separator className="my-4" />
                 

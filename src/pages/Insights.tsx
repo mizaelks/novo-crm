@@ -12,6 +12,9 @@ const Insights = () => {
   // All hooks must be called before any conditional returns
   const { isManager, loading: roleLoading } = useUserRole();
   const [selectedFunnel, setSelectedFunnel] = useState<string>("all");
+  const [selectedUser, setSelectedUser] = useState<string>("all");
+  const [selectedWinReason, setSelectedWinReason] = useState<string>("all");
+  const [selectedLossReason, setSelectedLossReason] = useState<string>("all");
   
   const {
     funnels,
@@ -20,7 +23,7 @@ const Insights = () => {
     stageDistribution,
     valueOverTime,
     getTotalStats
-  } = useInsightsData(selectedFunnel);
+  } = useInsightsData(selectedFunnel, selectedUser, selectedWinReason, selectedLossReason);
 
   // Now we can do conditional returns after all hooks are called
   if (roleLoading) {
@@ -46,6 +49,12 @@ const Insights = () => {
             funnels={funnels}
             selectedFunnel={selectedFunnel}
             onFunnelChange={setSelectedFunnel}
+            selectedUser={selectedUser}
+            onUserChange={setSelectedUser}
+            selectedWinReason={selectedWinReason}
+            onWinReasonChange={setSelectedWinReason}
+            selectedLossReason={selectedLossReason}
+            onLossReasonChange={setSelectedLossReason}
           />
           <InsightsAdvancedSettings />
         </div>

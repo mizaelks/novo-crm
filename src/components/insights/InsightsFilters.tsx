@@ -1,23 +1,65 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, User, Trophy, X } from "lucide-react";
 import { Funnel } from "@/types";
 import { useDateFilter, DateFilterType } from "@/hooks/useDateFilter";
+import { useUsers } from "@/hooks/useUsers";
 import DateRangePicker from "@/components/dashboard/DateRangePicker";
 
 interface InsightsFiltersProps {
   funnels: Funnel[];
   selectedFunnel: string;
   onFunnelChange: (value: string) => void;
+  selectedUser: string;
+  onUserChange: (value: string) => void;
+  selectedWinReason: string;
+  onWinReasonChange: (value: string) => void;
+  selectedLossReason: string;
+  onLossReasonChange: (value: string) => void;
 }
 
-const InsightsFilters = ({ funnels, selectedFunnel, onFunnelChange }: InsightsFiltersProps) => {
+const InsightsFilters = ({ 
+  funnels, 
+  selectedFunnel, 
+  onFunnelChange,
+  selectedUser,
+  onUserChange,
+  selectedWinReason,
+  onWinReasonChange,
+  selectedLossReason,
+  onLossReasonChange
+}: InsightsFiltersProps) => {
   const { filter, setFilterType, setDateRange } = useDateFilter();
+  const { users, loading: usersLoading } = useUsers();
 
   const handleDateRangeApply = () => {
     // Trigger data refresh when custom date range is applied
     console.log("Custom date range applied:", filter.dateRange);
   };
+
+  // Get all available win/loss reasons from selected funnel stages
+  const getAvailableReasons = (type: 'win' | 'loss') => {
+    const reasons = new Set<string>();
+    
+    const funnelsToCheck = selectedFunnel === "all" 
+      ? funnels 
+      : funnels.filter(f => f.id === selectedFunnel);
+    
+    funnelsToCheck.forEach(funnel => {
+      funnel.stages.forEach(stage => {
+        if (type === 'win' && stage.isWinStage && stage.winReasons) {
+          stage.winReasons.forEach(reason => reasons.add(reason));
+        } else if (type === 'loss' && stage.isLossStage && stage.lossReasons) {
+          stage.lossReasons.forEach(reason => reasons.add(reason));
+        }
+      });
+    });
+    
+    return Array.from(reasons);
+  };
+
+  const winReasons = getAvailableReasons('win');
+  const lossReasons = getAvailableReasons('loss');
 
   return (
     <div className="flex items-center gap-4 flex-wrap">
@@ -34,6 +76,25 @@ const InsightsFilters = ({ funnels, selectedFunnel, onFunnelChange }: InsightsFi
           ))}
         </SelectContent>
       </Select>
+
+      <div className="flex items-center gap-2">
+        <User className="h-4 w-4 text-muted-foreground" />
+        <Select value={selectedUser} onValueChange={onUserChange} disabled={usersLoading}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Todos os usuários" />
+          </SelectTrigger>
+          <SelectContent className="bg-background">
+            <SelectItem value="all">Todos os usuários</SelectItem>
+            {users.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.first_name && user.last_name 
+                  ? `${user.first_name} ${user.last_name}` 
+                  : user.email}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
       <div className="flex items-center gap-2">
         <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -57,6 +118,44 @@ const InsightsFilters = ({ funnels, selectedFunnel, onFunnelChange }: InsightsFi
           setDate={setDateRange}
           onApply={handleDateRangeApply}
         />
+      )}
+
+      {winReasons.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-green-600" />
+          <Select value={selectedWinReason} onValueChange={onWinReasonChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Motivo de vitória" />
+            </SelectTrigger>
+            <SelectContent className="bg-background">
+              <SelectItem value="all">Todos os motivos</SelectItem>
+              {winReasons.map((reason) => (
+                <SelectItem key={reason} value={reason}>
+                  {reason}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {lossReasons.length > 0 && (
+        <div className="flex items-center gap-2">
+          <X className="h-4 w-4 text-red-600" />
+          <Select value={selectedLossReason} onValueChange={onLossReasonChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Motivo de perda" />
+            </SelectTrigger>
+            <SelectContent className="bg-background">
+              <SelectItem value="all">Todos os motivos</SelectItem>
+              {lossReasons.map((reason) => (
+                <SelectItem key={reason} value={reason}>
+                  {reason}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
     </div>
   );
