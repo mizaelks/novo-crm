@@ -51,6 +51,7 @@ export const useStatsCalculation = (
     let totalValue = 0;
     let totalSales = 0;
     let totalSalesValue = 0;
+    let vendaOpportunities = 0; // Contador específico para oportunidades de venda
 
     funnelsData.forEach(funnel => {
       funnel.stages.forEach(stage => {
@@ -69,51 +70,39 @@ export const useStatsCalculation = (
         // Count all opportunities regardless of funnel type
         totalOpportunities += opportunities.length;
         
-        opportunities.forEach(opp => {
-          // Only count values and sales for 'venda' funnels
-          if (funnel.funnelType === 'venda') {
+        // For 'venda' funnels only
+        if (funnel.funnelType === 'venda') {
+          // Count opportunities from venda funnels for conversion rate
+          vendaOpportunities += opportunities.length;
+          
+          opportunities.forEach(opp => {
+            // Sum values for venda funnels
             totalValue += opp.value;
             
-            // Only 'venda' funnels can generate sales
+            // Count sales only for win stages in venda funnels
             if (stage.isWinStage) {
               totalSales++;
               totalSalesValue += opp.value;
             }
-          }
-          // For 'relacionamento' funnels, we don't count monetary values or sales
-        });
+          });
+        }
+        // For 'relacionamento' funnels, we don't count monetary values or sales
+        // They are already counted in totalOpportunities above
       });
     });
 
     const averageTicket = totalSales > 0 ? totalSalesValue / totalSales : 0;
-    // Conversion rate only makes sense for 'venda' funnels
-    // Calculate based on opportunities from 'venda' funnels only
-    const vendaOpportunities = funnelsData
-      .filter(f => f.funnelType === 'venda')
-      .reduce((acc, funnel) => {
-        return acc + funnel.stages.reduce((stageAcc, stage) => {
-          let opportunities = stage.opportunities;
-          if (fromDate && toDate) {
-            opportunities = opportunities.filter(opp => {
-              const oppDate = new Date(opp.createdAt);
-              return oppDate >= fromDate && oppDate <= toDate;
-            });
-          } else {
-            opportunities = filterOpportunities(opportunities, stage.id);
-          }
-          return stageAcc + opportunities.length;
-        }, 0);
-      }, 0);
-    
+    // Conversion rate: vendas / oportunidades de venda (apenas funis de venda)
     const conversionRate = vendaOpportunities > 0 ? (totalSales / vendaOpportunities) * 100 : 0;
 
-    console.log('Stats calculation:', {
+    console.log('Stats calculation detailed:', {
       totalOpportunities,
+      vendaOpportunities,
       totalValue,
       totalSales,
       totalSalesValue,
-      vendaOpportunities,
-      conversionRate
+      conversionRate,
+      funnelsAnalyzed: funnelsData.map(f => ({ name: f.name, type: f.funnelType }))
     });
 
     return {
