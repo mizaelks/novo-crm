@@ -83,7 +83,7 @@ const OpportunityCard = ({
 
   return (
     <>
-      <Draggable draggableId={opportunity.id} index={index} type="OPPORTUNITY">
+      <Draggable draggableId={opportunity.id} index={index}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
