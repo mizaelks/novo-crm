@@ -24,6 +24,16 @@ const ClientSummaryTableWithPagination = ({
   getStageName,
   itemsPerPage = 10
 }: ClientSummaryTableWithPaginationProps) => {
+  // Transform data to match ClientSummaryTable interface
+  const transformedData = clientSummary.map(item => ({
+    client: item.client,
+    opportunityCount: item.totalOpportunities,
+    totalValue: item.totalValue,
+    mostRecentDate: null, // Will be handled by the table component
+    funnelId: item.funnelId,
+    stageId: item.stageId
+  }));
+
   const {
     currentPage,
     totalPages,
@@ -37,7 +47,7 @@ const ClientSummaryTableWithPagination = ({
     startIndex,
     endIndex
   } = usePagination({
-    data: clientSummary,
+    data: transformedData,
     itemsPerPage
   });
 

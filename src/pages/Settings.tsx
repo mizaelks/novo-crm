@@ -19,9 +19,16 @@ import {
 } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  desktop: boolean;
+  sound: boolean;
+}
+
 const Settings = () => {
   const [theme, setTheme] = useLocalStorage("theme", "system");
-  const [notifications, setNotifications] = useLocalStorage("notifications", {
+  const [notifications, setNotifications] = useLocalStorage<NotificationSettings>("notifications", {
     email: true,
     push: false,
     desktop: true,
@@ -36,7 +43,7 @@ const Settings = () => {
     enhancedToast.success("Configurações salvas com sucesso!");
   };
 
-  const handleNotificationChange = (key: string, value: boolean) => {
+  const handleNotificationChange = (key: keyof NotificationSettings, value: boolean) => {
     setNotifications(prev => ({ ...prev, [key]: value }));
   };
 
