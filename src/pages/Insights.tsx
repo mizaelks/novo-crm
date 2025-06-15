@@ -44,11 +44,10 @@ const Insights = () => {
 
   const stats = getTotalStats();
 
-  // Determinar o tipo de funil selecionado para ajustar as estatísticas
-  const selectedFunnelData = funnels.find(f => f.id === selectedFunnel);
-  const displayFunnelType: FunnelType = selectedFunnel === "all" 
-    ? (funnelType as FunnelType)
-    : (selectedFunnelData?.funnelType as FunnelType) || "venda";
+  // CORRIGIDO - Usar diretamente o funnelType do hook que agora está corrigido
+  const displayFunnelType: FunnelType = funnelType as FunnelType;
+  
+  console.log('Insights.tsx - selectedFunnel:', selectedFunnel, 'funnelType do hook:', funnelType, 'displayFunnelType:', displayFunnelType);
 
   // Get context information for better user feedback
   const getContextInfo = () => {
@@ -69,15 +68,18 @@ const Insights = () => {
           description: "Valores monetários e vendas apenas de funis de venda"
         };
       }
-    } else if (selectedFunnelData) {
-      return {
-        badge: selectedFunnelData.funnelType === 'venda'
-          ? <Badge variant="default" className="bg-green-100 text-green-800">Analisando: {selectedFunnelData.name} (Venda)</Badge>
-          : <Badge variant="secondary" className="bg-blue-100 text-blue-800">Analisando: {selectedFunnelData.name} (Relacionamento)</Badge>,
-        description: selectedFunnelData.funnelType === 'venda'
-          ? "Métricas incluem valores monetários e vendas realizadas"
-          : "Métricas focam em contagem de oportunidades e relacionamentos"
-      };
+    } else {
+      const selectedFunnelData = funnels.find(f => f.id === selectedFunnel);
+      if (selectedFunnelData) {
+        return {
+          badge: selectedFunnelData.funnelType === 'venda'
+            ? <Badge variant="default" className="bg-green-100 text-green-800">Analisando: {selectedFunnelData.name} (Venda)</Badge>
+            : <Badge variant="secondary" className="bg-blue-100 text-blue-800">Analisando: {selectedFunnelData.name} (Relacionamento)</Badge>,
+          description: selectedFunnelData.funnelType === 'venda'
+            ? "Métricas incluem valores monetários e vendas realizadas"
+            : "Métricas focam em contagem de oportunidades e relacionamentos"
+        };
+      }
     }
     
     return {
@@ -121,7 +123,7 @@ const Insights = () => {
       <InsightsStats 
         loading={loading} 
         stats={stats} 
-        funnelType={displayFunnelType as 'venda' | 'relacionamento' | 'all' | 'mixed'}
+        funnelType={displayFunnelType}
       />
       <InsightsCharts
         stageDistribution={stageDistribution}

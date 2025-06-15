@@ -11,14 +11,26 @@ export const useDataProcessing = (
   selectedLossReason: string,
   filter: any
 ) => {
-  // Determinar o tipo de funil selecionado
-  const getFunnelType = useCallback(() => {
+  // Determinar o tipo de funil selecionado - CORRIGIDO
+  const getFunnelType = useCallback((): 'venda' | 'relacionamento' | 'all' | 'mixed' => {
+    console.log('getFunnelType - filteredFunnels:', filteredFunnels.map(f => ({ id: f.id, name: f.name, type: f.funnelType })));
+    
     if (filteredFunnels.length === 0) return 'all';
-    if (filteredFunnels.length === 1) return filteredFunnels[0].funnelType;
+    if (filteredFunnels.length === 1) {
+      const singleType = filteredFunnels[0].funnelType;
+      console.log('getFunnelType - single funnel type:', singleType);
+      return singleType;
+    }
     
     // Se há múltiplos funis (caso "all"), verificar se são todos do mesmo tipo
     const types = [...new Set(filteredFunnels.map(f => f.funnelType))];
-    return types.length === 1 ? types[0] : 'mixed';
+    console.log('getFunnelType - multiple funnels types:', types);
+    
+    if (types.length === 1) {
+      return types[0];
+    } else {
+      return 'mixed';
+    }
   }, [filteredFunnels]);
 
   const processStageDistribution = useCallback((funnelsData: Funnel[]) => {

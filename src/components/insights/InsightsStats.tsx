@@ -23,19 +23,23 @@ interface InsightsStatsProps {
       conversionRate: number;
     };
   };
-  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed';
+  funnelType?: 'venda' | 'relacionamento' | 'all' | 'mixed'; // CORRIGIDO - incluído 'relacionamento'
 }
 
 const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProps) => {
   const { getFilterLabel } = useDateFilter();
 
+  console.log('InsightsStats - funnelType recebido:', funnelType);
+
   if (loading) {
     return <InsightsStatsSkeleton />;
   }
 
-  // Determinar se deve mostrar valores monetários e vendas
+  // Determinar se deve mostrar valores monetários e vendas - CORRIGIDO
   const showMonetaryValues = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
   const showSalesMetrics = funnelType === 'venda' || funnelType === 'all' || funnelType === 'mixed';
+  
+  console.log('InsightsStats - showMonetaryValues:', showMonetaryValues, 'showSalesMetrics:', showSalesMetrics);
   
   // Labels baseados no tipo de funil
   const salesLabel = 'Vendas Realizadas'; // Sempre vendas, pois só aparecem para funis de venda
@@ -43,19 +47,19 @@ const InsightsStats = ({ loading, stats, funnelType = 'all' }: InsightsStatsProp
 
   // Calcular subtitle para taxa de conversão com base no tipo de funil
   const getConversionSubtitle = () => {
-    if (!showSalesMetrics) {
-      return 'Apenas funis de venda geram vendas';
-    }
-    
     if (funnelType === 'relacionamento') {
       return 'Funis de relacionamento não têm vendas';
+    }
+    
+    if (!showSalesMetrics) {
+      return 'Apenas funis de venda geram vendas';
     }
     
     if (funnelType === 'mixed') {
       return `${stats.totalSales} vendas de oportunidades em funis de venda`;
     }
     
-    return `${stats.totalSales} vendas de ${stats.totalOpportunities} oportunidades`;
+    return `${stats.totalSales} vendas de ${stats.totalOpportunidades} oportunidades`;
   };
 
   const conversionSubtitle = getConversionSubtitle();
