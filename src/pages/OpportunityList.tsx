@@ -9,6 +9,8 @@ import { subDays, startOfWeek, startOfMonth, endOfMonth, isWithinInterval } from
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
 import { useArchiveSettings } from "@/hooks/useArchiveSettings";
 import { useOpportunityOperations } from "@/hooks/useOpportunityOperations";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { LoadingScreen } from "@/components/ui/loading-spinner";
 import OpportunityMetricsCards from "@/components/opportunity/OpportunityMetricsCards";
 import OpportunityTableFilters from "@/components/opportunity/OpportunityTableFilters";
 import OpportunityListHeader from "@/components/opportunity/OpportunityListHeader";
@@ -35,6 +37,7 @@ const OpportunityList = () => {
   
   const { archiveSettings, setArchiveSettings, processAutoArchive } = useArchiveSettings();
   const { loading: opsLoading, archiveOpportunity, handleDeleteOpportunity, refreshData } = useOpportunityOperations();
+  const { handleError } = useErrorHandler();
 
   // Get unique clients
   const uniqueClients = useMemo(() => {
@@ -67,7 +70,7 @@ const OpportunityList = () => {
         return isWithinInterval(createdAt, { start: yesterday, end: yesterdayEnd });
         
       case DateFilterType.THIS_WEEK:
-        const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // Segunda-feira
+        const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 });
         return createdAt >= startOfCurrentWeek && createdAt <= today;
         
       case DateFilterType.LAST_WEEK:
@@ -181,8 +184,7 @@ const OpportunityList = () => {
         : await opportunityAPI.getAll(false);
       setOpportunities(data);
     } catch (error) {
-      console.error("Error loading opportunities:", error);
-      toast.error("Erro ao carregar oportunidades");
+      handleError(error, "Erro ao carregar oportunidades");
     }
   };
 
@@ -211,8 +213,7 @@ const OpportunityList = () => {
         }
         setStages(allStages);
       } catch (error) {
-        console.error("Error loading opportunities:", error);
-        toast.error("Erro ao carregar oportunidades");
+        handleError(error, "Erro ao carregar dados");
       } finally {
         setLoading(false);
       }
@@ -252,12 +253,7 @@ const OpportunityList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Relatório de Oportunidades</h1>
-        <div className="animate-pulse bg-muted h-96 rounded-md"></div>
-      </div>
-    );
+    return <LoadingScreen text="Carregando oportunidades..." />;
   }
 
   return (

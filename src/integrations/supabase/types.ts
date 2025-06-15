@@ -662,6 +662,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      is_opportunity_owner: {
+        Args: { opportunity_id: string }
+        Returns: boolean
+      }
       update_webhook_template: {
         Args: {
           p_id: string
@@ -682,6 +686,10 @@ export type Database = {
           target_type: string
           url: string
         }
+      }
+      user_has_funnel_access: {
+        Args: { funnel_id: string; user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
