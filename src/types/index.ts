@@ -50,7 +50,7 @@ export interface StageMigrateConfig {
 export interface RequiredField {
   id: string;
   name: string;
-  type: 'text' | 'textarea' | 'number' | 'date' | 'checkbox' | 'select';
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
   options?: string[]; // For select type fields
   isRequired: boolean;
   stageId: string;
@@ -196,7 +196,7 @@ export interface StageFormData {
 
 export interface RequiredFieldFormData {
   name: string;
-  type: 'text' | 'textarea' | 'number' | 'date' | 'checkbox' | 'select';
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'select';
   options?: string[]; // For select type fields
   isRequired: boolean;
   stageId: string;

@@ -66,26 +66,34 @@ const StageColumn = ({
   };
 
   const handleAddField = (opportunity: Opportunity) => {
-    // Abrir diálogo de detalhes da oportunidade na aba de campos personalizados
-    setSelectedOpportunityId(opportunity.id);
+    setSelectedOpportunityForAction(opportunity);
+    setIsAddFieldDialogOpen(true);
   };
 
   const handleTaskAdded = () => {
-    setIsAddTaskDialogOpen(false);
-    setSelectedOpportunityForAction(null);
-    // Recarregar dados via callback se necessário
+    // Refresh the opportunity data or trigger a refetch
+    if (onOpportunityUpdated && selectedOpportunityForAction) {
+      // Trigger a refresh - you might want to implement a proper refresh mechanism
+      window.location.reload();
+    }
   };
 
   const handleFieldAdded = () => {
-    setIsAddFieldDialogOpen(false);
-    setSelectedOpportunityForAction(null);
+    // Refresh the opportunity data or trigger a refetch
+    if (onOpportunityUpdated && selectedOpportunityForAction) {
+      // Trigger a refresh - you might want to implement a proper refresh mechanism
+      window.location.reload();
+    }
   };
 
-  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
-    console.log('Opportunity created successfully:', newOpportunity);
+  const handleOpportunityCreatedWrapper = () => {
+    // Trigger a refresh without needing the opportunity object
+    // The parent component will handle reloading the data
     setIsCreateDialogOpen(false);
-    // Chamar callback do pai para atualizar a UI
-    onOpportunityCreated(newOpportunity);
+    if (onOpportunityCreated) {
+      // Call with a dummy opportunity object or trigger a refresh
+      window.location.reload();
+    }
   };
   
   return (
@@ -124,7 +132,7 @@ const StageColumn = ({
               onOpenChange={setIsCreateDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
-              onOpportunityCreated={handleOpportunityCreatedSuccess}
+              onOpportunityCreated={handleOpportunityCreatedWrapper}
             />
             
             {selectedOpportunityId && (
@@ -136,7 +144,6 @@ const StageColumn = ({
                 opportunityId={selectedOpportunityId}
                 onOpportunityUpdated={handleOpportunityUpdated}
                 onOpportunityDeleted={handleOpportunityDeleted}
-                initialTab={selectedOpportunityForAction ? "custom-fields" : "details"}
               />
             )}
 

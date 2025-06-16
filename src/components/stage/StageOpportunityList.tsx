@@ -65,15 +65,14 @@ const StageOpportunityList = ({
               }`}
             >
               {sortedOpportunities.map((opportunity, index) => (
-                <div key={opportunity.id}>
-                  <OpportunityCard
-                    opportunity={opportunity}
-                    stage={stage}
-                    onView={onOpportunityClick}
-                    onAddTask={onAddTask}
-                    onAddField={onAddField}
-                  />
-                </div>
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                  stage={stage}
+                  onView={onOpportunityClick}
+                  onAddTask={onAddTask}
+                  onAddField={onAddField}
+                />
               ))}
               {provided.placeholder}
             </div>
