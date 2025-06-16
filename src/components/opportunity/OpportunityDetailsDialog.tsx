@@ -16,6 +16,7 @@ interface OpportunityDetailsDialogProps {
   opportunityId: string;
   onOpportunityUpdated: (opportunity: Opportunity) => void;
   onOpportunityDeleted: (opportunityId: string) => void;
+  initialTab?: string;
 }
 
 const OpportunityDetailsDialog = ({
@@ -23,7 +24,8 @@ const OpportunityDetailsDialog = ({
   onOpenChange,
   opportunityId,
   onOpportunityUpdated,
-  onOpportunityDeleted
+  onOpportunityDeleted,
+  initialTab = "details"
 }: OpportunityDetailsDialogProps) => {
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,7 @@ const OpportunityDetailsDialog = ({
                 opportunity={opportunity} 
                 currentStage={currentStage}
                 onOpportunityUpdated={handleOpportunityUpdated}
+                initialTab={initialTab}
               />
             ) : (
               <div className="text-center py-6">

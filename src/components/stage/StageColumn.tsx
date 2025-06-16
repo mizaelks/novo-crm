@@ -66,33 +66,27 @@ const StageColumn = ({
   };
 
   const handleAddField = (opportunity: Opportunity) => {
-    setSelectedOpportunityForAction(opportunity);
-    setIsAddFieldDialogOpen(true);
+    // Abrir diálogo de detalhes da oportunidade na aba de campos personalizados
+    setSelectedOpportunityId(opportunity.id);
   };
 
   const handleTaskAdded = () => {
-    // Refresh the opportunity data or trigger a refetch
-    if (onOpportunityUpdated && selectedOpportunityForAction) {
-      // Trigger a refresh - you might want to implement a proper refresh mechanism
-      window.location.reload();
-    }
+    setIsAddTaskDialogOpen(false);
+    setSelectedOpportunityForAction(null);
+    // Recarregar dados via callback se necessário
   };
 
   const handleFieldAdded = () => {
-    // Refresh the opportunity data or trigger a refetch
-    if (onOpportunityUpdated && selectedOpportunityForAction) {
-      // Trigger a refresh - you might want to implement a proper refresh mechanism
-      window.location.reload();
-    }
+    setIsAddFieldDialogOpen(false);
+    setSelectedOpportunityForAction(null);
   };
 
-  const handleOpportunityCreatedWrapper = () => {
-    // Trigger a refresh without needing the opportunity object
-    // The parent component will handle reloading the data
+  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
+    console.log('Opportunity created successfully:', newOpportunity);
     setIsCreateDialogOpen(false);
+    // Chamar callback do pai para atualizar a UI
     if (onOpportunityCreated) {
-      // Call with a dummy opportunity object or trigger a refresh
-      window.location.reload();
+      onOpportunityCreated(newOpportunity);
     }
   };
   
@@ -132,7 +126,7 @@ const StageColumn = ({
               onOpenChange={setIsCreateDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
-              onOpportunityCreated={handleOpportunityCreatedWrapper}
+              onOpportunityCreated={handleOpportunityCreatedSuccess}
             />
             
             {selectedOpportunityId && (
