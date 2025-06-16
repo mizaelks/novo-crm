@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { opportunityAPI } from "@/services/opportunityAPI";
 import { toast } from "sonner";
 import { ProductTitleInput } from "./ProductTitleInput";
-import { productSuggestionsAPI } from "@/services/productSuggestionsAPI";
+import { productSuggestionsAPI, ProductSuggestion } from "@/services/productSuggestionsAPI";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreateOpportunityDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export const CreateOpportunityDialog = ({
   funnelId, 
   onOpportunityCreated 
 }: CreateOpportunityDialogProps) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -35,10 +37,24 @@ export const CreateOpportunityDialog = ({
     company: ""
   });
 
+  const handleProductChange = (value: string, selectedProduct?: ProductSuggestion) => {
+    setFormData(prev => ({
+      ...prev,
+      title: value,
+      // Auto-preencher o valor se um produto foi selecionado e tem preço
+      value: selectedProduct?.price ? selectedProduct.price.toString() : prev.value
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.client.trim()) {
       toast.error("Produto/Serviço e Cliente são obrigatórios");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("Usuário não autenticado");
       return;
     }
 
@@ -53,7 +69,8 @@ export const CreateOpportunityDialog = ({
         phone: formData.phone,
         email: formData.email,
         company: formData.company,
-        customFields: {}
+        customFields: {},
+        userId: user.id // Incluir o user_id na criação
       });
 
       // Incrementar contador de uso do produto
@@ -92,7 +109,7 @@ export const CreateOpportunityDialog = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <ProductTitleInput
             value={formData.title}
-            onChange={(value) => setFormData({ ...formData, title: value })}
+            onChange={handleProductChange}
             required
           />
           

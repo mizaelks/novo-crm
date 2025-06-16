@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface ProductTitleInputProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, selectedProduct?: ProductSuggestion) => void;
   required?: boolean;
 }
 
@@ -54,12 +54,12 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
   const handleSelectProduct = (product: ProductSuggestion) => {
     console.log("ProductTitleInput: Product selected:", product);
     setSelectedProduct(product);
-    onChange(product.name);
+    onChange(product.name, product); // Passar o produto selecionado
     setOpen(false);
   };
 
   const handleInputChange = (inputValue: string) => {
-    onChange(inputValue);
+    onChange(inputValue); // Não passar produto quando digitando manualmente
     if (selectedProduct && inputValue !== selectedProduct.name) {
       setSelectedProduct(null);
     }
@@ -222,11 +222,6 @@ export const ProductTitleInput = ({ value, onChange, required }: ProductTitleInp
           </span>
         </div>
       )}
-      
-      {/* Debug info - removível em produção */}
-      <div className="text-xs text-gray-400">
-        Debug: {suggestions.length} sugestões carregadas, loading: {loading.toString()}, error: {error || 'nenhum'}
-      </div>
     </div>
   );
 };
