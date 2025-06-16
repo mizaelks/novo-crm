@@ -12,6 +12,7 @@ import { OpportunityTasksBadge } from "./OpportunityTasksBadge";
 interface OpportunityCardProps {
   opportunity: Opportunity;
   stage: Stage;
+  index: number;
   onView?: (opportunity: Opportunity) => void;
   onAddTask?: (opportunity: Opportunity) => void;
   onAddField?: (opportunity: Opportunity) => void;
@@ -20,6 +21,7 @@ interface OpportunityCardProps {
 export const OpportunityCard = ({ 
   opportunity, 
   stage, 
+  index,
   onView, 
   onAddTask, 
   onAddField 
@@ -46,8 +48,13 @@ export const OpportunityCard = ({
     return daysInStage >= stage.alertConfig.maxDaysInStage;
   };
 
+  // Get pending tasks for this opportunity
+  const pendingTasks = opportunity.scheduledActions?.filter(
+    action => action.status === 'pending' && action.actionType === 'task'
+  ) || [];
+
   return (
-    <Draggable draggableId={opportunity.id} index={0}>
+    <Draggable draggableId={opportunity.id} index={index}>
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
@@ -69,7 +76,12 @@ export const OpportunityCard = ({
                   <Badge variant="secondary" className="text-xs">
                     {formatCurrency(opportunity.value)}
                   </Badge>
-                  {shouldShowAlert() && <OpportunityAlertIndicator />}
+                  {shouldShowAlert() && (
+                    <OpportunityAlertIndicator 
+                      opportunity={opportunity} 
+                      stage={stage} 
+                    />
+                  )}
                 </div>
               </div>
 
@@ -113,7 +125,13 @@ export const OpportunityCard = ({
               )}
 
               {/* Badge de tarefas pendentes */}
-              <OpportunityTasksBadge opportunityId={opportunity.id} />
+              <OpportunityTasksBadge 
+                pendingTasks={pendingTasks}
+                onCompleteTask={() => {
+                  // Handle task completion
+                  console.log('Complete task for opportunity:', opportunity.id);
+                }}
+              />
 
               {/* Footer com ações */}
               <div className="flex items-center justify-between pt-1 border-t border-gray-100">
