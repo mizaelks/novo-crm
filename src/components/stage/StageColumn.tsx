@@ -85,9 +85,7 @@ const StageColumn = ({
     console.log('Opportunity created successfully:', newOpportunity);
     setIsCreateDialogOpen(false);
     // Chamar callback do pai para atualizar a UI
-    if (onOpportunityCreated) {
-      onOpportunityCreated(newOpportunity);
-    }
+    onOpportunityCreated(newOpportunity);
   };
   
   return (
@@ -138,6 +136,7 @@ const StageColumn = ({
                 opportunityId={selectedOpportunityId}
                 onOpportunityUpdated={handleOpportunityUpdated}
                 onOpportunityDeleted={handleOpportunityDeleted}
+                initialTab={selectedOpportunityForAction ? "custom-fields" : "details"}
               />
             )}
 
