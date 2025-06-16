@@ -22,9 +22,10 @@ import {
   Calendar,
   FileText
 } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { shouldShowAlert, getAlertMessage } from "@/utils/stageAlerts";
+import { PermissionGate } from "@/components/ui/permission-gate";
 
 interface SimpleOpportunityCardProps {
   opportunity: Opportunity;
@@ -46,11 +47,11 @@ export const SimpleOpportunityCard = ({
   onUnarchive
 }: SimpleOpportunityCardProps) => {
   const { user } = useAuth();
-  const { isAdmin, isManager } = useUserRole();
+  const { canEditAllOpportunities, canDeleteOpportunities } = usePermissions();
   
   const isOwner = user?.id === opportunity.userId;
-  const canEdit = isOwner || isAdmin || isManager;
-  const canDelete = isOwner || isAdmin;
+  const canEdit = isOwner || canEditAllOpportunities;
+  const canDelete = isOwner || canDeleteOpportunities;
   const hasAlert = stage && shouldShowAlert(opportunity, stage);
 
   return (
@@ -75,33 +76,54 @@ export const SimpleOpportunityCard = ({
                   Ver detalhes
                 </DropdownMenuItem>
               )}
-              {canEdit && onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(opportunity)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-              )}
-              {canEdit && !opportunity.archived && onArchive && (
-                <DropdownMenuItem onClick={() => onArchive(opportunity.id)}>
-                  <Archive className="mr-2 h-4 w-4" />
-                  Arquivar
-                </DropdownMenuItem>
-              )}
-              {canEdit && opportunity.archived && onUnarchive && (
-                <DropdownMenuItem onClick={() => onUnarchive(opportunity.id)}>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Desarquivar
-                </DropdownMenuItem>
-              )}
-              {canDelete && onDelete && (
-                <DropdownMenuItem 
-                  onClick={() => onDelete(opportunity.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir
-                </DropdownMenuItem>
-              )}
+              
+              <PermissionGate 
+                permissions={['edit_all_opportunities', 'edit_own_opportunities']}
+                fallback={null}
+              >
+                {canEdit && onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(opportunity)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+              </PermissionGate>
+              
+              <PermissionGate 
+                permissions={['edit_all_opportunities', 'edit_own_opportunities']}
+                fallback={null}
+              >
+                {canEdit && !opportunity.archived && onArchive && (
+                  <DropdownMenuItem onClick={() => onArchive(opportunity.id)}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    Arquivar
+                  </DropdownMenuItem>
+                )}
+              </PermissionGate>
+              
+              <PermissionGate 
+                permissions={['edit_all_opportunities', 'edit_own_opportunities']}
+                fallback={null}
+              >
+                {canEdit && opportunity.archived && onUnarchive && (
+                  <DropdownMenuItem onClick={() => onUnarchive(opportunity.id)}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Desarquivar
+                  </DropdownMenuItem>
+                )}
+              </PermissionGate>
+              
+              <PermissionGate permission="delete_opportunities" fallback={null}>
+                {canDelete && onDelete && (
+                  <DropdownMenuItem 
+                    onClick={() => onDelete(opportunity.id)}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
+                  </DropdownMenuItem>
+                )}
+              </PermissionGate>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

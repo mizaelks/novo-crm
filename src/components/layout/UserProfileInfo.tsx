@@ -1,97 +1,64 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
 
-interface Profile {
-  first_name: string | null;
-  last_name: string | null;
-}
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { User, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { UserPermissionsBadge } from "@/components/ui/user-permissions-badge";
 
 const UserProfileInfo = () => {
   const { user } = useAuth();
-  const { userRole, loading } = useUserRole();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error("Error loading profile:", error);
-    }
-  };
-
-  const getUserDisplayName = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
-    }
-    return user?.email || '';
-  };
-
-  const getRoleLabel = () => {
-    switch (userRole) {
-      case 'admin':
-        return 'Admin';
-      case 'manager':
-        return 'Gerente';
-      default:
-        return 'Usuário';
-    }
-  };
-
-  const getRoleBadgeVariant = () => {
-    switch (userRole) {
-      case 'admin':
-        return 'destructive';
-      case 'manager':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
 
   if (!user) return null;
 
+  const getInitials = () => {
+    if (user.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
   return (
-    <div className="flex items-center space-x-2">
-      {!loading && (
-        <Badge variant={getRoleBadgeVariant()} className="text-xs">
-          {getRoleLabel()}
-        </Badge>
-      )}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate('/profile')}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <User className="h-4 w-4" />
-        {getUserDisplayName()}
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback>{getInitials()}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-2">
+            <p className="text-sm font-medium leading-none">{user.email}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs leading-none text-muted-foreground">
+                Papel:
+              </p>
+              <UserPermissionsBadge />
+            </div>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate("/profile")}>
+          <User className="mr-2 h-4 w-4" />
+          <span>Perfil</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/settings")}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Configurações</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

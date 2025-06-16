@@ -6,11 +6,14 @@ import FunnelCard from "./FunnelCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import CreateFunnelDialog from "./CreateFunnelDialog";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionGate } from "@/components/ui/permission-gate";
 
 const FunnelList = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { canManageFunnels } = usePermissions();
 
   useEffect(() => {
     const loadFunnels = async () => {
@@ -77,10 +80,16 @@ const FunnelList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Funis</h2>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Funil
-        </Button>
+        <PermissionGate 
+          permission="manage_funnels"
+          showTooltip
+          tooltipMessage="Você não tem permissão para criar funis"
+        >
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Funil
+          </Button>
+        </PermissionGate>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -98,19 +107,27 @@ const FunnelList = () => {
         {funnels.length === 0 && (
           <div className="col-span-3 flex flex-col items-center justify-center py-12 bg-muted/50 rounded-lg">
             <p className="text-muted-foreground mb-4">Nenhum funil encontrado</p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar primeiro funil
-            </Button>
+            <PermissionGate 
+              permission="manage_funnels"
+              showTooltip
+              tooltipMessage="Você não tem permissão para criar funis"
+            >
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar primeiro funil
+              </Button>
+            </PermissionGate>
           </div>
         )}
       </div>
 
-      <CreateFunnelDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onFunnelCreated={handleFunnelCreated}
-      />
+      <PermissionGate permission="manage_funnels">
+        <CreateFunnelDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onFunnelCreated={handleFunnelCreated}
+        />
+      </PermissionGate>
     </div>
   );
 };

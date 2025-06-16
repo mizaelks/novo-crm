@@ -17,6 +17,9 @@ import { Opportunity, Stage } from "@/types";
 import { formatCurrency, formatDateBRT } from "@/services/utils/dateUtils";
 import { Trash2, Archive, ArchiveRestore, ExternalLink, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { PermissionGate } from "@/components/ui/permission-gate";
 
 interface OpportunityTableRowProps {
   opportunity: Opportunity;
@@ -37,7 +40,13 @@ const OpportunityTableRow = ({
   onArchive,
   onDelete
 }: OpportunityTableRowProps) => {
+  const { user } = useAuth();
+  const { canEditAllOpportunities, canDeleteOpportunities } = usePermissions();
   const hasAlert = !showArchived && getStageAlertStatus(opportunity);
+  
+  const isOwner = user?.id === opportunity.userId;
+  const canEdit = isOwner || canEditAllOpportunities;
+  const canDelete = isOwner || canDeleteOpportunities;
 
   return (
     <TableRow className={hasAlert ? "bg-red-50" : ""}>
@@ -100,49 +109,67 @@ const OpportunityTableRow = ({
             </Button>
           )}
           
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => onArchive(opportunity, !showArchived)}
-            title={showArchived ? "Restaurar oportunidade" : "Arquivar oportunidade"}
+          <PermissionGate 
+            permissions={['edit_all_opportunities', 'edit_own_opportunities']}
+            showTooltip
+            tooltipMessage="Você não tem permissão para arquivar esta oportunidade"
+            fallback={null}
           >
-            {showArchived ? (
-              <ArchiveRestore className="h-4 w-4" />
-            ) : (
-              <Archive className="h-4 w-4" />
-            )}
-          </Button>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
+            {canEdit && (
+              <Button
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0" 
+                className="h-8 w-8 p-0"
+                onClick={() => onArchive(opportunity, !showArchived)}
+                title={showArchived ? "Restaurar oportunidade" : "Arquivar oportunidade"}
               >
-                <Trash2 className="h-4 w-4" />
+                {showArchived ? (
+                  <ArchiveRestore className="h-4 w-4" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir oportunidade</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Isso excluirá permanentemente a 
-                  oportunidade "{opportunity.title}" do cliente {opportunity.client} e removerá 
-                  todos os dados associados a ela.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDelete(opportunity.id)}
-                >
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            )}
+          </PermissionGate>
+          
+          <PermissionGate 
+            permission="delete_opportunities"
+            showTooltip
+            tooltipMessage="Você não tem permissão para excluir esta oportunidade"
+            fallback={null}
+          >
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    className="h-8 w-8 p-0" 
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir oportunidade</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isso excluirá permanentemente a 
+                      oportunidade "{opportunity.title}" do cliente {opportunity.client} e removerá 
+                      todos os dados associados a ela.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(opportunity.id)}
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </PermissionGate>
         </div>
       </TableCell>
     </TableRow>

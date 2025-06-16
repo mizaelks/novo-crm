@@ -7,12 +7,13 @@ import { toast } from "sonner";
 import AlertsDropdown from "@/components/alerts/AlertsDropdown";
 import SettingsDropdown from "@/components/settings/SettingsDropdown";
 import UserProfileInfo from "./UserProfileInfo";
-import { useUserRole } from "@/hooks/useUserRole";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionGate } from "@/components/ui/permission-gate";
 
 const AppHeader = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { isManager } = useUserRole();
+  const { canViewReports, canSystemSettings } = usePermissions();
   
   const handleSignOut = async () => {
     await signOut();
@@ -25,8 +26,8 @@ const AppHeader = () => {
     { href: "/opportunities", label: "Oportunidades" },
   ];
 
-  // Add insights link only for managers and admins
-  if (isManager) {
+  // Add insights link only for users with permission
+  if (canViewReports) {
     links.push({ href: "/insights", label: "Insights" });
   }
 
@@ -57,7 +58,9 @@ const AppHeader = () => {
           {user && (
             <div className="flex items-center space-x-4">
               <AlertsDropdown />
-              <SettingsDropdown />
+              <PermissionGate permission="system_settings">
+                <SettingsDropdown />
+              </PermissionGate>
               <UserProfileInfo />
               <Button
                 variant="ghost"
