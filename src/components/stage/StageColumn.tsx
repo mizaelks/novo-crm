@@ -71,28 +71,26 @@ const StageColumn = ({
   };
 
   const handleTaskAdded = () => {
-    // Refresh the opportunity data or trigger a refetch
+    // Trigger opportunity refresh if callback exists
     if (onOpportunityUpdated && selectedOpportunityForAction) {
-      // Trigger a refresh - you might want to implement a proper refresh mechanism
-      window.location.reload();
+      // Re-fetch opportunity data to get updated tasks
+      handleOpportunityUpdated(selectedOpportunityForAction);
     }
   };
 
   const handleFieldAdded = () => {
-    // Refresh the opportunity data or trigger a refetch
+    // Trigger opportunity refresh if callback exists
     if (onOpportunityUpdated && selectedOpportunityForAction) {
-      // Trigger a refresh - you might want to implement a proper refresh mechanism
-      window.location.reload();
+      // Re-fetch opportunity data to get updated fields
+      handleOpportunityUpdated(selectedOpportunityForAction);
     }
   };
 
-  const handleOpportunityCreatedWrapper = () => {
-    // Trigger a refresh without needing the opportunity object
-    // The parent component will handle reloading the data
+  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
     setIsCreateDialogOpen(false);
+    // Use the proper callback to update state instead of reloading
     if (onOpportunityCreated) {
-      // Call with a dummy opportunity object or trigger a refresh
-      window.location.reload();
+      onOpportunityCreated(newOpportunity);
     }
   };
   
@@ -132,7 +130,7 @@ const StageColumn = ({
               onOpenChange={setIsCreateDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
-              onOpportunityCreated={handleOpportunityCreatedWrapper}
+              onOpportunityCreated={handleOpportunityCreatedSuccess}
             />
             
             {selectedOpportunityId && (

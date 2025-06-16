@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Droppable } from "react-beautiful-dnd";
+import { Droppable, Draggable } from "react-beautiful-dnd";
 import { Opportunity, Stage } from "@/types";
 import { OpportunityCard } from "../opportunity/OpportunityCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -65,14 +65,27 @@ const StageOpportunityList = ({
               }`}
             >
               {sortedOpportunities.map((opportunity, index) => (
-                <OpportunityCard
-                  key={opportunity.id}
-                  opportunity={opportunity}
-                  stage={stage}
-                  onView={onOpportunityClick}
-                  onAddTask={onAddTask}
-                  onAddField={onAddField}
-                />
+                <Draggable key={opportunity.id} draggableId={opportunity.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={{
+                        ...provided.draggableProps.style,
+                      }}
+                      className={`${snapshot.isDragging ? 'rotate-3 shadow-lg' : ''}`}
+                    >
+                      <OpportunityCard
+                        opportunity={opportunity}
+                        stage={stage}
+                        onView={onOpportunityClick}
+                        onAddTask={onAddTask}
+                        onAddField={onAddField}
+                      />
+                    </div>
+                  )}
+                </Draggable>
               ))}
               {provided.placeholder}
             </div>
