@@ -4,7 +4,7 @@ import { useRolePermissions } from "./useRolePermissions";
 
 export const usePermissions = () => {
   const { userRole, isAdmin, isManager, loading: roleLoading } = useUserRole();
-  const { permissions, hasPermission: hasRolePermission, loading: permissionsLoading } = useRolePermissions();
+  const { permissions, hasPermission: hasRolePermission, isLoading: permissionsLoading } = useRolePermissions();
 
   const loading = roleLoading || permissionsLoading;
 
