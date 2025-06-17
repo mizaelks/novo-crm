@@ -43,6 +43,9 @@ export const useOpportunityDrag = (
       return;
     }
     
+    // Immediate visual feedback
+    toast.loading("Movendo oportunidade...", { id: 'moving-opportunity' });
+    
     // Create drag operation
     const dragOperation = createDragOperation(
       opportunity,
@@ -64,6 +67,7 @@ export const useOpportunityDrag = (
     
     if (hasRequirements(dragOperation)) {
       console.log('Has requirements - setting up drag operation');
+      toast.dismiss('moving-opportunity');
       setCurrentDragOperation(dragOperation);
       
       // Se só precisa de motivos, vai direto para diálogo de motivos
@@ -138,10 +142,26 @@ export const useOpportunityDrag = (
       }
       
       console.log('Move completed successfully');
+      toast.dismiss('moving-opportunity');
       toast.success("Oportunidade movida com sucesso");
     } catch (error) {
       console.error("Error moving opportunity:", error);
+      toast.dismiss('moving-opportunity');
       toast.error("Erro ao mover oportunidade");
+      
+      // Revert UI changes on error
+      try {
+        const originalStages = await Promise.all(
+          stages.map(async (stage) => {
+            // Re-fetch opportunities for each stage to restore original state
+            const opportunities = await opportunityAPI.getByStageId(stage.id, false);
+            return { ...stage, opportunities };
+          })
+        );
+        setStages(originalStages);
+      } catch (revertError) {
+        console.error("Error reverting stage state:", revertError);
+      }
     } finally {
       setIsDragging(false);
     }

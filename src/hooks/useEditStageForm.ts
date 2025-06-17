@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Stage, RequiredField, RequiredTask, StageAlertConfig, StageMigrateConfig, SortingOption } from "@/types";
 import { stageAPI } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -50,109 +51,162 @@ export const useEditStageForm = (stageId: string, open: boolean) => {
     defaultValues: {
       name: "",
       description: "",
-      color: "#CCCCCC",
+      color: "#3b82f6",
       isWinStage: false,
       isLossStage: false
     }
   });
 
   useEffect(() => {
-    const loadStage = async () => {
-      if (open && stageId) {
-        setLoading(true);
-        console.log("Carregando dados da etapa:", stageId);
-        
-        try {
-          const stageData = await stageAPI.getById(stageId);
-          console.log("Etapa carregada:", stageData);
-          
-          if (stageData) {
-            setStage(stageData);
-            setRequiredFields(stageData.requiredFields || []);
-            setRequiredTasks(stageData.requiredTasks || []);
-            
-            const alertConf = stageData.alertConfig || { enabled: false, maxDaysInStage: 3 };
-            setAlertConfig(alertConf);
-            
-            const migrateConf = stageData.migrateConfig || { 
-              enabled: false, 
-              targetFunnelId: '', 
-              targetStageId: '' 
-            };
-            setMigrateConfig(migrateConf);
+    if (open && stageId) {
+      loadStage();
+    }
+  }, [open, stageId]);
 
-            const sortConf = stageData.sortConfig || { type: 'free' as SortingOption, enabled: false };
-            setSortConfig(sortConf);
-
-            setWinReasonRequired(stageData.winReasonRequired || false);
-            setLossReasonRequired(stageData.lossReasonRequired || false);
-            setWinReasons(stageData.winReasons || []);
-            setLossReasons(stageData.lossReasons || []);
-            
-            form.reset({
-              name: stageData.name,
-              description: stageData.description || "",
-              color: stageData.color || "#CCCCCC",
-              isWinStage: stageData.isWinStage || false,
-              isLossStage: stageData.isLossStage || false
-            });
-          }
-        } catch (error) {
-          console.error("Error loading stage:", error);
-          toast.error("Erro ao carregar dados da etapa");
-        } finally {
-          setLoading(false);
-        }
+  const loadStage = async () => {
+    try {
+      setLoading(true);
+      
+      // Load stage data
+      const stageData = await stageAPI.getById(stageId);
+      if (!stageData) return;
+      
+      setStage(stageData);
+      
+      // Load required fields from database
+      const { data: fieldsData } = await supabase
+        .from('required_fields')
+        .select('*')
+        .eq('stage_id', stageId);
+      
+      if (fieldsData) {
+        setRequiredFields(fieldsData.map(field => ({
+          id: field.id,
+          name: field.name,
+          type: field.type as 'text' | 'number' | 'email' | 'phone' | 'select' | 'textarea',
+          options: field.options || [],
+          isRequired: field.is_required
+        })));
       }
-    };
-
-    loadStage();
-  }, [open, stageId, form]);
+      
+      // Load required tasks from database
+      const { data: tasksData } = await supabase
+        .from('required_tasks')
+        .select('*')
+        .eq('stage_id', stageId);
+      
+      if (tasksData) {
+        setRequiredTasks(tasksData.map(task => ({
+          id: task.id,
+          name: task.name,
+          description: task.description || '',
+          defaultDuration: task.default_duration || 1,
+          isRequired: task.is_required,
+          templateId: task.template_id
+        })));
+      }
+      
+      // Set form values
+      form.reset({
+        name: stageData.name,
+        description: stageData.description || "",
+        color: stageData.color || "#3b82f6",
+        isWinStage: stageData.isWinStage,
+        isLossStage: stageData.isLossStage
+      });
+      
+      // Set other configs
+      setAlertConfig(stageData.alertConfig || { enabled: false, maxDaysInStage: 3 });
+      setMigrateConfig(stageData.migrateConfig || { enabled: false, targetFunnelId: '', targetStageId: '' });
+      setWinReasonRequired(stageData.winReasonRequired || false);
+      setLossReasonRequired(stageData.lossReasonRequired || false);
+      setWinReasons(stageData.winReasons || []);
+      setLossReasons(stageData.lossReasons || []);
+    } catch (error) {
+      console.error("Error loading stage:", error);
+      toast.error("Erro ao carregar dados da etapa");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const submitForm = async (values: StageFormData, onStageUpdated: (stage: Stage) => void) => {
-    if (!stage) {
-      console.error("Stage data not loaded");
-      toast.error("Dados da etapa não carregados");
-      return false;
-    }
-    
     try {
-      console.log("Enviando atualização para a etapa:", stageId);
-      
       setIsSubmitting(true);
       
-      const updateData = {
-        name: values.name,
-        description: values.description,
-        funnelId: stage.funnelId,
-        color: values.color,
-        isWinStage: values.isWinStage,
-        isLossStage: values.isLossStage,
-        requiredFields: requiredFields,
-        requiredTasks: requiredTasks,
-        alertConfig: alertConfig.enabled ? alertConfig : undefined,
-        migrateConfig: migrateConfig.enabled ? migrateConfig : undefined,
-        sortConfig: sortConfig.enabled ? sortConfig : undefined,
-        winReasonRequired: winReasonRequired,
-        lossReasonRequired: lossReasonRequired,
-        winReasons: winReasons,
-        lossReasons: lossReasons
-      };
+      // Update stage
+      const updatedStage = await stageAPI.update(stageId, {
+        ...values,
+        alertConfig,
+        migrateConfig,
+        winReasonRequired,
+        lossReasonRequired,
+        winReasons,
+        lossReasons
+      });
       
-      console.log("Dados para atualização:", updateData);
-      
-      const updatedStage = await stageAPI.update(stageId, updateData);
-      
-      console.log("Resposta da API:", updatedStage);
-      
-      if (updatedStage) {
-        onStageUpdated(updatedStage);
-        toast.success("Etapa atualizada com sucesso!");
-        return true;
-      } else {
-        toast.error("Erro ao atualizar etapa");
-        return false;
+      if (!updatedStage) {
+        throw new Error("Failed to update stage");
       }
+      
+      // Save required fields to database
+      // First delete existing fields
+      await supabase
+        .from('required_fields')
+        .delete()
+        .eq('stage_id', stageId);
+      
+      // Insert new fields
+      if (requiredFields.length > 0) {
+        const fieldsToInsert = requiredFields.map(field => ({
+          stage_id: stageId,
+          name: field.name,
+          type: field.type,
+          options: field.options,
+          is_required: field.isRequired
+        }));
+        
+        const { error: fieldsError } = await supabase
+          .from('required_fields')
+          .insert(fieldsToInsert);
+        
+        if (fieldsError) {
+          console.error("Error saving required fields:", fieldsError);
+          toast.error("Erro ao salvar campos obrigatórios");
+        }
+      }
+      
+      // Save required tasks to database
+      // First delete existing tasks
+      await supabase
+        .from('required_tasks')
+        .delete()
+        .eq('stage_id', stageId);
+      
+      // Insert new tasks
+      if (requiredTasks.length > 0) {
+        const tasksToInsert = requiredTasks.map(task => ({
+          stage_id: stageId,
+          name: task.name,
+          description: task.description,
+          default_duration: task.defaultDuration,
+          is_required: task.isRequired,
+          template_id: task.templateId
+        }));
+        
+        const { error: tasksError } = await supabase
+          .from('required_tasks')
+          .insert(tasksToInsert);
+        
+        if (tasksError) {
+          console.error("Error saving required tasks:", tasksError);
+          toast.error("Erro ao salvar tarefas obrigatórias");
+        }
+      }
+      
+      toast.success("Etapa atualizada com sucesso!");
+      onStageUpdated(updatedStage);
+      return true;
     } catch (error) {
       console.error("Error updating stage:", error);
       toast.error("Erro ao atualizar etapa");

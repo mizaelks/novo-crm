@@ -9,13 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Share2, Database, ShieldCheck, Edit } from "lucide-react";
+import { Settings, Users, Share2, Database, ShieldCheck, Edit, Package } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserManagementDialog } from "./UserManagementDialog";
 import { FunnelSharingSettings } from "./FunnelSharingSettings";
 import { SettingsAutomation } from "./SettingsAutomation";
 import { RolePermissionsManagement } from "./RolePermissionsManagement";
 import { EditableRolePermissions } from "./EditableRolePermissions";
+import { TemplateManagement } from "./TemplateManagement";
 
 interface SystemSettingsDialogProps {
   isOpen: boolean;
@@ -47,10 +48,14 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
           </DialogHeader>
 
           <Tabs defaultValue="sharing" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="sharing" className="flex items-center gap-2">
                 <Share2 className="h-4 w-4" />
                 Compartilhamento
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Templates
               </TabsTrigger>
               {isAdmin && (
                 <TabsTrigger value="users" className="flex items-center gap-2">
@@ -76,6 +81,10 @@ export const SystemSettingsDialog = ({ isOpen, setIsOpen }: SystemSettingsDialog
 
             <TabsContent value="sharing" className="space-y-4">
               <FunnelSharingSettings />
+            </TabsContent>
+
+            <TabsContent value="templates" className="space-y-4">
+              <TemplateManagement isAdmin={isAdmin} />
             </TabsContent>
 
             {isAdmin && (
