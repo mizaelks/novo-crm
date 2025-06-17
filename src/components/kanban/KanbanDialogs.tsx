@@ -58,7 +58,7 @@ const KanbanDialogs = ({
         />
       )}
       
-      {currentDragOperation && showReasonDialog && (
+      {currentDragOperation && showReasonDialog && currentDragOperation.stage && (
         <OpportunityReasonDialog
           open={showReasonDialog}
           onOpenChange={(open) => {
@@ -69,10 +69,7 @@ const KanbanDialogs = ({
             }
           }}
           opportunity={currentDragOperation.opportunity}
-          needsWinReason={currentDragOperation.needsWinReason}
-          needsLossReason={currentDragOperation.needsLossReason}
-          availableWinReasons={currentDragOperation.availableWinReasons}
-          availableLossReasons={currentDragOperation.availableLossReasons}
+          stage={currentDragOperation.stage}
           onComplete={onReasonComplete}
         />
       )}
