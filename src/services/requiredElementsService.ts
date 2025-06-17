@@ -208,16 +208,22 @@ export const requiredElementsService = {
     try {
       console.log('Processing stage requirements for opportunity:', opportunity.id, 'stage:', destinationStageId);
       
+      // Ensure we have a valid opportunity
+      if (!opportunity || !opportunity.id) {
+        console.error('Invalid opportunity provided');
+        return null;
+      }
+      
       const stageRequirements = await this.getStageRequirements(destinationStageId);
       
       // Extract arrays with proper null safety
       const requiredFields = stageRequirements?.requiredFields || [];
       const requiredTasks = stageRequirements?.requiredTasks || [];
       
-      let updatedOpportunity = opportunity;
+      let updatedOpportunity: Opportunity | null = opportunity;
 
       // Adicionar campos obrigatórios
-      if (requiredFields.length > 0) {
+      if (requiredFields.length > 0 && updatedOpportunity) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (!fieldResult) {
           return null;
@@ -226,8 +232,8 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks.length > 0) {
-        const tasksSuccess = await this.addRequiredTasksToOpportunity(opportunity.id, requiredTasks);
+      if (requiredTasks.length > 0 && updatedOpportunity?.id) {
+        const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
         }
