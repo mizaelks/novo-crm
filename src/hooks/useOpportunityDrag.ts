@@ -4,6 +4,7 @@ import { opportunityAPI } from "@/services/api";
 import { Stage, Opportunity } from "@/types";
 import { toast } from "sonner";
 import { useDragOperationHandler } from "./useDragOperationHandler";
+import { requiredElementsService } from "@/services/requiredElementsService";
 
 export const useOpportunityDrag = (
   stages: Stage[],
@@ -46,8 +47,8 @@ export const useOpportunityDrag = (
     // Immediate visual feedback
     toast.loading("Movendo oportunidade...", { id: 'moving-opportunity' });
     
-    // Create drag operation
-    const dragOperation = createDragOperation(
+    // Create drag operation (now async)
+    const dragOperation = await createDragOperation(
       opportunity,
       sourceDroppableId,
       destinationStage,
@@ -101,6 +102,15 @@ export const useOpportunityDrag = (
       // Merge any updates (like win/loss reasons) with the opportunity
       const opportunityToMove = updatedOpportunity ? { ...opportunity, ...updatedOpportunity } : opportunity;
       
+      // Processar requisitos automáticos da etapa (tarefas e campos obrigatórios)
+      console.log('Processing stage requirements...');
+      const processedOpportunity = await requiredElementsService.processStageRequirements(
+        opportunityToMove,
+        destinationStageId
+      );
+
+      const finalOpportunity = processedOpportunity || opportunityToMove;
+      
       // Optimistically update UI first
       const updatedStages = stages.map(stage => {
         // Remove from source stage
@@ -115,7 +125,7 @@ export const useOpportunityDrag = (
         if (stage.id === destinationStageId) {
           const newOpportunities = [...stage.opportunities];
           const updatedOpp = {
-            ...opportunityToMove,
+            ...finalOpportunity,
             stageId: destinationStageId,
             lastStageChangeAt: new Date()
           };

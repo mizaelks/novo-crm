@@ -1,5 +1,6 @@
 
 import { Stage, Opportunity, RequiredField } from "@/types";
+import { requiredElementsService } from "@/services/requiredElementsService";
 
 interface DragOperation {
   opportunity: Opportunity;
@@ -14,13 +15,15 @@ interface DragOperation {
 }
 
 export const useDragOperationHandler = () => {
-  const createDragOperation = (
+  const createDragOperation = async (
     opportunity: Opportunity,
     sourceStageId: string,
     destinationStage: Stage,
     destinationIndex: number
-  ): DragOperation => {
-    const requiredFields = destinationStage.requiredFields || [];
+  ): Promise<DragOperation> => {
+    // Buscar requisitos da etapa de destino
+    const { requiredFields } = await requiredElementsService.getStageRequirements(destinationStage.id);
+    
     const needsWinReason = destinationStage.isWinStage && destinationStage.winReasonRequired;
     const needsLossReason = destinationStage.isLossStage && destinationStage.lossReasonRequired;
     
