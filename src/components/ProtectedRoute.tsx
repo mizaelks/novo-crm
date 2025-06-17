@@ -1,10 +1,14 @@
 
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const [shouldRedirect, setShouldRedirect] = useState(false);
@@ -33,7 +37,7 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" />;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

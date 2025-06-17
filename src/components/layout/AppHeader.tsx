@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { AlertsDropdown } from "../alerts/AlertsDropdown";
+import AlertsDropdown from "../alerts/AlertsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export const AppHeader = () => {
@@ -22,7 +22,7 @@ export const AppHeader = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/auth");
+    navigate("/login");
   };
 
   const navItems = [
@@ -109,3 +109,5 @@ export const AppHeader = () => {
     </header>
   );
 };
+
+export default AppHeader;

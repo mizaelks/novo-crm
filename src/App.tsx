@@ -6,19 +6,19 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Pages
-import Auth from "@/pages/Auth";
+import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
-import Funnels from "@/pages/Funnels";
+import FunnelList from "@/pages/FunnelList";
 import FunnelDetail from "@/pages/FunnelDetail";
-import Opportunities from "@/pages/Opportunities";
+import OpportunityList from "@/pages/OpportunityList";
 import Insights from "@/pages/Insights";
 import Settings from "@/pages/Settings";
 import Templates from "@/pages/Templates";
-import Users from "@/pages/Users";
+import UserProfile from "@/pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +42,7 @@ function App() {
           <Toaster />
           <BrowserRouter>
             <Routes>
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/login" element={<Login />} />
               <Route
                 path="/*"
                 element={
@@ -50,13 +50,13 @@ function App() {
                     <AppLayout>
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
-                        <Route path="/funnels" element={<Funnels />} />
+                        <Route path="/funnels" element={<FunnelList />} />
                         <Route path="/funnels/:id" element={<FunnelDetail />} />
-                        <Route path="/opportunities" element={<Opportunities />} />
+                        <Route path="/opportunities" element={<OpportunityList />} />
                         <Route path="/insights" element={<Insights />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/templates" element={<Templates />} />
-                        <Route path="/users" element={<Users />} />
+                        <Route path="/users" element={<UserProfile />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </AppLayout>

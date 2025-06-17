@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +9,7 @@ import { useOpportunityMove } from "@/hooks/useOpportunityMove";
 import { useOpportunityFunnelMove } from "@/hooks/useOpportunityFunnelMove";
 import { toast } from "sonner";
 import RequiredFieldsDialog from "./RequiredFieldsDialog";
-import { OpportunityReasonDialog } from "./OpportunityReasonDialog";
+import OpportunityReasonDialog from "./OpportunityReasonDialog";
 
 interface OpportunityMoveActionsProps {
   opportunity: Opportunity;
