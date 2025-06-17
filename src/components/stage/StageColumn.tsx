@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Stage, Opportunity } from "@/types";
@@ -89,9 +90,7 @@ const StageColumn = ({
     console.log('Opportunity created in StageColumn:', newOpportunity);
     setIsCreateDialogOpen(false);
     // Use the proper callback to update state instead of reloading
-    if (onOpportunityCreated) {
-      onOpportunityCreated(newOpportunity);
-    }
+    onOpportunityCreated(newOpportunity);
   };
   
   return (
