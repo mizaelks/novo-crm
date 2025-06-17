@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, RequiredField, RequiredTask } from "@/types";
 
@@ -215,13 +216,19 @@ export const requiredElementsService = {
       
       const stageRequirements = await this.getStageRequirements(destinationStageId);
       
-      // Extract arrays - getStageRequirements always returns these as arrays, never undefined
-      const { requiredFields, requiredTasks } = stageRequirements;
+      // Verificação explícita para garantir type safety
+      if (!stageRequirements) {
+        console.error('Failed to get stage requirements');
+        return opportunity;
+      }
+      
+      const requiredFields = stageRequirements.requiredFields || [];
+      const requiredTasks = stageRequirements.requiredTasks || [];
       
       let updatedOpportunity: Opportunity | null = opportunity;
 
       // Adicionar campos obrigatórios
-      if (requiredFields && requiredFields.length > 0 && updatedOpportunity !== null) {
+      if (requiredFields.length > 0 && updatedOpportunity) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (fieldResult === null) {
           return null;
@@ -230,7 +237,7 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity !== null && updatedOpportunity.id) {
+      if (requiredTasks.length > 0 && updatedOpportunity && updatedOpportunity.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
