@@ -3,7 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Opportunity, Stage } from "@/types";
+import { Opportunity } from "@/types";
 import { opportunityAPI } from "@/services/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,10 @@ interface OpportunityReasonDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   opportunity: Opportunity;
-  stage: Stage;
+  needsWinReason?: boolean;
+  needsLossReason?: boolean;
+  availableWinReasons?: string[];
+  availableLossReasons?: string[];
   onComplete: (success: boolean, updatedOpportunity?: Opportunity) => void;
 }
 
@@ -38,15 +41,13 @@ const OpportunityReasonDialog = ({
   open,
   onOpenChange,
   opportunity,
-  stage,
+  needsWinReason = false,
+  needsLossReason = false,
+  availableWinReasons = [],
+  availableLossReasons = [],
   onComplete
 }: OpportunityReasonDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const needsWinReason = stage.isWinStage && stage.winReasonRequired;
-  const needsLossReason = stage.isLossStage && stage.lossReasonRequired;
-  const availableWinReasons = stage.winReasons || [];
-  const availableLossReasons = stage.lossReasons || [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

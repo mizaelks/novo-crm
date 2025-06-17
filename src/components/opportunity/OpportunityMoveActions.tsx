@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,8 +9,6 @@ import { funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
 import { useOpportunityMove } from "@/hooks/useOpportunityMove";
 import { useOpportunityFunnelMove } from "@/hooks/useOpportunityFunnelMove";
 import { toast } from "sonner";
-import RequiredFieldsDialog from "./RequiredFieldsDialog";
-import OpportunityReasonDialog from "./OpportunityReasonDialog";
 
 interface OpportunityMoveActionsProps {
   opportunity: Opportunity;
@@ -167,61 +166,37 @@ const OpportunityMoveActions = ({
   };
 
   const performMove = async () => {
-    // Immediate visual feedback
-    const updatedOpportunity = { ...opportunity, stageId: selectedStageId };
-    onOpportunityMoved(updatedOpportunity);
-    
-    try {
-      const result = await moveOpportunity(
-        opportunity,
-        selectedStageId,
-        onOpportunityMoved
-      );
+    const updatedOpportunity = await moveOpportunity(
+      opportunity,
+      selectedStageId,
+      onOpportunityMoved
+    );
 
-      if (result) {
-        setSelectedStageId(result.stageId);
-        toast.success("Oportunidade movida com sucesso!");
-      }
-    } catch (error) {
-      // Revert visual change on error
-      onOpportunityMoved(opportunity);
-      toast.error("Erro ao mover oportunidade");
+    if (updatedOpportunity) {
+      setSelectedStageId(updatedOpportunity.stageId);
+      toast.success("Oportunidade movida com sucesso!");
     }
   };
 
   const performFunnelMove = async () => {
-    // Immediate visual feedback
-    const updatedOpportunity = { 
-      ...opportunity, 
-      funnelId: selectedFunnelId, 
-      stageId: selectedStageId 
-    };
-    onOpportunityMoved(updatedOpportunity);
+    const updatedOpportunity = await moveBetweenFunnels(
+      opportunity,
+      selectedFunnelId,
+      selectedStageId,
+      onOpportunityMoved
+    );
 
-    try {
-      const result = await moveBetweenFunnels(
-        opportunity,
-        selectedFunnelId,
-        selectedStageId,
-        onOpportunityMoved
-      );
-
-      if (result) {
-        setSelectedFunnelId(result.funnelId);
-        setSelectedStageId(result.stageId);
-        toast.success("Oportunidade movida com sucesso!");
-      }
-    } catch (error) {
-      // Revert visual change on error
-      onOpportunityMoved(opportunity);
-      toast.error("Erro ao mover oportunidade");
+    if (updatedOpportunity) {
+      setSelectedFunnelId(updatedOpportunity.funnelId);
+      setSelectedStageId(updatedOpportunity.stageId);
+      toast.success("Oportunidade movida com sucesso!");
     }
   };
 
-  const handleRequiredFieldsComplete = async (success: boolean, updatedOpportunity?: Opportunity) => {
+  const handleRequiredFieldsComplete = async (updatedOpportunity?: Opportunity) => {
     setShowRequiredFieldsDialog(false);
     
-    if (success && updatedOpportunity && targetStage) {
+    if (updatedOpportunity && targetStage) {
       // Check if still needs reasons after filling required fields
       const needsReasons = (targetStage.isWinStage && targetStage.winReasonRequired) || 
                           (targetStage.isLossStage && targetStage.lossReasonRequired);
@@ -233,25 +208,21 @@ const OpportunityMoveActions = ({
     }
     
     // Proceed with move
-    if (success) {
-      if (selectedFunnelId !== opportunity.funnelId) {
-        await performFunnelMove();
-      } else {
-        await performMove();
-      }
+    if (selectedFunnelId !== opportunity.funnelId) {
+      await performFunnelMove();
+    } else {
+      await performMove();
     }
   };
 
-  const handleReasonComplete = async (success: boolean) => {
+  const handleReasonComplete = async () => {
     setShowReasonDialog(false);
     
-    if (success) {
-      // Proceed with move
-      if (selectedFunnelId !== opportunity.funnelId) {
-        await performFunnelMove();
-      } else {
-        await performMove();
-      }
+    // Proceed with move
+    if (selectedFunnelId !== opportunity.funnelId) {
+      await performFunnelMove();
+    } else {
+      await performMove();
     }
   };
 
@@ -340,26 +311,7 @@ const OpportunityMoveActions = ({
         </CardContent>
       </Card>
 
-      {targetStage && (
-        <>
-          <RequiredFieldsDialog
-            open={showRequiredFieldsDialog}
-            onOpenChange={setShowRequiredFieldsDialog}
-            opportunity={opportunity}
-            requiredFields={targetStage.requiredFields || []}
-            onComplete={handleRequiredFieldsComplete}
-            stageId={targetStage.id}
-          />
-          
-          <OpportunityReasonDialog
-            open={showReasonDialog}
-            onOpenChange={setShowReasonDialog}
-            opportunity={opportunity}
-            stage={targetStage}
-            onComplete={handleReasonComplete}
-          />
-        </>
-      )}
+      {/* Dialogs for required fields and reasons would need to be imported and implemented here */}
     </>
   );
 };

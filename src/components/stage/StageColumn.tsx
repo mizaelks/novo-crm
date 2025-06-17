@@ -86,16 +86,11 @@ const StageColumn = ({
     }
   };
 
-  const handleOpportunityCreatedSuccess = () => {
-    console.log('Opportunity created in StageColumn');
+  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
     setIsCreateDialogOpen(false);
-    // Trigger a refresh by calling the parent callback without parameters
-    // The parent component should handle refetching the data
+    // Use the proper callback to update state instead of reloading
     if (onOpportunityCreated) {
-      // Create a dummy opportunity object to satisfy the type requirement
-      // The parent should handle the actual data refresh
-      const dummyOpportunity = { id: '', title: '', value: 0, client: '', createdAt: new Date(), stageId: stage.id, funnelId } as Opportunity;
-      onOpportunityCreated(dummyOpportunity);
+      onOpportunityCreated(newOpportunity);
     }
   };
   

@@ -1,74 +1,57 @@
-
-import { Toaster } from "@/components/ui/sonner";
+import React from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/contexts/AuthContext";
-import AppLayout from "@/components/layout/AppLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
+import WebhookManager from "./pages/webhook/WebhookManager";
+import ApiDocs from "./pages/api/ApiDocs";
+import ApiTokenManager from "./pages/ApiTokenManager";
+import Settings from "./pages/Settings";
 
-// Pages
-import Login from "@/pages/Login";
-import Dashboard from "@/pages/Dashboard";
-import FunnelList from "@/pages/FunnelList";
-import FunnelDetail from "@/pages/FunnelDetail";
-import OpportunityList from "@/pages/OpportunityList";
-import Insights from "@/pages/Insights";
-import Settings from "@/pages/Settings";
-import Templates from "@/pages/Templates";
-import UserProfile from "@/pages/UserProfile";
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const queryClient = new QueryClient();
-
-function App() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(() => {
-      setIsLoading(false);
-    });
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/funnels" element={<FunnelList />} />
-                        <Route path="/funnels/:id" element={<FunnelDetail />} />
-                        <Route path="/opportunities" element={<OpportunityList />} />
-                        <Route path="/insights" element={<Insights />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/templates" element={<Templates />} />
-                        <Route path="/users" element={<UserProfile />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                      </Routes>
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute />}>
+              <Route index element={<Index />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/webhooks" element={<WebhookManager />} />
+              <Route path="/api" element={<ApiDocs />} />
+              <Route path="/api/tokens" element={<ApiTokenManager />} />
+              <Route path="/*" element={<Index />} />
+            </Route>
+            <Route path="/api-docs" element={
+              <Navigate to="/api" replace />
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster />
+        <Sonner />
       </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

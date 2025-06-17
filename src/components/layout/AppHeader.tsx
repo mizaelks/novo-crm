@@ -1,109 +1,77 @@
 
-import { Bell, User, Settings, LogOut, BarChart3, Users, Briefcase, Zap, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
-import AlertsDropdown from "../alerts/AlertsDropdown";
-import { useUserRole } from "@/hooks/useUserRole";
+import { LogOut } from "lucide-react";
+import { toast } from "sonner";
+import AlertsDropdown from "@/components/alerts/AlertsDropdown";
+import SettingsDropdown from "@/components/settings/SettingsDropdown";
+import UserProfileInfo from "./UserProfileInfo";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionGate } from "@/components/ui/permission-gate";
 
-export const AppHeader = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+const AppHeader = () => {
   const location = useLocation();
-  const { isAdmin, isManager } = useUserRole();
-
+  const { user, signOut } = useAuth();
+  const { canViewReports, canSystemSettings } = usePermissions();
+  
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
+    toast.success("Sessão encerrada com sucesso");
   };
 
-  const navItems = [
-    { path: "/", label: "Dashboard", icon: BarChart3 },
-    { path: "/funnels", label: "Funis", icon: Zap },
-    { path: "/opportunities", label: "Oportunidades", icon: Briefcase },
-    { path: "/insights", label: "Insights", icon: BarChart3 },
+  const links = [
+    { href: "/", label: "Dashboard" },
+    { href: "/funnels", label: "Funis" },
+    { href: "/opportunities", label: "Oportunidades" },
   ];
 
-  // Add admin-only items
-  if (isAdmin) {
-    navItems.push(
-      { path: "/settings", label: "Configurações", icon: Settings },
-      { path: "/templates", label: "Templates", icon: Database }
-    );
-  }
-
-  if (isAdmin || isManager) {
-    navItems.push({ path: "/users", label: "Usuários", icon: Users });
+  // Add insights link only for users with permission
+  if (canViewReports) {
+    links.push({ href: "/insights", label: "Insights" });
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <h1 
-            className="text-xl font-bold text-primary cursor-pointer" 
-            onClick={() => navigate("/")}
-          >
-            FunnelFlow
-          </h1>
-          
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              return (
-                <Button
-                  key={item.path}
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => navigate(item.path)}
-                  className={`gap-2 ${isActive ? 'bg-primary/10 text-primary' : ''}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
-              );
-            })}
+    <header className="border-b">
+      <div className="flex h-16 items-center px-4 sm:px-6">
+        <div className="flex items-center space-x-4">
+          <Link to="/" className="font-semibold text-lg text-primary">
+            SalesFunnel
+          </Link>
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={
+                  location.pathname === link.href
+                    ? "text-sm font-medium transition-colors text-primary"
+                    : "text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                }
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <AlertsDropdown />
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <User className="h-4 w-4" />
-                {user?.email?.split("@")[0]}
+        <div className="ml-auto flex items-center space-x-4">
+          {user && (
+            <div className="flex items-center space-x-4">
+              <AlertsDropdown />
+              <PermissionGate permission="system_settings">
+                <SettingsDropdown />
+              </PermissionGate>
+              <UserProfileInfo />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
-              </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem onClick={() => navigate("/templates")}>
-                  <Database className="mr-2 h-4 w-4" />
-                  Templates
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          )}
         </div>
       </div>
     </header>
