@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Funnel, Stage, Opportunity } from "@/types";
 import { funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
 import { toast } from "sonner";
@@ -8,6 +8,43 @@ export const useKanbanState = (funnelId: string) => {
   const [funnel, setFunnel] = useState<Funnel | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const refreshStageOpportunities = useCallback(async (stageId: string) => {
+    try {
+      const opportunities = await opportunityAPI.getByStageId(stageId, false);
+      setStages(prevStages => 
+        prevStages.map(stage => 
+          stage.id === stageId 
+            ? { ...stage, opportunities }
+            : stage
+        )
+      );
+    } catch (error) {
+      console.error("Error refreshing stage opportunities:", error);
+    }
+  }, []);
+
+  const refreshOpportunityInStage = useCallback(async (opportunityId: string, stageId: string) => {
+    try {
+      const updatedOpportunity = await opportunityAPI.getById(opportunityId);
+      if (updatedOpportunity) {
+        setStages(prevStages => 
+          prevStages.map(stage => 
+            stage.id === stageId 
+              ? {
+                  ...stage,
+                  opportunities: stage.opportunities.map(opp => 
+                    opp.id === opportunityId ? updatedOpportunity : opp
+                  )
+                }
+              : stage
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error refreshing opportunity:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,16 +112,22 @@ export const useKanbanState = (funnelId: string) => {
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
     console.log("Updating opportunity in kanban state:", updatedOpportunity);
     
-    const updatedStages = stages.map(stage => {
-      return {
+    // Força atualização imediata na interface
+    setStages(prevStages => 
+      prevStages.map(stage => ({
         ...stage,
         opportunities: stage.opportunities.map(opp => 
           opp.id === updatedOpportunity.id ? updatedOpportunity : opp
         )
-      };
-    });
-    
-    setStages(updatedStages);
+      }))
+    );
+
+    // Também refresh da base de dados para garantir sincronização
+    if (updatedOpportunity.stageId) {
+      setTimeout(() => {
+        refreshOpportunityInStage(updatedOpportunity.id, updatedOpportunity.stageId);
+      }, 100);
+    }
   };
 
   const handleOpportunityDeleted = (opportunityId: string) => {
@@ -131,6 +174,8 @@ export const useKanbanState = (funnelId: string) => {
     handleOpportunityUpdated,
     handleOpportunityDeleted,
     handleOpportunityArchived,
-    handleStageUpdated
+    handleStageUpdated,
+    refreshStageOpportunities,
+    refreshOpportunityInStage
   };
 };
