@@ -2,6 +2,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, RequiredField, RequiredTask } from "@/types";
 
+// Type for action_config to handle the Json type properly
+interface TaskActionConfig {
+  title?: string;
+  description?: string;
+  assignedTo?: string | null;
+  nextStageId?: string | null;
+  moveToNextStage?: boolean;
+}
+
 export const requiredElementsService = {
   // Adiciona tarefas obrigatórias a uma oportunidade
   addRequiredTasksToOpportunity: async (
@@ -22,9 +31,10 @@ export const requiredElementsService = {
         .eq('opportunity_id', opportunityId)
         .eq('action_type', 'task');
 
-      const existingTaskNames = existingTasks?.map(task => 
-        task.action_config?.title || ''
-      ) || [];
+      const existingTaskNames = (existingTasks || []).map(task => {
+        const actionConfig = task.action_config as TaskActionConfig;
+        return actionConfig?.title || '';
+      });
 
       // Filtrar tarefas que ainda não existem
       const tasksToCreate = requiredTasks.filter(task => 
