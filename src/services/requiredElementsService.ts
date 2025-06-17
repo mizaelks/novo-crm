@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, RequiredField, RequiredTask } from "@/types";
 
@@ -214,10 +215,11 @@ export const requiredElementsService = {
 
       // Adicionar campos obrigatórios
       if (requiredFields.length > 0) {
-        updatedOpportunity = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
-        if (!updatedOpportunity) {
+        const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
+        if (!fieldResult) {
           return null;
         }
+        updatedOpportunity = fieldResult;
       }
 
       // Adicionar tarefas obrigatórias
@@ -235,3 +237,4 @@ export const requiredElementsService = {
     }
   }
 };
+
