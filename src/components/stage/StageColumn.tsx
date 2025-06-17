@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Stage, Opportunity } from "@/types";
@@ -86,9 +85,11 @@ const StageColumn = ({
     }
   };
 
-  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
+  const handleOpportunityCreatedSuccess = () => {
     setIsCreateDialogOpen(false);
-    onOpportunityCreated(newOpportunity);
+    // Since CreateOpportunityDialog doesn't provide the created opportunity,
+    // we'll need to trigger a refresh through the parent component
+    // The parent will handle re-fetching the opportunities for this stage
   };
   
   return (
