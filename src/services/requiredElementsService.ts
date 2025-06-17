@@ -209,12 +209,19 @@ export const requiredElementsService = {
     try {
       console.log('Processing stage requirements for opportunity:', opportunity.id, 'stage:', destinationStageId);
       
-      const { requiredFields, requiredTasks } = await this.getStageRequirements(destinationStageId);
+      const stageRequirements = await this.getStageRequirements(destinationStageId);
+      
+      if (!stageRequirements) {
+        console.error('Failed to get stage requirements');
+        return opportunity;
+      }
+
+      const { requiredFields = [], requiredTasks = [] } = stageRequirements;
       
       let updatedOpportunity = opportunity;
 
       // Adicionar campos obrigatórios
-      if (requiredFields.length > 0) {
+      if (requiredFields && requiredFields.length > 0) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (!fieldResult) {
           return null;
@@ -223,7 +230,7 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks.length > 0) {
+      if (requiredTasks && requiredTasks.length > 0) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(opportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
