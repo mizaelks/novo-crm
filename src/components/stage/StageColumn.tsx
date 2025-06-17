@@ -86,9 +86,9 @@ const StageColumn = ({
     }
   };
 
-  const handleOpportunityCreatedSuccess = () => {
+  const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
     setIsCreateDialogOpen(false);
-    // The CreateOpportunityDialog will handle calling onOpportunityCreated directly
+    onOpportunityCreated(newOpportunity);
   };
   
   return (
@@ -127,7 +127,7 @@ const StageColumn = ({
               onOpenChange={setIsCreateDialogOpen}
               stageId={stage.id}
               funnelId={funnelId}
-              onOpportunityCreated={onOpportunityCreated}
+              onOpportunityCreated={handleOpportunityCreatedSuccess}
             />
             
             {selectedOpportunityId && (

@@ -23,6 +23,26 @@ const formSchema = z.object({
 
 export type StageFormData = z.infer<typeof formSchema>;
 
+// Helper function to map database field types to TypeScript types
+const mapFieldType = (dbType: string): 'text' | 'number' | 'date' | 'checkbox' | 'select' => {
+  switch (dbType) {
+    case 'email':
+    case 'phone':
+    case 'textarea':
+      return 'text';
+    case 'number':
+      return 'number';
+    case 'date':
+      return 'date';
+    case 'checkbox':
+      return 'checkbox';
+    case 'select':
+      return 'select';
+    default:
+      return 'text';
+  }
+};
+
 export const useEditStageForm = (stageId: string, open: boolean) => {
   const [stage, setStage] = useState<Stage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +103,7 @@ export const useEditStageForm = (stageId: string, open: boolean) => {
         setRequiredFields(fieldsData.map(field => ({
           id: field.id,
           name: field.name,
-          type: field.type as 'text' | 'number' | 'email' | 'phone' | 'select' | 'textarea',
+          type: mapFieldType(field.type),
           options: field.options || [],
           isRequired: field.is_required,
           stageId: field.stage_id
