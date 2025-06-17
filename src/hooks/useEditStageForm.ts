@@ -85,7 +85,8 @@ export const useEditStageForm = (stageId: string, open: boolean) => {
           name: field.name,
           type: field.type as 'text' | 'number' | 'email' | 'phone' | 'select' | 'textarea',
           options: field.options || [],
-          isRequired: field.is_required
+          isRequired: field.is_required,
+          stageId: field.stage_id
         })));
       }
       
@@ -102,7 +103,8 @@ export const useEditStageForm = (stageId: string, open: boolean) => {
           description: task.description || '',
           defaultDuration: task.default_duration || 1,
           isRequired: task.is_required,
-          templateId: task.template_id
+          templateId: task.template_id,
+          stageId: task.stage_id
         })));
       }
       
