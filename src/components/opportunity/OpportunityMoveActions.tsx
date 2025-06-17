@@ -9,6 +9,8 @@ import { funnelAPI, stageAPI, opportunityAPI } from "@/services/api";
 import { useOpportunityMove } from "@/hooks/useOpportunityMove";
 import { useOpportunityFunnelMove } from "@/hooks/useOpportunityFunnelMove";
 import { toast } from "sonner";
+import RequiredFieldsDialog from "./RequiredFieldsDialog";
+import { OpportunityReasonDialog } from "./OpportunityReasonDialog";
 
 interface OpportunityMoveActionsProps {
   opportunity: Opportunity;
@@ -166,37 +168,61 @@ const OpportunityMoveActions = ({
   };
 
   const performMove = async () => {
-    const updatedOpportunity = await moveOpportunity(
-      opportunity,
-      selectedStageId,
-      onOpportunityMoved
-    );
+    // Immediate visual feedback
+    const updatedOpportunity = { ...opportunity, stageId: selectedStageId };
+    onOpportunityMoved(updatedOpportunity);
+    
+    try {
+      const result = await moveOpportunity(
+        opportunity,
+        selectedStageId,
+        onOpportunityMoved
+      );
 
-    if (updatedOpportunity) {
-      setSelectedStageId(updatedOpportunity.stageId);
-      toast.success("Oportunidade movida com sucesso!");
+      if (result) {
+        setSelectedStageId(result.stageId);
+        toast.success("Oportunidade movida com sucesso!");
+      }
+    } catch (error) {
+      // Revert visual change on error
+      onOpportunityMoved(opportunity);
+      toast.error("Erro ao mover oportunidade");
     }
   };
 
   const performFunnelMove = async () => {
-    const updatedOpportunity = await moveBetweenFunnels(
-      opportunity,
-      selectedFunnelId,
-      selectedStageId,
-      onOpportunityMoved
-    );
+    // Immediate visual feedback
+    const updatedOpportunity = { 
+      ...opportunity, 
+      funnelId: selectedFunnelId, 
+      stageId: selectedStageId 
+    };
+    onOpportunityMoved(updatedOpportunity);
 
-    if (updatedOpportunity) {
-      setSelectedFunnelId(updatedOpportunity.funnelId);
-      setSelectedStageId(updatedOpportunity.stageId);
-      toast.success("Oportunidade movida com sucesso!");
+    try {
+      const result = await moveBetweenFunnels(
+        opportunity,
+        selectedFunnelId,
+        selectedStageId,
+        onOpportunityMoved
+      );
+
+      if (result) {
+        setSelectedFunnelId(result.funnelId);
+        setSelectedStageId(result.stageId);
+        toast.success("Oportunidade movida com sucesso!");
+      }
+    } catch (error) {
+      // Revert visual change on error
+      onOpportunityMoved(opportunity);
+      toast.error("Erro ao mover oportunidade");
     }
   };
 
-  const handleRequiredFieldsComplete = async (updatedOpportunity?: Opportunity) => {
+  const handleRequiredFieldsComplete = async (success: boolean, updatedOpportunity?: Opportunity) => {
     setShowRequiredFieldsDialog(false);
     
-    if (updatedOpportunity && targetStage) {
+    if (success && updatedOpportunity && targetStage) {
       // Check if still needs reasons after filling required fields
       const needsReasons = (targetStage.isWinStage && targetStage.winReasonRequired) || 
                           (targetStage.isLossStage && targetStage.lossReasonRequired);
@@ -208,21 +234,25 @@ const OpportunityMoveActions = ({
     }
     
     // Proceed with move
-    if (selectedFunnelId !== opportunity.funnelId) {
-      await performFunnelMove();
-    } else {
-      await performMove();
+    if (success) {
+      if (selectedFunnelId !== opportunity.funnelId) {
+        await performFunnelMove();
+      } else {
+        await performMove();
+      }
     }
   };
 
-  const handleReasonComplete = async () => {
+  const handleReasonComplete = async (success: boolean) => {
     setShowReasonDialog(false);
     
-    // Proceed with move
-    if (selectedFunnelId !== opportunity.funnelId) {
-      await performFunnelMove();
-    } else {
-      await performMove();
+    if (success) {
+      // Proceed with move
+      if (selectedFunnelId !== opportunity.funnelId) {
+        await performFunnelMove();
+      } else {
+        await performMove();
+      }
     }
   };
 
@@ -311,7 +341,26 @@ const OpportunityMoveActions = ({
         </CardContent>
       </Card>
 
-      {/* Dialogs for required fields and reasons would need to be imported and implemented here */}
+      {targetStage && (
+        <>
+          <RequiredFieldsDialog
+            open={showRequiredFieldsDialog}
+            onOpenChange={setShowRequiredFieldsDialog}
+            opportunity={opportunity}
+            requiredFields={targetStage.requiredFields || []}
+            onComplete={handleRequiredFieldsComplete}
+            stageId={targetStage.id}
+          />
+          
+          <OpportunityReasonDialog
+            open={showReasonDialog}
+            onOpenChange={setShowReasonDialog}
+            opportunity={opportunity}
+            stage={targetStage}
+            onComplete={handleReasonComplete}
+          />
+        </>
+      )}
     </>
   );
 };

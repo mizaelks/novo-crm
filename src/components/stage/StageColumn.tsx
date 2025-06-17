@@ -87,6 +87,7 @@ const StageColumn = ({
   };
 
   const handleOpportunityCreatedSuccess = (newOpportunity: Opportunity) => {
+    console.log('Opportunity created in StageColumn:', newOpportunity);
     setIsCreateDialogOpen(false);
     // Use the proper callback to update state instead of reloading
     if (onOpportunityCreated) {
