@@ -216,9 +216,15 @@ export const requiredElementsService = {
       
       const stageRequirements = await this.getStageRequirements(destinationStageId);
       
+      // Ensure stageRequirements is valid before accessing its properties
+      if (!stageRequirements) {
+        console.error('Failed to get stage requirements');
+        return opportunity;
+      }
+      
       // Extract arrays with proper null safety
-      const requiredFields = stageRequirements?.requiredFields || [];
-      const requiredTasks = stageRequirements?.requiredTasks || [];
+      const requiredFields = stageRequirements.requiredFields || [];
+      const requiredTasks = stageRequirements.requiredTasks || [];
       
       let updatedOpportunity: Opportunity | null = opportunity;
 
@@ -232,7 +238,7 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks.length > 0 && updatedOpportunity?.id) {
+      if (requiredTasks.length > 0 && updatedOpportunity && updatedOpportunity.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
