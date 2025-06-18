@@ -4,7 +4,8 @@ import { Opportunity } from "@/types";
 import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
 import { OpportunityHistoryTab } from "./OpportunityHistoryTab";
-import { Calendar, Settings, Clock } from "lucide-react";
+import OpportunityOverviewTab from "./OpportunityOverviewTab";
+import { Calendar, Settings, Clock, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { stageAPI } from "@/services/api";
 
@@ -43,8 +44,12 @@ const OpportunityDetailsTabs = ({
   };
 
   return (
-    <Tabs defaultValue="actions" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="overview" className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Resumo
+        </TabsTrigger>
         <TabsTrigger value="actions" className="flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Ações
@@ -58,6 +63,13 @@ const OpportunityDetailsTabs = ({
           Histórico
         </TabsTrigger>
       </TabsList>
+      
+      <TabsContent value="overview" className="mt-6">
+        <OpportunityOverviewTab
+          opportunity={opportunity}
+          onOpportunityUpdated={onOpportunityUpdated}
+        />
+      </TabsContent>
       
       <TabsContent value="actions" className="mt-6">
         <ScheduledActionList 

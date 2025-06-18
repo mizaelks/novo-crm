@@ -20,7 +20,8 @@ import {
   Mail,
   AlertTriangle,
   Calendar,
-  FileText
+  FileText,
+  Settings
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,6 +54,13 @@ export const SimpleOpportunityCard = ({
   const canEdit = isOwner || canEditAllOpportunities;
   const canDelete = isOwner || canDeleteOpportunities;
   const hasAlert = stage && shouldShowAlert(opportunity, stage);
+
+  // Check for missing required fields
+  const requiredFields = stage?.requiredFields || [];
+  const missingRequiredFields = requiredFields.filter(field => {
+    const fieldValue = opportunity.customFields?.[field.name];
+    return !fieldValue || fieldValue === '' || (field.type === 'checkbox' && fieldValue !== true);
+  });
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
@@ -161,7 +169,7 @@ export const SimpleOpportunityCard = ({
           </div>
         )}
 
-        {/* Alertas e tarefas */}
+        {/* Alertas, tarefas e campos obrigatórios */}
         <div className="space-y-1">
           {hasAlert && (
             <div className="flex items-center gap-1">
@@ -177,6 +185,15 @@ export const SimpleOpportunityCard = ({
               <Calendar className="h-3 w-3 text-orange-500" />
               <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-800">
                 Tarefa pendente
+              </Badge>
+            </div>
+          )}
+
+          {missingRequiredFields.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Settings className="h-3 w-3 text-blue-500" />
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800">
+                {missingRequiredFields.length} campo(s) obrigatório(s)
               </Badge>
             </div>
           )}

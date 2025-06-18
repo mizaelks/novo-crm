@@ -6,9 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, Search } from "lucide-react";
 import { opportunityAPI, funnelAPI, stageAPI } from "@/services/api";
 import { Opportunity, Funnel, Stage } from "@/types";
+import { useUsers } from "@/hooks/useUsers";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface OpportunityImportExportProps {
   opportunities: Opportunity[];
@@ -29,11 +36,22 @@ export const OpportunityImportExport = ({
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  const [userSelectorOpen, setUserSelectorOpen] = useState(false);
+
+  const { users } = useUsers();
+  const { hasAnyPermission } = usePermissions();
+  const { user } = useAuth();
+
+  // Check if user can assign to others (admin or manager)
+  const canAssignToOthers = hasAnyPermission(['edit_all_opportunities', 'manage_users']);
 
   // Get stages for selected funnel
   const availableStages = selectedFunnel 
     ? stages.filter(stage => stage.funnelId === selectedFunnel)
     : [];
+
+  // Get available users for assignment
+  const availableUsers = canAssignToOthers ? users : users.filter(u => u.id === user?.id);
 
   const handleExportCSV = () => {
     const csvHeaders = [
@@ -95,6 +113,9 @@ export const OpportunityImportExport = ({
       return;
     }
 
+    // If user can't assign to others, always assign to themselves
+    const assignToUserId = canAssignToOthers ? selectedUser || user?.id : user?.id;
+
     setImporting(true);
     
     try {
@@ -139,9 +160,7 @@ export const OpportunityImportExport = ({
         if (oppData.title && oppData.client) {
           oppData.stageId = selectedStage;
           oppData.funnelId = selectedFunnel;
-          if (selectedUser) {
-            oppData.userId = selectedUser;
-          }
+          oppData.userId = assignToUserId;
           
           importedOpportunities.push(oppData);
         }
@@ -173,6 +192,8 @@ export const OpportunityImportExport = ({
       setImporting(false);
     }
   };
+
+  const selectedUserData = users.find(u => u.id === selectedUser);
 
   return (
     <div className="flex gap-2">
@@ -233,14 +254,61 @@ export const OpportunityImportExport = ({
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="user">Atribuir a Usuário (opcional)</Label>
-              <Input 
-                placeholder="ID do usuário (opcional)"
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-              />
-            </div>
+            {canAssignToOthers && (
+              <div>
+                <Label htmlFor="user">Atribuir a Usuário</Label>
+                <Popover open={userSelectorOpen} onOpenChange={setUserSelectorOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={userSelectorOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedUser
+                        ? `${selectedUserData?.first_name || ''} ${selectedUserData?.last_name || ''} (${selectedUserData?.email})`
+                        : "Selecione um usuário (opcional)"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar usuário..." />
+                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {availableUsers.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={`${user.first_name} ${user.last_name} ${user.email}`}
+                            onSelect={() => {
+                              setSelectedUser(user.id === selectedUser ? "" : user.id);
+                              setUserSelectorOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedUser === user.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {user.first_name} {user.last_name} ({user.email})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Se não selecionado, será atribuído a você
+                </p>
+              </div>
+            )}
+
+            {!canAssignToOthers && (
+              <div className="text-sm text-muted-foreground p-3 bg-muted rounded-lg">
+                As oportunidades importadas serão automaticamente atribuídas a você.
+              </div>
+            )}
 
             <div>
               <Label htmlFor="csv-file">Arquivo CSV *</Label>
