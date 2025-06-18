@@ -42,10 +42,6 @@ const OpportunityDetailsTabs = ({
       <TabsContent value="actions" className="mt-6">
         <ScheduledActionList 
           opportunityId={opportunity.id}
-          onActionUpdated={() => {
-            // Trigger refresh when actions are updated
-            console.log('Action updated, triggering opportunity refresh');
-          }}
         />
       </TabsContent>
       
