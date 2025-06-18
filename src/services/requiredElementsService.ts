@@ -228,11 +228,7 @@ export const requiredElementsService = {
       let updatedOpportunity: Opportunity | null = opportunity;
 
       // Adicionar campos obrigatórios
-      if (requiredFields.length > 0) {
-        if (!updatedOpportunity) {
-          console.error('Updated opportunity is null before adding required fields');
-          return null;
-        }
+      if (requiredFields.length > 0 && updatedOpportunity) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (!fieldResult) {
           console.error('Failed to add required fields');
@@ -242,11 +238,7 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks.length > 0) {
-        if (!updatedOpportunity || !updatedOpportunity.id) {
-          console.error('Updated opportunity is null or missing ID before adding required tasks');
-          return null;
-        }
+      if (requiredTasks.length > 0 && updatedOpportunity?.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');

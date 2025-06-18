@@ -8,13 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Clock, User } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OpportunityHistoryTabProps {
   opportunityId: string;
 }
 
+interface HistoryEntryWithStageNames extends StageHistoryEntry {
+  fromStageName?: string;
+  toStageName?: string;
+}
+
 export const OpportunityHistoryTab = ({ opportunityId }: OpportunityHistoryTabProps) => {
-  const [history, setHistory] = useState<StageHistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntryWithStageNames[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +28,31 @@ export const OpportunityHistoryTab = ({ opportunityId }: OpportunityHistoryTabPr
       try {
         setLoading(true);
         const historyData = await stageHistoryAPI.getOpportunityHistory(opportunityId);
-        setHistory(historyData);
+        
+        // Buscar nomes das etapas
+        const stageIds = new Set<string>();
+        historyData.forEach(entry => {
+          if (entry.fromStageId) stageIds.add(entry.fromStageId);
+          if (entry.toStageId) stageIds.add(entry.toStageId);
+        });
+
+        const { data: stages } = await supabase
+          .from('stages')
+          .select('id, name')
+          .in('id', Array.from(stageIds));
+
+        const stageNamesMap = new Map(
+          (stages || []).map(stage => [stage.id, stage.name])
+        );
+
+        // Adicionar nomes das etapas ao histórico
+        const historyWithNames: HistoryEntryWithStageNames[] = historyData.map(entry => ({
+          ...entry,
+          fromStageName: entry.fromStageId ? stageNamesMap.get(entry.fromStageId) : undefined,
+          toStageName: stageNamesMap.get(entry.toStageId) || 'Etapa desconhecida'
+        }));
+
+        setHistory(historyWithNames);
       } catch (error) {
         console.error("Error loading opportunity history:", error);
       } finally {
@@ -70,15 +100,23 @@ export const OpportunityHistoryTab = ({ opportunityId }: OpportunityHistoryTabPr
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   {entry.fromStageId ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Etapa anterior</span>
+                      <span className="text-muted-foreground">
+                        {entry.fromStageName || 'Etapa anterior'}
+                      </span>
                       <ArrowRight className="h-4 w-4 text-primary" />
-                      <span className="text-foreground">Nova etapa</span>
+                      <span className="text-foreground">
+                        {entry.toStageName}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <Badge variant="success" className="text-xs">
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                         Entrada no funil
                       </Badge>
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span className="text-foreground">
+                        {entry.toStageName}
+                      </span>
                     </div>
                   )}
                 </CardTitle>

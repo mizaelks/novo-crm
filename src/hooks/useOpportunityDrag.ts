@@ -102,16 +102,30 @@ export const useOpportunityDrag = (
       // Merge any updates (like win/loss reasons) with the opportunity
       const opportunityToMove = updatedOpportunity ? { ...opportunity, ...updatedOpportunity } : opportunity;
       
-      // Processar requisitos automáticos da etapa (tarefas e campos obrigatórios)
+      console.log('Processing stage requirements for opportunity:', opportunityToMove.id, 'to stage:', destinationStageId);
+      
+      // Primeiro mover a oportunidade para a nova etapa na base de dados
+      if (updatedOpportunity) {
+        console.log('Updating opportunity with additional data:', updatedOpportunity);
+        await opportunityAPI.update(opportunity.id, {
+          stageId: destinationStageId,
+          ...updatedOpportunity
+        });
+      } else {
+        console.log('Moving opportunity via API');
+        await opportunityAPI.move(opportunity.id, destinationStageId);
+      }
+
+      // Depois processar requisitos automáticos da etapa (tarefas e campos obrigatórios)
       console.log('Processing stage requirements...');
       const processedOpportunity = await requiredElementsService.processStageRequirements(
-        opportunityToMove,
+        { ...opportunityToMove, stageId: destinationStageId },
         destinationStageId
       );
 
-      const finalOpportunity = processedOpportunity || opportunityToMove;
+      const finalOpportunity = processedOpportunity || { ...opportunityToMove, stageId: destinationStageId };
       
-      // Optimistically update UI first
+      // Optimistically update UI
       const updatedStages = stages.map(stage => {
         // Remove from source stage
         if (stage.id === sourceStageId) {
@@ -136,20 +150,8 @@ export const useOpportunityDrag = (
         return stage;
       });
       
-      console.log('Updating UI optimistically');
+      console.log('Updating UI with processed opportunity');
       setStages(updatedStages);
-      
-      // Then update the database with any reason updates
-      if (updatedOpportunity) {
-        console.log('Updating opportunity with additional data:', updatedOpportunity);
-        await opportunityAPI.update(opportunity.id, {
-          stageId: destinationStageId,
-          ...updatedOpportunity
-        });
-      } else {
-        console.log('Moving opportunity via API');
-        await opportunityAPI.move(opportunity.id, destinationStageId);
-      }
       
       console.log('Move completed successfully');
       toast.dismiss('moving-opportunity');
