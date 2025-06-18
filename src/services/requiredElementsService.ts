@@ -228,7 +228,7 @@ export const requiredElementsService = {
       let updatedOpportunity: Opportunity | null = opportunity;
 
       // Adicionar campos obrigatórios
-      if (requiredFields.length > 0 && updatedOpportunity) {
+      if (requiredFields && requiredFields.length > 0 && updatedOpportunity) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (!fieldResult) {
           console.error('Failed to add required fields');
@@ -238,14 +238,14 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks.length > 0 && updatedOpportunity?.id) {
+      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity?.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
         }
       }
 
-      return updatedOpportunity;
+      return updatedOpportunity || null;
     } catch (error) {
       console.error('Error processing stage requirements:', error);
       return null;
