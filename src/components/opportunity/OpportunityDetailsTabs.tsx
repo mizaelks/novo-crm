@@ -1,7 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Opportunity } from "@/types";
-import { ScheduledActionList } from "../scheduledAction/ScheduledActionList";
+import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
 import { OpportunityHistoryTab } from "./OpportunityHistoryTab";
 import { Calendar, Settings, Clock } from "lucide-react";

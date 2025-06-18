@@ -215,8 +215,15 @@ export const requiredElementsService = {
       }
       
       const stageRequirements = await this.getStageRequirements(destinationStageId);
-      const requiredFields = stageRequirements.requiredFields;
-      const requiredTasks = stageRequirements.requiredTasks;
+      
+      // Add null checks for stageRequirements properties
+      if (!stageRequirements) {
+        console.log('No stage requirements found');
+        return opportunity;
+      }
+      
+      const requiredFields = stageRequirements.requiredFields || [];
+      const requiredTasks = stageRequirements.requiredTasks || [];
       
       let updatedOpportunity: Opportunity | null = opportunity;
 
