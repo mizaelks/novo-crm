@@ -215,15 +215,8 @@ export const requiredElementsService = {
       }
       
       const stageRequirements = await this.getStageRequirements(destinationStageId);
-      
-      // Verificação explícita para garantir type safety
-      if (!stageRequirements) {
-        console.error('Failed to get stage requirements');
-        return opportunity;
-      }
-      
-      const requiredFields = stageRequirements.requiredFields || [];
-      const requiredTasks = stageRequirements.requiredTasks || [];
+      const requiredFields = stageRequirements.requiredFields;
+      const requiredTasks = stageRequirements.requiredTasks;
       
       let updatedOpportunity: Opportunity | null = opportunity;
 

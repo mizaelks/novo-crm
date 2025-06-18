@@ -4,11 +4,12 @@ import { Opportunity } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { opportunityAPI, stageAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import EditOpportunityDialog from "./EditOpportunityDialog";
 import OpportunityDetailsTabs from "./OpportunityDetailsTabs";
+import { useOpportunityRefresh } from "@/hooks/useOpportunityRefresh";
 
 interface OpportunityDetailsDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ const OpportunityDetailsDialog = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState<any>(null);
   const { ConfirmDialog, showConfirmation } = useConfirmDialog();
+  const { refreshOpportunity, refreshing } = useOpportunityRefresh();
 
   useEffect(() => {
     const loadOpportunityDetails = async () => {
@@ -58,6 +60,17 @@ const OpportunityDetailsDialog = ({
     loadOpportunityDetails();
   }, [open, opportunityId]);
 
+  const handleRefresh = async () => {
+    if (!opportunityId) return;
+    
+    const refreshedOpportunity = await refreshOpportunity(opportunityId);
+    if (refreshedOpportunity) {
+      setOpportunity(refreshedOpportunity);
+      onOpportunityUpdated(refreshedOpportunity);
+      toast.success("Oportunidade atualizada");
+    }
+  };
+
   const handleDelete = async () => {
     if (!opportunity) return;
     
@@ -84,8 +97,14 @@ const OpportunityDetailsDialog = ({
   };
 
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
+    console.log("Opportunity updated in details dialog:", updatedOpportunity);
     setOpportunity(updatedOpportunity);
     onOpportunityUpdated(updatedOpportunity);
+    
+    // Trigger an immediate refresh to ensure data consistency
+    setTimeout(() => {
+      handleRefresh();
+    }, 500);
   };
 
   return (
@@ -98,6 +117,14 @@ const OpportunityDetailsDialog = ({
                 {loading ? "Carregando..." : opportunity?.title}
               </DialogTitle>
               <div className="flex gap-2 ml-4">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
                 <Button 
                   variant="outline" 
                   size="icon"
