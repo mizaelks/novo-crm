@@ -2,101 +2,49 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { Download, Upload, FileSpreadsheet, Search } from "lucide-react";
-import { opportunityAPI, funnelAPI, stageAPI } from "@/services/api";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, Download, User } from "lucide-react";
 import { Opportunity, Funnel, Stage } from "@/types";
-import { useUsers } from "@/hooks/useUsers";
-import { usePermissions } from "@/hooks/usePermissions";
+import { opportunityAPI } from "@/services/api";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useUsers } from "@/hooks/useUsers";
 
 interface OpportunityImportExportProps {
   opportunities: Opportunity[];
   funnels: Funnel[];
   stages: Stage[];
-  onImportComplete: () => void;
+  onImportComplete?: () => void;
 }
 
-export const OpportunityImportExport = ({ 
-  opportunities, 
-  funnels, 
-  stages, 
-  onImportComplete 
+export const OpportunityImportExport = ({
+  opportunities,
+  funnels,
+  stages,
+  onImportComplete
 }: OpportunityImportExportProps) => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
   const [selectedStage, setSelectedStage] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<string>("");
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [userSelectorOpen, setUserSelectorOpen] = useState(false);
-
-  const { users } = useUsers();
-  const { hasAnyPermission } = usePermissions();
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  
   const { user } = useAuth();
+  const { canManageAllUsers } = usePermissions();
+  const { users } = useUsers();
 
-  // Check if user can assign to others (admin or manager)
-  const canAssignToOthers = hasAnyPermission(['edit_all_opportunities', 'manage_users']);
-
-  // Get stages for selected funnel
   const availableStages = selectedFunnel 
     ? stages.filter(stage => stage.funnelId === selectedFunnel)
     : [];
-
-  // Get available users for assignment
-  const availableUsers = canAssignToOthers ? users : users.filter(u => u.id === user?.id);
-
-  const handleExportCSV = () => {
-    const csvHeaders = [
-      'titulo',
-      'cliente', 
-      'valor',
-      'telefone',
-      'email',
-      'empresa',
-      'funil',
-      'etapa',
-      'data_criacao'
-    ];
-
-    const csvRows = opportunities.map(opp => {
-      const funnel = funnels.find(f => f.id === opp.funnelId);
-      const stage = stages.find(s => s.id === opp.stageId);
-      
-      return [
-        `"${opp.title || ''}"`,
-        `"${opp.client || ''}"`,
-        opp.value || 0,
-        `"${opp.phone || ''}"`,
-        `"${opp.email || ''}"`,
-        `"${opp.company || ''}"`,
-        `"${funnel?.name || ''}"`,
-        `"${stage?.name || ''}"`,
-        new Date(opp.createdAt).toLocaleDateString('pt-BR')
-      ].join(',');
-    });
-
-    const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `oportunidades_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success("Arquivo CSV exportado com sucesso!");
-  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -107,122 +55,159 @@ export const OpportunityImportExport = ({
     }
   };
 
-  const handleImportCSV = async () => {
+  const parseCSV = (csvText: string): any[] => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    
+    return lines.slice(1)
+      .filter(line => line.trim())
+      .map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const obj: any = {};
+        headers.forEach((header, index) => {
+          obj[header] = values[index] || '';
+        });
+        return obj;
+      });
+  };
+
+  const handleImport = async () => {
     if (!csvFile || !selectedFunnel || !selectedStage) {
       toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
-    // If user can't assign to others, always assign to themselves
-    const assignToUserId = canAssignToOthers ? selectedUser || user?.id : user?.id;
-
-    setImporting(true);
+    // For non-admin users, auto-assign to themselves
+    const assignedUserId = canManageAllUsers && selectedUser ? selectedUser : user?.id;
     
+    if (!assignedUserId) {
+      toast.error("Usuário para atribuição não encontrado");
+      return;
+    }
+
+    setIsImporting(true);
     try {
-      const text = await csvFile.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+      const csvText = await csvFile.text();
+      const csvData = parseCSV(csvText);
       
-      const importedOpportunities = [];
-      
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = line.split(',').map(v => v.replace(/"/g, '').trim());
-        const oppData: any = {};
-        
-        headers.forEach((header, index) => {
-          if (values[index]) {
-            switch (header.toLowerCase()) {
-              case 'titulo':
-                oppData.title = values[index];
-                break;
-              case 'cliente':
-                oppData.client = values[index];
-                break;
-              case 'valor':
-                oppData.value = parseFloat(values[index]) || 0;
-                break;
-              case 'telefone':
-                oppData.phone = values[index];
-                break;
-              case 'email':
-                oppData.email = values[index];
-                break;
-              case 'empresa':
-                oppData.company = values[index];
-                break;
-            }
-          }
-        });
+      let importedCount = 0;
+      let errors: string[] = [];
 
-        if (oppData.title && oppData.client) {
-          oppData.stageId = selectedStage;
-          oppData.funnelId = selectedFunnel;
-          oppData.userId = assignToUserId;
-          
-          importedOpportunities.push(oppData);
-        }
-      }
-
-      // Create opportunities
-      let successCount = 0;
-      for (const oppData of importedOpportunities) {
+      for (const row of csvData) {
         try {
-          await opportunityAPI.create(oppData);
-          successCount++;
+          const opportunityData = {
+            title: row.title || row.titulo || 'Importado',
+            client: row.client || row.cliente || '',
+            company: row.company || row.empresa || '',
+            email: row.email || '',
+            phone: row.phone || row.telefone || '',
+            value: parseFloat(row.value || row.valor || '0') || 0,
+            funnelId: selectedFunnel,
+            stageId: selectedStage,
+            userId: assignedUserId
+          };
+
+          await opportunityAPI.create(opportunityData);
+          importedCount++;
         } catch (error) {
-          console.error('Error creating opportunity:', error);
+          console.error('Error importing row:', error);
+          errors.push(`Erro na linha: ${row.title || row.titulo || 'sem título'}`);
         }
       }
 
-      toast.success(`${successCount} oportunidades importadas com sucesso!`);
-      setImportDialogOpen(false);
-      setCsvFile(null);
-      setSelectedFunnel("");
-      setSelectedStage("");
-      setSelectedUser("");
-      onImportComplete();
-      
+      if (importedCount > 0) {
+        toast.success(`${importedCount} oportunidades importadas com sucesso!`);
+        onImportComplete?.();
+        setImportDialogOpen(false);
+        setCsvFile(null);
+        setSelectedFunnel("");
+        setSelectedStage("");
+        setSelectedUser("");
+      }
+
+      if (errors.length > 0) {
+        toast.error(`${errors.length} erros durante a importação`);
+      }
     } catch (error) {
-      console.error('Error importing CSV:', error);
+      console.error('Import error:', error);
       toast.error("Erro ao importar arquivo CSV");
     } finally {
-      setImporting(false);
+      setIsImporting(false);
     }
   };
 
-  const selectedUserData = users.find(u => u.id === selectedUser);
+  const handleExport = () => {
+    if (opportunities.length === 0) {
+      toast.error("Nenhuma oportunidade para exportar");
+      return;
+    }
+
+    const headers = ['title', 'client', 'company', 'email', 'phone', 'value', 'funnel', 'stage', 'created_at'];
+    const csvContent = [
+      headers.join(','),
+      ...opportunities.map(opp => [
+        opp.title,
+        opp.client,
+        opp.company || '',
+        opp.email || '',
+        opp.phone || '',
+        opp.value || 0,
+        funnels.find(f => f.id === opp.funnelId)?.name || '',
+        stages.find(s => s.id === opp.stageId)?.name || '',
+        new Date(opp.createdAt).toLocaleDateString('pt-BR')
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `oportunidades_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Arquivo CSV exportado com sucesso!");
+    setExportDialogOpen(false);
+  };
+
+  const selectedUserName = users?.find(u => u.id === selectedUser)?.name || '';
 
   return (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={handleExportCSV} className="gap-2">
-        <Download className="h-4 w-4" />
-        Exportar CSV
-      </Button>
-      
+      {/* Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="gap-2">
-            <Upload className="h-4 w-4" />
+          <Button variant="outline" size="sm">
+            <Upload className="h-4 w-4 mr-2" />
             Importar CSV
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" />
-              Importar Oportunidades via CSV
-            </DialogTitle>
+            <DialogTitle>Importar Oportunidades</DialogTitle>
           </DialogHeader>
-          
           <div className="space-y-4">
             <div>
-              <Label htmlFor="funnel">Funil de Destino *</Label>
+              <Label htmlFor="csv-file">Arquivo CSV</Label>
+              <Input
+                id="csv-file"
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Colunas esperadas: title, client, company, email, phone, value
+              </p>
+            </div>
+
+            <div>
+              <Label>Funil de Destino *</Label>
               <Select value={selectedFunnel} onValueChange={setSelectedFunnel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o funil" />
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecione um funil" />
                 </SelectTrigger>
                 <SelectContent>
                   {funnels.map(funnel => (
@@ -235,14 +220,14 @@ export const OpportunityImportExport = ({
             </div>
 
             <div>
-              <Label htmlFor="stage">Etapa de Destino *</Label>
+              <Label>Etapa de Destino *</Label>
               <Select 
                 value={selectedStage} 
                 onValueChange={setSelectedStage}
                 disabled={!selectedFunnel}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a etapa" />
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecione uma etapa" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableStages.map(stage => (
@@ -254,81 +239,99 @@ export const OpportunityImportExport = ({
               </Select>
             </div>
 
-            {canAssignToOthers && (
+            {canManageAllUsers && (
               <div>
-                <Label htmlFor="user">Atribuir a Usuário</Label>
-                <Popover open={userSelectorOpen} onOpenChange={setUserSelectorOpen}>
+                <Label>Atribuir para Usuário</Label>
+                <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       role="combobox"
-                      aria-expanded={userSelectorOpen}
-                      className="w-full justify-between"
+                      aria-expanded={userSearchOpen}
+                      className="w-full justify-between mt-1"
                     >
-                      {selectedUser
-                        ? `${selectedUserData?.first_name || ''} ${selectedUserData?.last_name || ''} (${selectedUserData?.email})`
-                        : "Selecione um usuário (opcional)"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      {selectedUserName || "Selecione um usuário..."}
+                      <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0">
                     <Command>
-                      <CommandInput placeholder="Buscar usuário..." />
-                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
-                      <CommandGroup>
-                        {availableUsers.map((user) => (
-                          <CommandItem
-                            key={user.id}
-                            value={`${user.first_name} ${user.last_name} ${user.email}`}
-                            onSelect={() => {
-                              setSelectedUser(user.id === selectedUser ? "" : user.id);
-                              setUserSelectorOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedUser === user.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {user.first_name} {user.last_name} ({user.email})
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
+                      <CommandInput placeholder="Buscar usuário..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {users && users.length > 0 ? users.map((user) => (
+                            <CommandItem
+                              key={user.id}
+                              value={user.name}
+                              onSelect={() => {
+                                setSelectedUser(user.id);
+                                setUserSearchOpen(false);
+                              }}
+                            >
+                              {user.name} ({user.email})
+                            </CommandItem>
+                          )) : null}
+                        </CommandGroup>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Se não selecionado, será atribuído a você
+                  Deixe vazio para atribuir automaticamente a você
                 </p>
               </div>
             )}
 
-            {!canAssignToOthers && (
-              <div className="text-sm text-muted-foreground p-3 bg-muted rounded-lg">
-                As oportunidades importadas serão automaticamente atribuídas a você.
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="csv-file">Arquivo CSV *</Label>
-              <Input
-                id="csv-file"
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Colunas esperadas: titulo, cliente, valor, telefone, email, empresa
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={handleImport}
+                disabled={!csvFile || !selectedFunnel || !selectedStage || isImporting}
+                className="flex-1"
+              >
+                {isImporting ? "Importando..." : "Importar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(false)}
+                className="flex-1"
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleImportCSV} disabled={importing}>
-                {importing ? "Importando..." : "Importar"}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exportar Oportunidades</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Exportar {opportunities.length} oportunidades para CSV?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              O arquivo incluirá: título, cliente, empresa, email, telefone, valor, funil, etapa e data de criação.
+            </p>
+            <div className="flex gap-2 pt-4">
+              <Button onClick={handleExport} className="flex-1">
+                Exportar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setExportDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancelar
               </Button>
             </div>
           </div>

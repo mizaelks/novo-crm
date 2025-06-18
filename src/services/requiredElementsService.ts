@@ -237,7 +237,7 @@ export const requiredElementsService = {
         }
       }
 
-      // Adicionar tarefas obrigatórias
+      // Adicionar tarefas obrigatórias - with null check
       if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity && updatedOpportunity.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
@@ -245,7 +245,8 @@ export const requiredElementsService = {
         }
       }
 
-      return updatedOpportunity;
+      // Ensure we return the updated opportunity - with null check
+      return updatedOpportunity || opportunity;
     } catch (error) {
       console.error('Error processing stage requirements:', error);
       return null;
