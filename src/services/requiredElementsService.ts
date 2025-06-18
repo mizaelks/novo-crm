@@ -222,8 +222,8 @@ export const requiredElementsService = {
         return opportunity;
       }
       
-      const requiredFields = stageRequirements.requiredFields || [];
-      const requiredTasks = stageRequirements.requiredTasks || [];
+      const requiredFields = stageRequirements?.requiredFields || [];
+      const requiredTasks = stageRequirements?.requiredTasks || [];
       
       let updatedOpportunity: Opportunity | null = opportunity;
 
@@ -234,7 +234,8 @@ export const requiredElementsService = {
           return null;
         }
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
-        if (fieldResult === null) {
+        if (!fieldResult) {
+          console.error('Failed to add required fields');
           return null;
         }
         updatedOpportunity = fieldResult;
