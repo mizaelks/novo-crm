@@ -238,7 +238,7 @@ export const requiredElementsService = {
       }
 
       // Adicionar tarefas obrigatórias - with null check
-      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity && updatedOpportunity.id) {
+      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity?.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');

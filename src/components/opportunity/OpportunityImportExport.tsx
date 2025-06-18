@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Upload, Download, User } from "lucide-react";
 import { Opportunity, Funnel, Stage } from "@/types";
 import { opportunityAPI } from "@/services/api";
@@ -39,8 +38,11 @@ export const OpportunityImportExport = ({
   const [isImporting, setIsImporting] = useState(false);
   
   const { user } = useAuth();
-  const { canManageAllUsers } = usePermissions();
+  const { canManageUsers, isAdmin, isManager } = usePermissions();
   const { users } = useUsers();
+
+  // Admin and manager can assign to other users
+  const canAssignToOthers = isAdmin || isManager || canManageUsers;
 
   const availableStages = selectedFunnel 
     ? stages.filter(stage => stage.funnelId === selectedFunnel)
@@ -77,8 +79,8 @@ export const OpportunityImportExport = ({
       return;
     }
 
-    // For non-admin users, auto-assign to themselves
-    const assignedUserId = canManageAllUsers && selectedUser ? selectedUser : user?.id;
+    // For non-admin/manager users, auto-assign to themselves
+    const assignedUserId = canAssignToOthers && selectedUser ? selectedUser : user?.id;
     
     if (!assignedUserId) {
       toast.error("Usuário para atribuição não encontrado");
@@ -172,7 +174,16 @@ export const OpportunityImportExport = ({
     setExportDialogOpen(false);
   };
 
-  const selectedUserName = users?.find(u => u.id === selectedUser)?.name || '';
+  // Create display name from first_name and last_name
+  const getUserDisplayName = (user: any) => {
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
+    return `${firstName} ${lastName}`.trim() || user.email || 'Usuário sem nome';
+  };
+
+  const selectedUserName = users?.find(u => u.id === selectedUser) 
+    ? getUserDisplayName(users.find(u => u.id === selectedUser)) 
+    : '';
 
   return (
     <div className="flex gap-2">
@@ -239,7 +250,7 @@ export const OpportunityImportExport = ({
               </Select>
             </div>
 
-            {canManageAllUsers && (
+            {canAssignToOthers && (
               <div>
                 <Label>Atribuir para Usuário</Label>
                 <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
@@ -263,13 +274,13 @@ export const OpportunityImportExport = ({
                           {users && users.length > 0 ? users.map((user) => (
                             <CommandItem
                               key={user.id}
-                              value={user.name}
+                              value={getUserDisplayName(user)}
                               onSelect={() => {
                                 setSelectedUser(user.id);
                                 setUserSearchOpen(false);
                               }}
                             >
-                              {user.name} ({user.email})
+                              {getUserDisplayName(user)} ({user.email})
                             </CommandItem>
                           )) : null}
                         </CommandGroup>
