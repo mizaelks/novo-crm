@@ -104,21 +104,24 @@ export const useKanbanState = (funnelId: string) => {
   };
 
   const handleOpportunityCreated = (newOpportunity: Opportunity) => {
+    console.log("Opportunity created - immediate UI update:", newOpportunity);
+    
     // Only add if not archived
     if (!newOpportunity.customFields?.archived) {
-      const updatedStages = stages.map(stage => {
-        if (stage.id === newOpportunity.stageId) {
-          return {
-            ...stage,
-            opportunities: [...stage.opportunities, newOpportunity]
-          };
-        }
-        return stage;
-      });
+      // Immediate UI update
+      setStages(prevStages => 
+        prevStages.map(stage => {
+          if (stage.id === newOpportunity.stageId) {
+            return {
+              ...stage,
+              opportunities: [newOpportunity, ...stage.opportunities]
+            };
+          }
+          return stage;
+        })
+      );
       
-      setStages(updatedStages);
-      
-      // Refresh the stage to ensure all data is up to date
+      // Background refresh for consistency
       setTimeout(() => {
         refreshStageOpportunities(newOpportunity.stageId);
       }, 500);
@@ -126,60 +129,79 @@ export const useKanbanState = (funnelId: string) => {
   };
 
   const handleOpportunityUpdated = (updatedOpportunity: Opportunity) => {
-    console.log("Updating opportunity in kanban state:", updatedOpportunity);
+    console.log("Updating opportunity in kanban state - immediate update:", updatedOpportunity);
     
-    // Força atualização imediata na interface
-    setStages(prevStages => 
-      prevStages.map(stage => ({
-        ...stage,
-        opportunities: stage.opportunities.map(opp => 
-          opp.id === updatedOpportunity.id ? updatedOpportunity : opp
-        )
-      }))
-    );
+    // Immediate UI update with comprehensive stage handling
+    setStages(prevStages => {
+      let stageChanged = false;
+      const newStages = prevStages.map(stage => {
+        // Remove from all stages first (in case of stage change)
+        const filteredOpportunities = stage.opportunities.filter(opp => opp.id !== updatedOpportunity.id);
+        
+        // Add to correct stage
+        if (stage.id === updatedOpportunity.stageId) {
+          stageChanged = true;
+          return {
+            ...stage,
+            opportunities: [updatedOpportunity, ...filteredOpportunities]
+          };
+        }
+        
+        // Return stage with opportunity removed if it was there
+        return {
+          ...stage,
+          opportunities: filteredOpportunities
+        };
+      });
+      
+      return newStages;
+    });
 
-    // Também refresh da base de dados para garantir sincronização
-    if (updatedOpportunity.stageId) {
-      setTimeout(() => {
+    // Background refresh for consistency
+    setTimeout(() => {
+      if (updatedOpportunity.stageId) {
         refreshOpportunityInStage(updatedOpportunity.id, updatedOpportunity.stageId);
-      }, 100);
-    }
+      }
+    }, 100);
   };
 
   const handleOpportunityDeleted = (opportunityId: string) => {
-    console.log("Deleting opportunity from kanban state:", opportunityId);
+    console.log("Deleting opportunity from kanban state - immediate update:", opportunityId);
     
-    const updatedStages = stages.map(stage => {
-      return {
+    // Immediate UI update
+    setStages(prevStages => 
+      prevStages.map(stage => ({
         ...stage,
         opportunities: stage.opportunities.filter(opp => opp.id !== opportunityId)
-      };
-    });
-    
-    setStages(updatedStages);
+      }))
+    );
   };
 
   const handleOpportunityArchived = (opportunityId: string) => {
-    console.log("Archiving opportunity from kanban state:", opportunityId);
+    console.log("Archiving opportunity from kanban state - immediate update:", opportunityId);
     
-    // Remove from kanban view when archived
-    const updatedStages = stages.map(stage => {
-      return {
+    // Immediate removal from kanban view when archived
+    setStages(prevStages => 
+      prevStages.map(stage => ({
         ...stage,
         opportunities: stage.opportunities.filter(opp => opp.id !== opportunityId)
-      };
-    });
-    
-    setStages(updatedStages);
+      }))
+    );
   };
 
   const handleStageUpdated = (updatedStage: Stage) => {
-    const updatedStages = stages.map(stage => 
-      stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
-    );
-    setStages(updatedStages);
+    console.log("Stage updated - immediate UI update:", updatedStage);
     
-    // Refresh opportunities to ensure data consistency
+    // Immediate UI update
+    setStages(prevStages => 
+      prevStages.map(stage => 
+        stage.id === updatedStage.id 
+          ? {...updatedStage, opportunities: stage.opportunities} 
+          : stage
+      )
+    );
+    
+    // Background refresh for consistency
     setTimeout(() => {
       refreshStageOpportunities(updatedStage.id);
     }, 100);
