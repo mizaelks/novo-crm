@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WebhookConfig, WebhookFormData, WebhookPayload } from "@/types";
 import { mapDbWebhookToWebhook } from "./utils/mappers";
@@ -29,11 +28,11 @@ export const webhookAPI = {
       throw specificError;
     }
     
-    // Second query: Get wildcard webhooks (target_id = '*')
+    // Second query: Get wildcard webhooks (target_id is null)
     const { data: wildcardWebhooks, error: wildcardError } = await supabase.from('webhooks')
       .select('*')
       .eq('target_type', targetType)
-      .eq('target_id', '*');
+      .is('target_id', null);
     
     if (wildcardError) {
       console.error("Error fetching wildcard webhooks:", wildcardError);

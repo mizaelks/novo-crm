@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Opportunity, RequiredField, RequiredTask } from "@/types";
 
@@ -214,7 +213,7 @@ export const requiredElementsService = {
         return null;
       }
       
-      const stageRequirements = await this.getStageRequirements(destinationStageId);
+      const stageRequirements = await requiredElementsService.getStageRequirements(destinationStageId);
       
       // Add null checks for stageRequirements properties
       if (!stageRequirements) {
@@ -229,7 +228,7 @@ export const requiredElementsService = {
 
       // Adicionar campos obrigatórios
       if (requiredFields && requiredFields.length > 0 && updatedOpportunity) {
-        const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
+        const fieldResult = await requiredElementsService.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
         if (fieldResult) {
           updatedOpportunity = fieldResult;
         } else {
@@ -239,7 +238,7 @@ export const requiredElementsService = {
 
       // Adicionar tarefas obrigatórias - with proper null check
       if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity?.id) {
-        const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
+        const tasksSuccess = await requiredElementsService.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
         }

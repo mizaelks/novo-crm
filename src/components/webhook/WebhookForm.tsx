@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -96,8 +95,8 @@ const WebhookForm = ({ onWebhookCreated }: WebhookFormProps) => {
     try {
       setIsSubmitting(true);
       
-      // Se applyToAll estiver marcado, usamos um ID especial "*" para indicar todos os alvos
-      const targetId = values.applyToAll ? "*" : values.targetId || "*";
+      // Se applyToAll estiver marcado, usamos null para indicar todos os alvos
+      const targetId = values.applyToAll ? null : values.targetId || null;
       
       // Create a properly typed WebhookFormData object from the form values
       const webhookData: WebhookFormData = {
