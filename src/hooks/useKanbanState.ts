@@ -46,6 +46,20 @@ export const useKanbanState = (funnelId: string) => {
     }
   }, []);
 
+  const refreshAllStagesOpportunities = useCallback(async () => {
+    try {
+      const stagesWithOpportunities = await Promise.all(
+        stages.map(async (stage) => {
+          const opportunities = await opportunityAPI.getByStageId(stage.id, false);
+          return { ...stage, opportunities };
+        })
+      );
+      setStages(stagesWithOpportunities);
+    } catch (error) {
+      console.error("Error refreshing all stages:", error);
+    }
+  }, [stages]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -59,11 +73,8 @@ export const useKanbanState = (funnelId: string) => {
         // Load opportunities for each stage, excluding archived ones
         const stagesWithOpportunities = await Promise.all(
           sortedStages.map(async (stage) => {
-            const opportunities = await opportunityAPI.getByStageId(stage.id, false); // false = exclude archived
-            return {
-              ...stage,
-              opportunities
-            };
+            const opportunities = await opportunityAPI.getByStageId(stage.id, false);
+            return { ...stage, opportunities };
           })
         );
         
@@ -106,6 +117,11 @@ export const useKanbanState = (funnelId: string) => {
       });
       
       setStages(updatedStages);
+      
+      // Refresh the stage to ensure all data is up to date
+      setTimeout(() => {
+        refreshStageOpportunities(newOpportunity.stageId);
+      }, 500);
     }
   };
 
@@ -162,6 +178,11 @@ export const useKanbanState = (funnelId: string) => {
       stage.id === updatedStage.id ? {...updatedStage, opportunities: stage.opportunities} : stage
     );
     setStages(updatedStages);
+    
+    // Refresh opportunities to ensure data consistency
+    setTimeout(() => {
+      refreshStageOpportunities(updatedStage.id);
+    }, 100);
   };
 
   return {
@@ -176,6 +197,7 @@ export const useKanbanState = (funnelId: string) => {
     handleOpportunityArchived,
     handleStageUpdated,
     refreshStageOpportunities,
-    refreshOpportunityInStage
+    refreshOpportunityInStage,
+    refreshAllStagesOpportunities
   };
 };

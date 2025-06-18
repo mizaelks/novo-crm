@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useDateFilter, DateFilterType, DateRange } from "@/hooks/useDateFilter";
@@ -12,6 +13,7 @@ import OpportunityTableFilters from "@/components/opportunity/OpportunityTableFi
 import OpportunityListHeader from "@/components/opportunity/OpportunityListHeader";
 import ClientSummaryTableWithPagination from "@/components/opportunity/ClientSummaryTableWithPagination";
 import OpportunitiesTableWithPagination from "@/components/opportunity/OpportunitiesTableWithPagination";
+import { OpportunityImportExport } from "@/components/opportunity/OpportunityImportExport";
 
 const OpportunityList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,23 +86,36 @@ const OpportunityList = () => {
     refreshData(loadOpportunities);
   };
 
+  const handleImportComplete = () => {
+    loadOpportunities();
+  };
+
   if (loading) {
     return <LoadingScreen text="Carregando oportunidades..." />;
   }
 
   return (
     <div className="space-y-6">
-      <OpportunityListHeader
-        showArchived={showArchived}
-        setShowArchived={setShowArchived}
-        refreshData={handleRefresh}
-        loading={loading || opsLoading}
-        archiveSettings={archiveSettings}
-        setArchiveSettings={setArchiveSettings}
-        processAutoArchive={processAutoArchive}
-        isArchiveSettingsOpen={isArchiveSettingsOpen}
-        setIsArchiveSettingsOpen={setIsArchiveSettingsOpen}
-      />
+      <div className="flex justify-between items-center">
+        <OpportunityListHeader
+          showArchived={showArchived}
+          setShowArchived={setShowArchived}
+          refreshData={handleRefresh}
+          loading={loading || opsLoading}
+          archiveSettings={archiveSettings}
+          setArchiveSettings={setArchiveSettings}
+          processAutoArchive={processAutoArchive}
+          isArchiveSettingsOpen={isArchiveSettingsOpen}
+          setIsArchiveSettingsOpen={setIsArchiveSettingsOpen}
+        />
+        
+        <OpportunityImportExport
+          opportunities={opportunities}
+          funnels={funnels}
+          stages={stages}
+          onImportComplete={handleImportComplete}
+        />
+      </div>
 
       <OpportunityMetricsCards 
         opportunities={filteredOpportunities}

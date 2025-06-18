@@ -5,6 +5,8 @@ import ScheduledActionList from "../scheduledAction/ScheduledActionList";
 import CustomFieldsForm from "../customFields/CustomFieldsForm";
 import { OpportunityHistoryTab } from "./OpportunityHistoryTab";
 import { Calendar, Settings, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { stageAPI } from "@/services/api";
 
 interface OpportunityDetailsTabsProps {
   opportunity: Opportunity;
@@ -17,6 +19,24 @@ const OpportunityDetailsTabs = ({
   currentStage,
   onOpportunityUpdated 
 }: OpportunityDetailsTabsProps) => {
+  const [refreshedStage, setRefreshedStage] = useState(currentStage);
+
+  // Refresh stage data when opportunity stage changes
+  useEffect(() => {
+    const loadStageData = async () => {
+      if (opportunity.stageId) {
+        try {
+          const stageData = await stageAPI.getById(opportunity.stageId);
+          setRefreshedStage(stageData);
+        } catch (error) {
+          console.error("Error loading stage data:", error);
+        }
+      }
+    };
+
+    loadStageData();
+  }, [opportunity.stageId]);
+
   const handleCustomFieldsUpdated = (updatedOpportunity: Opportunity) => {
     console.log('Custom fields updated, refreshing opportunity:', updatedOpportunity);
     onOpportunityUpdated(updatedOpportunity);
@@ -48,7 +68,7 @@ const OpportunityDetailsTabs = ({
       <TabsContent value="fields" className="mt-6">
         <CustomFieldsForm
           opportunity={opportunity}
-          requiredFields={currentStage?.requiredFields || []}
+          requiredFields={refreshedStage?.requiredFields || []}
           onCustomFieldsUpdated={handleCustomFieldsUpdated}
         />
       </TabsContent>

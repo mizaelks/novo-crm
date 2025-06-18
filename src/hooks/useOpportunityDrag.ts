@@ -56,15 +56,6 @@ export const useOpportunityDrag = (
     );
     
     console.log('Drag operation created:', dragOperation);
-    console.log('Destination stage details:', {
-      id: destinationStage.id,
-      name: destinationStage.name,
-      isWinStage: destinationStage.isWinStage,
-      isLossStage: destinationStage.isLossStage,
-      winReasonRequired: destinationStage.winReasonRequired,
-      lossReasonRequired: destinationStage.lossReasonRequired,
-      requiredFields: destinationStage.requiredFields
-    });
     
     if (hasRequirements(dragOperation)) {
       console.log('Has requirements - setting up drag operation');
@@ -74,7 +65,6 @@ export const useOpportunityDrag = (
       // Se só precisa de motivos, vai direto para diálogo de motivos
       if (requiresOnlyReasons(dragOperation)) {
         console.log('Only needs reasons - showing reason dialog directly');
-        // Sinaliza que deve mostrar diálogo de motivos
         setShowRequiredFieldsDialog('reason');
         return;
       }

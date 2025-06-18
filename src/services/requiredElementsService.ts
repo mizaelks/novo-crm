@@ -20,7 +20,7 @@ export const requiredElementsService = {
     try {
       console.log('Adding required tasks to opportunity:', opportunityId, requiredTasks);
       
-      if (requiredTasks.length === 0) {
+      if (!requiredTasks || requiredTasks.length === 0) {
         return true;
       }
 
@@ -92,7 +92,7 @@ export const requiredElementsService = {
     try {
       console.log('Adding required fields to opportunity:', opportunity.id, requiredFields);
       
-      if (requiredFields.length === 0) {
+      if (!requiredFields || requiredFields.length === 0) {
         return opportunity;
       }
 
@@ -222,30 +222,30 @@ export const requiredElementsService = {
         return opportunity;
       }
       
-      const requiredFields = stageRequirements?.requiredFields || [];
-      const requiredTasks = stageRequirements?.requiredTasks || [];
+      const requiredFields = stageRequirements.requiredFields || [];
+      const requiredTasks = stageRequirements.requiredTasks || [];
       
       let updatedOpportunity: Opportunity | null = opportunity;
 
       // Adicionar campos obrigatórios
       if (requiredFields && requiredFields.length > 0 && updatedOpportunity) {
         const fieldResult = await this.addRequiredFieldsToOpportunity(updatedOpportunity, requiredFields);
-        if (!fieldResult) {
+        if (fieldResult) {
+          updatedOpportunity = fieldResult;
+        } else {
           console.error('Failed to add required fields');
-          return null;
         }
-        updatedOpportunity = fieldResult;
       }
 
       // Adicionar tarefas obrigatórias
-      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity?.id) {
+      if (requiredTasks && requiredTasks.length > 0 && updatedOpportunity && updatedOpportunity.id) {
         const tasksSuccess = await this.addRequiredTasksToOpportunity(updatedOpportunity.id, requiredTasks);
         if (!tasksSuccess) {
           console.error('Failed to add required tasks');
         }
       }
 
-      return updatedOpportunity || null;
+      return updatedOpportunity;
     } catch (error) {
       console.error('Error processing stage requirements:', error);
       return null;
